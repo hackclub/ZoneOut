@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.vercel
+.claude/settings.local.json
+__pycache__/
+
+# dev-only, not part of the deployed site
+CLAUDE.md
+devserver.py
+filloutform.txt
+.neon
+skills-lock.json
+.claude/skills/

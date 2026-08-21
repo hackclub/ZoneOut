@@ -1,0 +1,17 @@
+{
+  "name": "zoneout",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ZoneOut - Hack Club YSWS promo site. Static front end plus Vercel serverless functions for the Neon Postgres layer.",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "migrate": "node --env-file=.env.local db/migrate.mjs",
+    "dev:api": "vercel dev"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

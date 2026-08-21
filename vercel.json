@@ -1,0 +1,49 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+
+  "regions": ["sin1"],
+
+  "functions": {
+    "api/**": {
+      "maxDuration": 15
+    }
+  },
+
+  "redirects": [
+    { "source": "/lib/:path*", "destination": "/", "permanent": false },
+    { "source": "/.gitattributes", "destination": "/", "permanent": false }
+  ],
+
+  "rewrites": [
+    { "source": "/info", "destination": "/" },
+    { "source": "/submit", "destination": "/home" },
+    { "source": "/profile", "destination": "/home" },
+    { "source": "/error", "destination": "/home" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://server.fillout.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.hackclub.com https://user-cdn.hackclub-assets.com data:; media-src 'self' https://cdn.hackclub.com https://user-cdn.hackclub-assets.com; font-src 'self'; connect-src 'self' https://server.fillout.com https://forms.hackclub.com; frame-src https://forms.hackclub.com https://*.fillout.com; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'"
+        },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    }
+  ]
+}

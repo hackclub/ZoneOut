@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">
+<!-- ZoneOut's mark: the same eye as the interactive custom cursor in style.css.
+     The lens is two circular arcs of r=13.786 through (2,14) (14,7) (26,14),
+     which is what favicon.ico and apple-touch-icon.png are rendered from too -
+     change one and re-run the generator for the others, or they drift apart.
+     The tile is opaque because a tab strip may be light or dark, and a bare
+     black-on-transparent eye disappears on the light one. -->
+<rect width="28" height="28" rx="5" fill="#08080a"/>
+<path d="M2 14A13.786 13.786 0 0 1 26 14A13.786 13.786 0 0 1 2 14Z" fill="#000000" stroke="#ffffff" stroke-width="1.6"/>
+<circle cx="14" cy="14" r="4.8" fill="#ffffff"/>
+<circle cx="14" cy="14" r="1.7" fill="#000000"/>
+</svg>

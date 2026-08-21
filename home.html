@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="style.css">
+<title>ZoneOut Terminal</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+
+<script>
+document.documentElement.classList.toggle(
+    "knownSession",
+    /(?:^|;\s*)(?:__Host-)?zo_hint=1(?:\s*;|$)/.test(document.cookie)
+);
+</script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Courier New",monospace;
+}
+
+body{
+background:black;
+color:white;
+overflow-x:hidden;
+min-height:100vh;
+min-height:100dvh;
+-webkit-text-size-adjust:100%;
+text-size-adjust:100%;
+}
+
+
+.videoBG{
+position:fixed;
+top:50%;
+left:50%;
+width:100vw;
+height:100vh;
+min-width:100%;
+min-height:100%;
+object-fit:cover;
+transform:translate(-50%,-50%);
+z-index:-2;
+pointer-events:none;
+}
+
+.overlay{
+position:fixed;
+inset:0;
+background:radial-gradient(circle at center, rgba(0,0,0,0.1), rgba(0,0,0,0.92));
+z-index:-1;
+}
+
+body.onError .videoBG,
+body.onError .overlay{
+display:none;
+}
+
+.backBtn{
+display:block;
+position:fixed;
+top:20px;
+left:20px;
+cursor:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%3E%3Cpath%20d='M2%2014s5-7%2012-7%2012%207%2012%207-5%207-12%207S2%2014%202%2014z'%20fill='%23000000'%20stroke='%23ffffff'%20stroke-width='1.6'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='4.8'%20fill='%23ffffff'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='1.7'%20fill='%23000000'/%3E%3C/svg%3E") 14 14, pointer;
+font-size:16px;
+opacity:0.7;
+transition:0.2s;
+z-index:80;
+color:white;
+}
+
+.backBtn:hover,
+.backBtn:focus-visible{
+opacity:1;
+outline:none;
+text-shadow:0 0 6px white;
+}
+
+
+.state{
+display:none;
+}
+
+.state.show{
+display:block;
+}
+
+
+.loadingScreen{
+z-index:90;
+}
+
+
+.camMap{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:min(900px,92vw);
+height:clamp(380px,68vh,600px);
+z-index:2;
+}
+
+#wireSparks{
+position:fixed;
+inset:0;
+z-index:1;
+pointer-events:none;
+}
+
+@media (pointer: coarse){
+.camNode{
+min-height:48px;
+}
+
+.backBtn{
+padding:12px 16px;
+margin:-12px -16px;
+}
+}
+
+@media (hover: none){
+.backBtn:hover,
+.camNode:hover{
+transform:none;
+}
+}
+
+.backBtn{
+top:max(20px, calc(env(safe-area-inset-top) + 12px));
+left:max(20px, calc(env(safe-area-inset-left) + 14px));
+}
+
+.volumeDock{
+right:max(16px, calc(env(safe-area-inset-right) + 12px));
+bottom:max(16px, calc(env(safe-area-inset-bottom) + 12px));
+}
+
+@media (max-width: 560px){
+.volumeDock{
+gap:8px;
+padding:8px 10px;
+font-size:12px;
+}
+
+.volumeDock input[type="range"]{
+width:96px;
+}
+
+.volumeDock span{
+min-width:34px;
+}
+}
+
+@media (max-width: 400px){
+.volumeDock label{
+display:none;
+}
+
+.volumeDock input[type="range"]{
+width:88px;
+}
+}
+
+body.noScroll{
+overflow:hidden;
+}
+
+.screenVeil.quick{
+transition-duration:.16s;
+}
+
+.camLines{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+pointer-events:none;
+}
+
+
+.camLines polyline{
+fill:none;
+vector-effect:non-scaling-stroke;
+}
+
+.camLines .wireBase{
+stroke:rgba(255,255,255,0.45);
+stroke-width:1.5;
+}
+
+.camLines .wirePulse{
+stroke:#fff;
+stroke-width:2.8;
+stroke-linecap:round;
+stroke-dasharray:60 940;
+filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 16px rgba(255,255,255,0.85));
+animation:wirePulse 3.4s linear infinite;
+}
+
+@keyframes wirePulse{
+from{stroke-dashoffset:0;}
+to{stroke-dashoffset:1000;}
+}
+
+.camNode{
+position:absolute;
+transform:translate(-50%,-50%);
+background:rgba(0,0,0,0.88);
+color:#fff;
+border:1px solid #fff;
+padding:12px 26px;
+font-size:15px;
+letter-spacing:4px;
+white-space:nowrap;
+transition:0.2s;
+}
+
+.camNode:hover,
+.camNode:focus-visible{
+outline:none;
+background:rgba(40,40,50,0.92);
+text-shadow:0 0 8px #fff;
+box-shadow:0 0 14px rgba(255,255,255,0.45);
+}
+
+@media (max-width:720px){
+.camMap{
+height:auto;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:24px;
+}
+
+.camMap::before{
+content:"";
+position:absolute;
+top:0;
+bottom:0;
+left:50%;
+transform:translateX(-50%);
+width:2px;
+z-index:-1;
+background:linear-gradient(to top,
+rgba(255,255,255,0.42) 0%,
+rgba(255,255,255,0.42) 44%,
+#fff 50%,
+rgba(255,255,255,0.42) 56%,
+rgba(255,255,255,0.42) 100%);
+background-size:100% 300%;
+box-shadow:0 0 7px rgba(255,255,255,0.5);
+animation:wireScroll 3.4s linear infinite;
+}
+
+@keyframes wireScroll{
+from{background-position:50% 100%;}
+to{background-position:50% 0%;}
+}
+
+.camLines{
+display:none;
+}
+
+.camNode{
+position:static;
+transform:none;
+background:black;
+width:min(240px, 68vw);
+padding:13px 10px;
+letter-spacing:3px;
+}
+}
+
+.subPage{
+display:none;
+}
+
+.subPage.show{
+display:block;
+}
+
+.formFull{
+position:fixed;
+inset:0;
+z-index:40;
+}
+
+.panel{
+width:min(680px,92vw);
+margin:min(12vh,110px) auto 30px;
+padding:22px;
+background:
+linear-gradient(135deg, rgba(35,10,55,0.96), rgba(10,10,10,0.96)),
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+);
+border:1px solid rgba(200,160,255,0.35);
+box-shadow:0 0 18px rgba(130,70,200,0.18);
+}
+
+.field{
+display:flex;
+justify-content:space-between;
+gap:16px;
+padding:10px 0;
+border-bottom:1px dashed rgba(255,255,255,0.12);
+font-size:15px;
+}
+
+.field:last-child{
+border-bottom:none;
+}
+
+.fieldKey{
+color:rgba(255,255,255,0.45);
+letter-spacing:2px;
+}
+
+.fieldVal{
+text-align:right;
+word-break:break-all;
+}
+
+.actionRow{
+width:min(680px,92vw);
+margin:0 auto 80px;
+text-align:right;
+}
+
+.actionRow .camNode{
+position:static;
+transform:none;
+}
+
+button{
+font-family:"Courier New",monospace;
+}
+
+.errorScreen{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:26px;
+text-align:center;
+padding:24px;
+z-index:10;
+}
+
+.errCode{
+font-size:clamp(28px,6vw,46px);
+letter-spacing:6px;
+color:#ff6b6b;
+text-shadow:0 0 12px rgba(255,80,80,0.5);
+}
+
+.errText{
+font-size:clamp(15px,2.4vw,19px);
+letter-spacing:2px;
+line-height:1.7;
+}
+
+.errorScreen .camNode{
+position:static;
+transform:none;
+}
+
+#errorDots{
+position:fixed;
+inset:0;
+z-index:5;
+background:black;
+}
+
+</style>
+</head>
+
+<body>
+
+<video autoplay muted loop playsinline class="videoBG">
+<source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
+</video>
+
+<div class="overlay"></div>
+
+<audio loop id="bgAudio" preload="auto">
+<source src="https://cdn.hackclub.com/019d157e-42db-7c9d-a810-abcb9247cf07/faqmusic.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="uiClick" preload="auto">
+<source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
+</audio>
+
+<div class="screenVeil" id="screenVeil" aria-hidden="true"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="backBtn" id="backBtn" role="button" tabindex="0">← Back</div>
+
+<div class="volumeDock">
+<label for="masterVolume">Volume</label>
+<input id="masterVolume" type="range" min="0" max="100" value="35" aria-label="Volume">
+<span id="volumeValue">35%</span>
+</div>
+
+<!-- signed in -->
+<div class="state" id="stateIn">
+
+<canvas id="wireSparks"></canvas>
+
+<div class="camMap" id="camMap">
+<svg class="camLines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+<polyline class="wireBase" pathLength="1000" points="26,12 68,38 26,64 68,90"></polyline>
+<polyline class="wirePulse" pathLength="1000" points="26,12 68,38 26,64 68,90"></polyline>
+</svg>
+<button class="camNode" id="nodeSubmit" type="button" style="left:26%;top:12%">SUBMIT</button>
+<button class="camNode" id="nodeProjects" type="button" style="left:68%;top:38%">PROJECTS</button>
+<button class="camNode" id="nodeShop" type="button" style="left:26%;top:64%">SHOP</button>
+<button class="camNode" id="nodeProfile" type="button" style="left:68%;top:90%">PROFILE</button>
+</div>
+
+<!-- /submit -->
+<div class="subPage" id="pageSubmit">
+<div class="formFull">
+<div id="filloutMount" data-fillout-id="gXaU3KEUqCus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-inherit-parameters data-fillout-domain="forms.hackclub.com"></div>
+</div>
+</div>
+
+<!-- /profile -->
+<div class="subPage" id="pageProfile">
+<div class="panel">
+<div class="field"><span class="fieldKey">NAME</span><span class="fieldVal" id="fName">—</span></div>
+<div class="field"><span class="fieldKey">EMAIL</span><span class="fieldVal" id="fEmail">—</span></div>
+<div class="field"><span class="fieldKey">SLACK ID</span><span class="fieldVal" id="fSlack">—</span></div>
+</div>
+
+<div class="actionRow">
+<button class="camNode" id="logoutBtn" type="button">LOG OUT</button>
+</div>
+</div>
+
+</div>
+
+<!-- /error -->
+<div class="state" id="stateError">
+<canvas id="errorDots"></canvas>
+<div class="errorScreen">
+<div class="errCode">ERROR: 404</div>
+<div class="errText" id="errMessage">You need to first log in!</div>
+<button class="camNode" id="toMenuBtn" type="button">← RETURN TO MAIN MENU</button>
+</div>
+</div>
+
+<div class="loadingScreen active" id="loadingScreen">
+<img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading" width="200" height="200" decoding="async">
+<div class="loadingText" id="loadingText">Loading</div>
+</div>
+
+<script>
+/* section for the signed-in dashboard */
+
+const VEIL_MS = 450;
+const DOTS_MS = 10000;
+
+const loadingScreen = document.getElementById("loadingScreen");
+const loadingText = document.getElementById("loadingText");
+const screenVeil = document.getElementById("screenVeil");
+const camMap = document.getElementById("camMap");
+const toast = document.getElementById("toast");
+const backBtn = document.getElementById("backBtn");
+const videoBG = document.querySelector(".videoBG");
+
+const knownSession = document.documentElement.classList.contains("knownSession");
+
+/* section for the router */
+const VIEWS = {
+    "/home":    { state: "stateIn",    page: null },
+    "/submit":  { state: "stateIn",    page: "pageSubmit" },
+    "/profile": { state: "stateIn",    page: "pageProfile" },
+    "/error":   { state: "stateError", page: null }
+};
+
+function pathOf(pathname) {
+    const path = pathname.replace(/\/+$/, "") || "/home";
+    return VIEWS[path] ? path : "/home";
+}
+
+let currentPath = null;
+let pushedHere = false;
+let lastInputWasKeyboard = false;
+
+function render(path) {
+    currentPath = path;
+    const view = VIEWS[path];
+
+    document.querySelectorAll(".state").forEach(s => s.classList.remove("show"));
+    document.querySelectorAll(".subPage").forEach(p => p.classList.remove("show"));
+
+    document.getElementById(view.state).classList.add("show");
+    camMap.style.display = view.page ? "none" : "";
+    if (view.page) document.getElementById(view.page).classList.add("show");
+
+    document.body.classList.toggle("onError", path === "/error");
+
+    document.body.classList.toggle("noScroll", path === "/home" || path === "/error");
+
+    if (path === "/submit") mountForm();
+    if (path === "/error") startDots(); else stopDots();
+    if (path === "/home") startSparks(); else stopSparks();
+
+    if (path === "/error" || path === "/submit") pauseVideo(videoBG);
+    else playVideo(videoBG);
+
+    const first = document.querySelector(".state.show .camNode");
+    if (first && lastInputWasKeyboard) first.focus();
+
+    window.scrollTo(0, 0);
+}
+
+/* section for view transitions */
+const FADE_MS = 160;
+let fadeTimer = null;
+
+function transition(swap) {
+    clearTimeout(fadeTimer);
+    screenVeil.classList.add("quick", "on");
+
+    fadeTimer = setTimeout(() => {
+        swap();
+        screenVeil.classList.remove("on");
+        fadeTimer = setTimeout(() => screenVeil.classList.remove("quick"), FADE_MS);
+    }, FADE_MS);
+}
+
+function go(path) {
+    if (path === currentPath) return;
+    history.pushState({ path }, "", path);
+    pushedHere = true;
+    transition(() => render(path));
+}
+
+function leaveSubPage() {
+    if (pushedHere) {
+        history.back();
+        return;
+    }
+    history.replaceState({ path: "/home" }, "", "/home");
+    transition(() => render("/home"));
+}
+
+window.addEventListener("popstate", () => {
+    pushedHere = false;
+    transition(() => render(pathOf(location.pathname)));
+});
+
+/* section for the loading veil */
+let loadingDotsTimer = null;
+
+function stopLoading() {
+    clearInterval(loadingDotsTimer);
+    loadingDotsTimer = null;
+    loadingScreen.classList.remove("active");
+}
+
+if (knownSession) {
+    stopLoading();
+} else {
+    let dots = 0;
+    loadingDotsTimer = setInterval(() => {
+        dots = (dots + 1) % 4;
+        loadingText.innerText = "Loading" + ".".repeat(dots);
+    }, 400);
+}
+
+/* section for the toast */
+let toastTimer = null;
+
+function hideToast() {
+    clearTimeout(toastTimer);
+    toast.classList.remove("show");
+}
+
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+["pointerdown", "touchstart", "keydown"].forEach(evt => {
+    document.addEventListener(evt, () => {
+        lastInputWasKeyboard = evt === "keydown";
+        hideToast();
+        resumeAudio();
+    }, { capture: true, passive: true });
+});
+
+/* section for the menu loop */
+const bgAudio = document.getElementById("bgAudio");
+const FADE_IN_MS = 1600;
+
+let masterVolume = 0.35;
+try {
+    const saved = Number(localStorage.getItem("zoneoutVolume"));
+    if (Number.isFinite(saved) && saved >= 0 && saved <= 100
+        && localStorage.getItem("zoneoutVolume") !== null) {
+        masterVolume = saved / 100;
+    }
+} catch (e) {}
+
+const clampVolume = level => Math.min(Math.max(level, 0), 1);
+
+let fadeGeneration = 0;
+
+function fadeInAudio() {
+    const mine = ++fadeGeneration;
+    const start = performance.now();
+
+    function step(now) {
+        if (mine !== fadeGeneration) return;
+        const progress = Math.min((now - start) / FADE_IN_MS, 1);
+        bgAudio.volume = clampVolume(masterVolume * progress);
+        if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+    setTimeout(() => {
+        if (mine === fadeGeneration) bgAudio.volume = clampVolume(masterVolume);
+    }, FADE_IN_MS + 250);
+}
+
+/* section for the button click */
+const uiClick = document.getElementById("uiClick");
+
+function playClick() {
+    uiClick.currentTime = 0;
+    uiClick.volume = clampVolume(masterVolume * 0.35);
+    uiClick.play().catch(() => {});
+}
+
+document.addEventListener("click", (e) => {
+    if (e.target.closest(".camNode, .backBtn")) playClick();
+});
+
+/* section for the volume dock */
+const volumeSlider = document.getElementById("masterVolume");
+const volumeValue = document.getElementById("volumeValue");
+
+function syncVolumeDisplay() {
+    volumeValue.textContent = `${Math.round(masterVolume * 100)}%`;
+}
+
+volumeSlider.value = String(Math.round(masterVolume * 100));
+syncVolumeDisplay();
+
+volumeSlider.addEventListener("input", () => {
+    masterVolume = Number(volumeSlider.value) / 100;
+    try { localStorage.setItem("zoneoutVolume", volumeSlider.value); } catch (e) {}
+
+    fadeGeneration++;
+    bgAudio.volume = clampVolume(masterVolume);
+    syncVolumeDisplay();
+
+    resumeAudio();
+});
+
+function resumeAudio() {
+    if (!bgAudio.paused || masterVolume === 0) return;
+    bgAudio.volume = 0;
+    bgAudio.play().then(fadeInAudio).catch(() => {});
+}
+
+resumeAudio();
+bgAudio.addEventListener("canplay", resumeAudio);
+
+/* section for the fillout embed */
+let formMounted = false;
+
+function mountForm() {
+    if (formMounted) return;
+    formMounted = true;
+
+    const script = document.createElement("script");
+    script.src = "https://server.fillout.com/embed/v1/";
+    document.body.appendChild(script);
+}
+
+/* section for the video backdrop */
+function playVideo(el) {
+    if (el && !document.hidden) el.play().catch(() => {});
+}
+
+function pauseVideo(el) {
+    if (el && !el.paused) el.pause();
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseVideo(videoBG);
+    else if (currentPath !== "/error" && currentPath !== "/submit") playVideo(videoBG);
+});
+
+/* section for the sparks thrown off the wire */
+const sparkCanvas = document.getElementById("wireSparks");
+const wirePulse = document.querySelector(".camLines .wirePulse");
+const PULSE_DASH = 60;
+const PULSE_UNITS = 1000;
+let sparks = [];
+let sparkFrame = null;
+let nextSpark = 0;
+
+function sizeSparks() {
+    sparkCanvas.width = window.innerWidth;
+    sparkCanvas.height = window.innerHeight;
+}
+
+function pulseHead() {
+    if (!wirePulse.getScreenCTM) return null;
+
+    const ctm = wirePulse.getScreenCTM();
+    if (!ctm) return null;
+
+    const offset = parseFloat(getComputedStyle(wirePulse).strokeDashoffset) || 0;
+    const centre = (((PULSE_DASH - offset) % PULSE_UNITS) + PULSE_UNITS) % PULSE_UNITS;
+    const at = wirePulse.getPointAtLength(centre / PULSE_UNITS * wirePulse.getTotalLength());
+
+    return at.matrixTransform(ctm);
+}
+
+function startSparks() {
+    if (sparkFrame) return;
+    sizeSparks();
+
+    const ctx = sparkCanvas.getContext("2d");
+
+    function step(now) {
+        if (!sparks.length && now < nextSpark) {
+            sparkFrame = requestAnimationFrame(step);
+            return;
+        }
+
+        ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+
+        if (now >= nextSpark) {
+            nextSpark = now + 90 + Math.random() * 320;
+            const head = pulseHead();
+
+            if (head) {
+                const burst = 1 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < burst; i++) {
+                    sparks.push({
+                        x: head.x,
+                        y: head.y,
+                        vx: (Math.random() - 0.5) * 0.9,
+                        vy: (Math.random() - 0.5) * 0.9 - 0.25,
+                        life: 0,
+                        span: 520 + Math.random() * 620,
+                        size: 0.8 + Math.random() * 1.6,
+                        last: now
+                    });
+                }
+            }
+        }
+
+        sparks = sparks.filter(s => {
+            const dt = now - s.last;
+            s.last = now;
+            s.life += dt;
+            if (s.life >= s.span) return false;
+
+            s.x += s.vx * dt * 0.06;
+            s.y += s.vy * dt * 0.06;
+
+            const fade = 1 - s.life / s.span;
+            ctx.globalAlpha = fade;
+            ctx.fillStyle = "#fff";
+            ctx.shadowColor = "rgba(255,255,255,0.9)";
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * fade, 0, Math.PI * 2);
+            ctx.fill();
+            return true;
+        });
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        sparkFrame = requestAnimationFrame(step);
+    }
+
+    sparkFrame = requestAnimationFrame(step);
+}
+
+function stopSparks() {
+    if (sparkFrame) cancelAnimationFrame(sparkFrame);
+    sparkFrame = null;
+    sparks = [];
+    sparkCanvas.getContext("2d").clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+}
+
+/* section for the dot field on /error */
+const dotsCanvas = document.getElementById("errorDots");
+let dotsFrame = null;
+let dotsTimer = null;
+let dotsStart = 0;
+
+function sizeDots() {
+    dotsCanvas.width = window.innerWidth;
+    dotsCanvas.height = window.innerHeight;
+}
+
+function startDots() {
+    if (dotsFrame) return;
+
+    sizeDots();
+    const ctx = dotsCanvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, dotsCanvas.width, dotsCanvas.height);
+    dotsStart = performance.now();
+
+    function step(now) {
+        const progress = Math.min((now - dotsStart) / DOTS_MS, 1);
+
+        const count = Math.round(4 + progress * progress * 900);
+        ctx.fillStyle = "#fff";
+
+        for (let i = 0; i < count; i++) {
+            const x = Math.random() * dotsCanvas.width;
+            const y = Math.random() * dotsCanvas.height;
+            const r = 1 + Math.random() * (1 + progress * 4);
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        if (progress < 1) {
+            dotsFrame = requestAnimationFrame(step);
+        } else {
+            dotsFrame = null;
+            window.location.href = "/";
+        }
+    }
+
+    dotsFrame = requestAnimationFrame(step);
+
+    clearTimeout(dotsTimer);
+    dotsTimer = setTimeout(() => { window.location.href = "/"; }, DOTS_MS + 400);
+}
+
+function stopDots() {
+    if (dotsFrame) cancelAnimationFrame(dotsFrame);
+    dotsFrame = null;
+    clearTimeout(dotsTimer);
+    dotsTimer = null;
+}
+
+let resizeFrame = null;
+
+window.addEventListener("resize", () => {
+    if (resizeFrame) return;
+    resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
+        if (dotsFrame) sizeDots();
+        if (sparkFrame) sizeSparks();
+    });
+});
+
+/* section for the map nodes */
+document.getElementById("nodeSubmit").addEventListener("click", () => go("/submit"));
+document.getElementById("nodeProfile").addEventListener("click", () => go("/profile"));
+document.getElementById("nodeProjects").addEventListener("click", () => showToast("Feature is under construction!"));
+document.getElementById("nodeShop").addEventListener("click", () => showToast("Shop unlocks soon!"));
+
+/* section for the back control */
+function goBack() {
+    if (currentPath === "/home" || currentPath === "/error") {
+        window.location.href = "/";
+        return;
+    }
+    leaveSubPage();
+}
+
+backBtn.addEventListener("click", goBack);
+
+backBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        playClick();
+        goBack();
+    }
+});
+
+document.getElementById("toMenuBtn").addEventListener("click", () => {
+    window.location.href = "/";
+});
+
+/* section for keyboard navigation */
+function focusables() {
+    return Array.from(document.querySelectorAll(".state.show .camNode"))
+                .concat([backBtn]);
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        e.preventDefault();
+        goBack();
+        return;
+    }
+
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+
+    const items = focusables();
+    if (!items.length) return;
+
+    e.preventDefault();
+    const at = items.indexOf(document.activeElement);
+    const next = at === -1
+        ? (step > 0 ? 0 : items.length - 1)
+        : (at + step + items.length) % items.length;
+
+    items[next].focus();
+});
+
+
+/* section for log out */
+function forgetSessionHint() {
+    const attrs = "Max-Age=0; Path=/; SameSite=Lax";
+    document.cookie = `zo_hint=; ${attrs}`;
+    if (location.protocol === "https:") {
+        document.cookie = `__Host-zo_hint=; ${attrs}; Secure`;
+    }
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    } catch {
+    }
+
+    forgetSessionHint();
+
+    try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
+    screenVeil.classList.add("on");
+    setTimeout(() => { window.location.href = "/"; }, VEIL_MS);
+});
+
+/* section for the session lookup */
+const put = (id, value) => { document.getElementById(id).textContent = value; };
+
+function toError(message) {
+    document.getElementById("errMessage").textContent = message;
+    history.replaceState({ path: "/error" }, "", "/error");
+    pushedHere = false;
+
+    if (currentPath === null) render("/error");
+    else transition(() => render("/error"));
+}
+
+async function load() {
+    let response;
+    try {
+        response = await fetch("/api/auth/me", { credentials: "same-origin" });
+    } catch {
+        stopLoading();
+        return toError("The terminal could not reach ZoneOut.");
+    }
+
+    if (response.status === 401) {
+        stopLoading();
+        return toError("You need to first log in!");
+    }
+
+    if (!response.ok) {
+        stopLoading();
+        return toError("The terminal could not reach ZoneOut.");
+    }
+
+    let payload;
+    try {
+        payload = await response.json();
+    } catch {
+        stopLoading();
+        return toError("The terminal could not reach ZoneOut.");
+    }
+
+    const user = payload.user;
+    put("fName", user.name || "—");
+    put("fEmail", user.email);
+    put("fSlack", user.slackId || "not linked");
+
+    stopLoading();
+    if (currentPath === null) render(pathOf(location.pathname));
+}
+
+const entryPath = pathOf(location.pathname);
+history.replaceState({ path: entryPath }, "", entryPath);
+
+if (knownSession || entryPath === "/error") render(entryPath);
+
+load();
+</script>
+
+</body>
+</html>

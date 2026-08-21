@@ -1,0 +1,5 @@
+* text=auto
+
+# the tab icons must never be CRLF normalised
+*.ico binary
+*.png binary

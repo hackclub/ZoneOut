@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="ZoneOut - a Hack Club YSWS for horror, mystery and ARG projects. Ship something weird, win prizes.">
+<meta name="theme-color" content="#000000">
+<title>Zone Out</title>
+<link rel="stylesheet" href="style.css">
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<script>
+try {
+    if (localStorage.getItem("zoneoutWarningAccepted") === "true"
+        && !/(^|[?&])reset(=|&|$)/.test(location.search)) {
+        document.documentElement.classList.add("skipWarning");
+    }
+} catch (e) {}
+</script>
+</head>
+
+<body>
+
+<div class="warningScreen" id="warningScreen">
+    <div class="warningCard">
+        <img class="warningIcon" src="https://cdn.hackclub.com/019d191c-8239-70cd-b9da-81b265c17236/caution.png" alt="Warning sign" width="120" height="120" decoding="async">
+
+        <div class="warningText">
+            WARNING: VIEWER DISCRETION IS ADVISED. THE WEBSITE MAY CONTAIN LOUD NOISES AND WEIRD IMAGES THAT MAY TRIGGER CERTAIN PERSONS. PROCEED WITH CAUTION.
+        </div>
+
+        <div class="warningComment"><span class="glitchText" data-text="ZoneOut">ZoneOut</span> is a YSWS on a theme of "weirding" someone out with your projects.
+            The site may contain some weird stuff so stay put!
+        </div>
+
+        <div class="warningActions">
+            <button class="warningProceed" id="warningProceed" type="button">Proceed</button>
+            <button class="warningQuit" id="warningQuit" type="button">Quit</button>
+        </div>
+    </div>
+</div>
+
+<div class="screenVeil" id="screenVeil" aria-hidden="true"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="introSequence" id="introSequence" aria-hidden="true">
+    <h1 class="introTitle"><span class="introWord introZone">Zone</span> <span class="introWord introOut">Out</span></h1>
+</div>
+
+<div class="volumeDock">
+    <label for="masterVolume">Volume</label>
+    <input id="masterVolume" type="range" min="0" max="100" value="35" aria-label="Volume">
+    <span id="volumeValue">35%</span>
+</div>
+
+<main class="site">
+    <section class="hero">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.hackclub.com/019d14f6-2cd2-7a84-81bf-d68825577d2c/ds.mp4" type="video/mp4">
+        </video>
+
+        <audio loop id="bgAudio" preload="auto">
+            <source src="https://cdn.hackclub.com/019d09b2-74cf-75cb-a4e5-828822608761/distorted.ogg" type="audio/ogg">
+        </audio>
+
+        <audio loop id="faqAudio" preload="metadata">
+            <source src="https://cdn.hackclub.com/019d157e-42db-7c9d-a810-abcb9247cf07/faqmusic.mp3" type="audio/mpeg">
+        </audio>
+
+        <audio id="uiClick" preload="auto">
+            <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
+        </audio>
+
+        <div class="overlay"></div>
+        <div class="crt"></div>
+
+        <div class="menu">
+            <div class="title">Zone Out</div>
+            <div class="subtitle">Make adrenalin inducing projects
+            <br> win great prizes!</div>
+
+            <div class="option" id="login">Login</div>
+            <div class="option active selector" id="learn">Learn More</div>
+        </div>
+
+        <div class="footer">A <a href="https://hackclub.com" target="_blank" rel="noreferrer" class="hackclub">HackClub</a> YSWS event.</div>
+    </section>
+
+    <div class="loadingScreen" id="loadingScreen">
+        <img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading" width="200" height="200" decoding="async">
+        <div class="loadingText" id="loadingText">Loading</div>
+    </div>
+
+    <div class="learnPage" id="learnPage">
+        <video class="learnBgVideo" muted loop playsinline preload="none">
+            <source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
+        </video>
+        <div class="learnShade"></div>
+
+        <div class="backBtn" id="backBtn">&larr; Back</div>
+
+        <div class="faqContainer">
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q1 toggle">
+                </button>
+                <div class="faqLabel">What is ZoneOut about?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        ZoneOut is a YSWS where you create something themed around <b>horror</b>, <b>mystery</b> or <b>ARG</b>!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q2 toggle">
+                </button>
+                <div class="faqLabel">What is the theme?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        Horror, mystery and ARG focusing on immersiveness and storytelling. [and, of course, good art!]
+                    </div>
+                </div>
+            </div>
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q3 toggle">
+                </button>
+                <div class="faqLabel">What kind of projects are to be submitted?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion">Projects can be:</div>
+                    <div class="faqAnswer">
+                        <br>&bull; A website
+                        <br>&bull; A terminal / CLI program
+                        <br>&bull; A game
+                        <br>&bull; A mod (eg. Minecraft)
+                        <br>Basically, anything that can be spooky.
+                        <br>This event is entirely software!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q4 toggle">
+                </button>
+                <div class="faqLabel">How do I track time?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        Use <a href="https://hackatime.hackclub.com" target="_blank" rel="noreferrer">Hackatime</a>. HackClub's own time-tracking tool!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q5 toggle">
+                </button>
+                <div class="faqLabel">There's a shop?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                       Once you submit a project, you will be granted access to the shop where you can buy things based on the number of hours submitted!
+                        <br>PS: To track your hours, use <a href="https://hackatime.hackclub.com" target="_blank" rel="noreferrer">Hackatime</a>!
+                    </div>
+                </div>
+            </div>
+
+            
+
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q8 toggle">
+                </button>
+                <div class="faqLabel">What is Hack Club?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        <a href="https://hackclub.com" target="_blank" rel="noreferrer" class="hackclub">Hack Club</a> is a non-profit global community for teenagers
+                        who like building crazy projects. The whole point is to
+                        make, learn, share, and have fun while doing it!
+                        <br>You can join our <a href="https://hackclub.enterprise.slack.com/" target="_blank" rel="noreferrer" class="slack">Slack community</a> here!
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q12 toggle">
+                </button>
+                <div class="faqLabel">What is the age requirement?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        Hack Club events are open to ages 13-18 worldwide!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faqNode">
+                <button class="faqToggle" type="button" aria-expanded="false">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q15 toggle">
+                </button>
+                <div class="faqLabel">Is this the event website?</div>
+                <div class="faqDrop">
+                    <div class="faqQuestion"></div>
+                    <div class="faqAnswer">
+                        Uh, yes.. This is the actual event website!
+                        <br>May this website serve as an example of how you can make a project "weird and horror themed" >:3
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
