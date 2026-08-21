@@ -17,6 +17,7 @@ you can join #zone-out here: https://app.slack.com/client/E09V59WQY1E/C0ANG7F1E9
 # Tech Stack:
 
 shit tons of js, html and css [hard-core]
+AI NOTE: mostly used for setting up hackclub auth and designing the flow 💀
 
 # what does it do?
 
