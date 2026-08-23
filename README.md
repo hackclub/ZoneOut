@@ -2,6 +2,8 @@
 
 **ZoneOut** is a Hack Club YSWS built for scary software projects, ARG [cuz args are so cool], mysterious and thrilling weird ideas. Give people a great adrenaline rush with your project, get back prizes!
 
+FUEL UP THIS COMING HALLOWEEN WITH ZZZONNEEE OOUUUTTT
+
 This is also a submission for my hack club internship!
 I thought this concept is pretty unique and decided to expand on the subject :3
 
@@ -17,6 +19,7 @@ you can join #zone-out here: https://app.slack.com/client/E09V59WQY1E/C0ANG7F1E9
 # Tech Stack:
 
 shit tons of js, html and css [hard-core]
+AI NOTE: mostly used for setting up hackclub auth and designing the flow 💀
 
 # what does it do?
 
