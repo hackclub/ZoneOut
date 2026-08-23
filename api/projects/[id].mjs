@@ -1,12 +1,13 @@
 import { readSession } from "../../lib/session.mjs";
 import { requireUser } from "../../lib/guard.mjs";
-import { getProjectById, updateProjectForUser, ValidationError } from "../../lib/users.mjs";
+import { getProjectById, updateProjectForUser, deleteProjectForUser, ValidationError } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape
-function present(project) {
+function present(project, ownerName) {
     return {
         projectId: project.project_id,
+        ownerName: ownerName ?? project.owner_name ?? null,
         name: project.name,
         description: project.description,
         repoUrl: project.repo_url,
@@ -28,8 +29,8 @@ export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
 
     // method
-    if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "PATCH") {
-        res.setHeader("Allow", "GET, HEAD, PATCH");
+    if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "PATCH" && req.method !== "DELETE") {
+        res.setHeader("Allow", "GET, HEAD, PATCH, DELETE");
         return res.status(405).json({ ok: false, error: "method not allowed" });
     }
 
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PATCH") return edit(req, res, projectId);
+    if (req.method === "DELETE") return remove(req, res, projectId);
 
     try {
         // public read
@@ -84,12 +86,31 @@ async function edit(req, res, projectId) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
-        return res.status(200).json({ ok: true, project: present(project), canEdit: true });
+        return res.status(200).json({ ok: true, project: present(project, user.name), canEdit: true });
     } catch (err) {
         if (err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
         }
         console.error("project update failed:", err.message);
+        return res.status(503).json({ ok: false, error: "database unreachable" });
+    }
+}
+
+// DELETE, owner only
+async function remove(req, res, projectId) {
+    const user = await requireUser(req, res);
+    if (!user) return;
+
+    try {
+        const deleted = await deleteProjectForUser(user.user_id, projectId);
+
+        if (!deleted) {
+            return res.status(404).json({ ok: false, error: "not found" });
+        }
+
+        return res.status(200).json({ ok: true, projectId });
+    } catch (err) {
+        console.error("project delete failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
     }
 }

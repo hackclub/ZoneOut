@@ -1138,11 +1138,13 @@ let meSettled = false;
 let projectsFresh = false;
 let projectsInFlight = null;
 let currentUserId = null;
+let currentUserName = null;
 
 function stashProjects(userId, list) {
-    window.__projectCache = { userId, list };
+    const cache = { userId, userName: currentUserName, list };
+    window.__projectCache = cache;
     try {
-        sessionStorage.setItem("zoneoutProjects", JSON.stringify({ userId, list }));
+        sessionStorage.setItem("zoneoutProjects", JSON.stringify(cache));
     } catch (e) {  }
 }
 
@@ -1151,9 +1153,10 @@ function forgetProjects() {
     try { sessionStorage.removeItem("zoneoutProjects"); } catch (e) {}
 }
 
-function adoptProjects(userId, list) {
+function adoptProjects(userId, userName, list) {
     meSettled = true;
     currentUserId = userId ?? null;
+    currentUserName = userName ?? null;
     if (!Array.isArray(list)) return;
 
     stashProjects(currentUserId, list);
@@ -1513,7 +1516,7 @@ async function load() {
     put("fEmail", user.email);
     put("fSlack", user.slackId || "not linked");
 
-    adoptProjects(user.userId, payload.projects);
+    adoptProjects(user.userId, user.name, payload.projects);
 
     stopLoading();
     if (currentPath === null) render(pathOf(location.pathname));

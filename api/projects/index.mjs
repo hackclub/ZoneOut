@@ -6,6 +6,7 @@ import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 function present(project) {
     return {
         projectId: project.project_id,
+        ownerName: project.owner_name ?? null,
         name: project.name,
         description: project.description,
         repoUrl: project.repo_url,
