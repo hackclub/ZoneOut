@@ -89,6 +89,10 @@ z-index:50;
 color:white;
 }
 
+.backBtn[hidden]{
+display:none;
+}
+
 .backBtn:hover,
 .backBtn:focus-visible{
 opacity:1;
@@ -97,6 +101,10 @@ text-shadow:0 0 6px white;
 }
 
 /* BALANCE */
+body.hasLoginBar .balanceBox{
+top:calc(var(--loginBarH, 72px) + 14px);
+}
+
 .balanceBox{
 position:fixed;
 top:max(20px, calc(env(safe-area-inset-top) + 12px));
@@ -529,6 +537,8 @@ display:none;
 
 <div class="backBtn" id="backBtn" role="button" tabindex="0">&larr; Back</div>
 
+<div class="loginBar" id="loginBar" hidden>You need to <a href="/">log in</a> to explore more!</div>
+
 <div class="overlay"></div>
 
 <div class="balanceBox" id="balanceBox">
@@ -783,6 +793,14 @@ async function refreshBalance() {
 
     if (response.status === 403) {
         window.location.replace("/ban");
+        return;
+    }
+
+    if (response.status === 401 || response.status === 404) {
+        signedIn = false;
+        showLoginBar();
+        stopPolling();
+        updateOrderButton();
         return;
     }
 
@@ -1090,12 +1108,31 @@ function goBack() {
     screenVeil.classList.add("on");
 
     setTimeout(() => {
-        if (document.referrer) window.history.back();
+        if (!signedIn) window.location.href = "/";
+        else if (document.referrer) window.history.back();
         else window.location.href = "/";
     }, VEIL_MS);
 }
 
 window.addEventListener("pageshow", (e) => { if (e.persisted) fadeUp(); });
+
+// signed-out bar
+const loginBar = document.getElementById("loginBar");
+
+function measureLoginBar() {
+    if (loginBar.hidden) return;
+    document.body.style.setProperty("--loginBarH", loginBar.offsetHeight + "px");
+}
+
+function showLoginBar() {
+    if (!loginBar.hidden) return;
+    loginBar.hidden = false;
+    backBtn.hidden = true;
+    document.body.classList.add("hasLoginBar");
+    measureLoginBar();
+}
+
+window.addEventListener("resize", measureLoginBar);
 
 // back control
 const backBtn = document.getElementById("backBtn");

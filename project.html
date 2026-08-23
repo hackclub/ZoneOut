@@ -97,6 +97,10 @@ z-index:80;
 color:white;
 }
 
+.backBtn[hidden]{
+display:none;
+}
+
 .backBtn:hover,
 .backBtn:focus-visible{
 opacity:1;
@@ -377,6 +381,8 @@ gap:16px;
 
 <div class="backBtn" id="backBtn" role="button" tabindex="0">&larr; Back</div>
 
+<div class="loginBar" id="loginBar" hidden>You need to <a href="/">log in</a> to explore more!</div>
+
 <div class="volumeDock">
 <label for="masterVolume">Volume</label>
 <input id="masterVolume" type="range" min="0" max="100" value="35" aria-label="Volume">
@@ -482,6 +488,7 @@ gap:16px;
 var projectId = window.__projectId;
 var project = null;
 var canEdit = false;
+var signedIn = true;
 
 // views
 function show(id) {
@@ -608,6 +615,7 @@ function load() {
             if (!payload) { missing(); return; }
             project = payload.project;
             canEdit = Boolean(payload.canEdit);
+            if (payload.signedIn === false) showLoginBar();
             renderView();
         })
         .catch(function () {
@@ -714,6 +722,11 @@ function goBack() {
         return;
     }
 
+    if (!signedIn) {
+        window.location.href = "/";
+        return;
+    }
+
     if (cameFromThisSite() && history.length > 1) {
         history.back();
         return;
@@ -723,6 +736,25 @@ function goBack() {
 
 var backBtn = document.getElementById("backBtn");
 backBtn.addEventListener("click", goBack);
+
+// signed-out bar
+var loginBar = document.getElementById("loginBar");
+
+function measureLoginBar() {
+    if (loginBar.hidden) return;
+    document.body.style.setProperty("--loginBarH", loginBar.offsetHeight + "px");
+}
+
+function showLoginBar() {
+    signedIn = false;
+    if (!loginBar.hidden) return;
+    loginBar.hidden = false;
+    backBtn.hidden = true;
+    document.body.classList.add("hasLoginBar");
+    measureLoginBar();
+}
+
+window.addEventListener("resize", measureLoginBar);
 
 backBtn.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") {
@@ -750,7 +782,7 @@ function controls() {
         return list;
     }
 
-    list.push(backBtn);
+    if (!backBtn.hidden) list.push(backBtn);
 
     var view = document.querySelector(".state.show");
     if (view) {

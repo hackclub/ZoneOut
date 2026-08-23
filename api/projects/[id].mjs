@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         const session = readSession(req);
         const canEdit = Boolean(session) && session.userId === project.user_id;
 
-        return res.status(200).json({ ok: true, project: present(project), canEdit });
+        return res.status(200).json({ ok: true, project: present(project), canEdit, signedIn: Boolean(session) });
     } catch (err) {
         console.error("project lookup failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });

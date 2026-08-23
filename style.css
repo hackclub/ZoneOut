@@ -1132,6 +1132,55 @@ flex:none;
 vertical-align:-0.14em;
 }
 
+/* SIGNED-OUT LOGIN BAR */
+.loginBar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+z-index:120;
+padding:22px 24px;
+text-align:center;
+font-size:clamp(15px, 2.2vw, 21px);
+letter-spacing:2px;
+text-transform:uppercase;
+color:#fff;
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgba(35,10,55,1), rgba(10,10,10,1));
+border-bottom:2px solid rgba(200,160,255,0.45);
+box-shadow:0 0 26px rgba(130,70,200,0.28);
+}
+
+.loginBar[hidden]{
+display:none;
+}
+
+body.hasLoginBar{
+padding-top:var(--loginBarH, 72px);
+}
+
+.loginBar a{
+color:#d9b6ff;
+text-decoration:none;
+border-bottom:1px solid rgba(217,182,255,0.5);
+text-shadow:0 0 10px rgba(160,90,255,0.6);
+}
+
+.loginBar a:hover,
+.loginBar a:focus-visible{
+color:#fff;
+border-bottom-color:#fff;
+text-shadow:0 0 14px rgba(200,160,255,0.9);
+outline:none;
+}
+
 /* REDUCED MOTION */
 @media (prefers-reduced-motion: reduce){
 .warningProceed,
