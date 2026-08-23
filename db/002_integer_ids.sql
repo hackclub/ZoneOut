@@ -1,4 +1,4 @@
--- Replaces the uuid keys from 001 with plain sequential integers.
+-- integer identity keys, replacing the uuids from 001
 
 DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS users;

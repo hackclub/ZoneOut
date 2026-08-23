@@ -1,8 +1,9 @@
--- Adds ZoneOut account state, set by the Hack Club Auth callback.
+-- account status
 
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pending';
 
+-- status constraint
 DO $$
 BEGIN
     ALTER TABLE users

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "migrate": "node --env-file=.env.local db/migrate.mjs",
-    "dev:api": "vercel dev"
+    "dev:api": "vercel dev",
+    "dev:static": "python devserver.py 8000"
   },
   "dependencies": {
     "pg": "^8.13.1"

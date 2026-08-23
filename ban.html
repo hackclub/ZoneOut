@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<link rel="stylesheet" href="/style.css">
+<title>Banned</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<style>
+
+/* RESET */
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Courier New",monospace;
+}
+
+body{
+background:black;
+color:white;
+min-height:100vh;
+min-height:100dvh;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:22px;
+padding:24px;
+text-align:center;
+-webkit-text-size-adjust:100%;
+text-size-adjust:100%;
+}
+
+/* BAN NOTICE */
+.banTitle{
+font-size:clamp(28px,8vw,54px);
+letter-spacing:6px;
+font-weight:bold;
+}
+
+.banReason{
+max-width:min(640px, 100%);
+font-size:clamp(14px,3.4vw,18px);
+line-height:1.7;
+letter-spacing:1px;
+color:#ff3b3b;
+word-break:break-word;
+
+min-height:1.7em;
+}
+
+.banFoot{
+margin-top:10px;
+font-size:12px;
+letter-spacing:2px;
+opacity:0.4;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="banTitle glitchText" data-text="YOU'VE BEEN BANNED!">YOU'VE BEEN BANNED!</div>
+
+<div class="banReason" id="banReason" role="status" aria-live="polite"></div>
+
+<div class="banFoot">ZONEOUT</div>
+
+<script>
+
+// the reason is fetched, never passed in the url
+var reasonEl = document.getElementById("banReason");
+
+fetch("/api/auth/ban", { credentials: "same-origin" })
+    .then(function (response) {
+        if (!response.ok) return null;
+        return response.json();
+    })
+    .then(function (payload) {
+        if (!payload) {
+            reasonEl.textContent = "";
+            return;
+        }
+
+        if (!payload.banned) {
+            window.location.replace("/");
+            return;
+        }
+
+        reasonEl.textContent = payload.reason;
+    })
+    .catch(function () {
+        reasonEl.textContent = "";
+    });
+
+</script>
+
+</body>
+</html>

@@ -1,5 +1,3 @@
-// section for the migration runner
-
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +6,7 @@ import { readEnv } from "../lib/env.mjs";
 
 const dbDir = dirname(fileURLToPath(import.meta.url));
 
+// direct connection, never the pooled one
 const unpooled = readEnv("DATABASE_URL_UNPOOLED", { required: false });
 const connectionString = unpooled ?? readEnv("DATABASE_URL", { required: false });
 if (!connectionString) {
@@ -21,6 +20,7 @@ if (!unpooled) {
     console.warn("DATABASE_URL_UNPOOLED not set - falling back to the pooled URL for DDL.");
 }
 
+// ssl parameters
 function stripSslParams(url) {
     try {
         const u = new URL(url);
@@ -36,11 +36,13 @@ function stripSslParams(url) {
     }
 }
 
+// client
 const client = new pg.Client({
     connectionString: stripSslParams(connectionString),
     ssl: { rejectUnauthorized: true }
 });
 
+// apply db/*.sql in filename order
 async function main() {
     await client.connect();
 
@@ -64,6 +66,7 @@ async function main() {
         if (applied.has(file)) continue;
 
         const sql = await readFile(join(dbDir, file), "utf8");
+
         await client.query("BEGIN");
         try {
             await client.query(sql);

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<link rel="stylesheet" href="/style.css">
+<title>ZoneOut Project</title>
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<script>
+// id, request and tab stash, read before the first paint
+(function () {
+    var match = location.pathname.match(/\/projects\/(\d+)\/?$/);
+    window.__projectId = match ? match[1] : null;
+
+    if (window.__projectId) {
+        window.__projectPromise =
+            fetch("/api/projects/" + window.__projectId, { credentials: "same-origin" });
+        window.__projectPromise.catch(function () {  });
+    }
+
+    window.__projectSeed = null;
+    try {
+        var cached = JSON.parse(sessionStorage.getItem("zoneoutProjects") || "null");
+        if (cached && Array.isArray(cached.list)) {
+            for (var i = 0; i < cached.list.length; i++) {
+                if (String(cached.list[i].projectId) === window.__projectId) {
+                    window.__projectSeed = cached.list[i];
+                    break;
+                }
+            }
+        }
+    } catch (e) {  }
+})();
+</script>
+
+<style>
+
+/* RESET */
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Courier New",monospace;
+}
+
+body{
+background:black;
+color:white;
+min-height:100vh;
+min-height:100dvh;
+overflow-x:hidden;
+-webkit-text-size-adjust:100%;
+text-size-adjust:100%;
+}
+
+/* BACKDROP */
+.videoBG{
+position:fixed;
+top:50%;
+left:50%;
+width:100vw;
+height:100vh;
+min-width:100%;
+min-height:100%;
+object-fit:cover;
+transform:translate(-50%,-50%);
+z-index:-2;
+pointer-events:none;
+}
+
+.overlay{
+position:fixed;
+inset:0;
+background:radial-gradient(circle at center, rgba(0,0,0,0.1), rgba(0,0,0,0.92));
+z-index:-1;
+pointer-events:none;
+}
+
+/* BACK CONTROL */
+.backBtn{
+display:block;
+position:fixed;
+top:max(20px, calc(env(safe-area-inset-top) + 12px));
+left:max(20px, calc(env(safe-area-inset-left) + 14px));
+cursor:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%3E%3Cpath%20d='M2%2014s5-7%2012-7%2012%207%2012%207-5%207-12%207S2%2014%202%2014z'%20fill='%23000000'%20stroke='%23ffffff'%20stroke-width='1.6'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='4.8'%20fill='%23ffffff'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='1.7'%20fill='%23000000'/%3E%3C/svg%3E") 14 14, pointer;
+font-size:16px;
+opacity:0.7;
+transition:0.2s;
+z-index:80;
+color:white;
+}
+
+.backBtn:hover,
+.backBtn:focus-visible{
+opacity:1;
+outline:none;
+text-shadow:0 0 6px white;
+}
+
+/* VIEWS */
+.state{
+display:none;
+}
+
+.state.show{
+display:block;
+}
+
+/* THE PROJECT */
+.projectWrap{
+width:min(760px, calc(100% - 44px));
+margin:min(11vh,96px) auto 90px;
+}
+
+.projectHead{
+display:flex;
+gap:22px;
+align-items:center;
+margin-bottom:26px;
+}
+
+.projThumb{
+width:clamp(96px,22vw,140px);
+aspect-ratio:1 / 1;
+flex:none;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:10px;
+overflow:hidden;
+text-align:center;
+word-break:break-word;
+line-height:1.15;
+letter-spacing:1px;
+font-weight:bold;
+text-transform:uppercase;
+color:#f2e9ff;
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgb(45,14,72), rgb(12,10,18));
+border:1px solid rgba(200,160,255,0.25);
+}
+
+.projectTitle{
+font-size:clamp(20px,4.4vw,30px);
+letter-spacing:3px;
+font-weight:bold;
+word-break:break-word;
+}
+
+.projectId{
+margin-top:8px;
+font-size:12px;
+letter-spacing:2px;
+opacity:0.4;
+}
+
+/* PANEL */
+.panel{
+padding:22px;
+background:
+linear-gradient(135deg, rgba(35,10,55,0.96), rgba(10,10,10,0.96)),
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+);
+border:1px solid rgba(200,160,255,0.35);
+box-shadow:0 0 18px rgba(130,70,200,0.18);
+}
+
+.sectionKey{
+font-size:11px;
+letter-spacing:3px;
+color:rgba(255,255,255,0.45);
+margin-bottom:8px;
+}
+
+.projectDescription{
+font-size:15px;
+line-height:1.8;
+
+white-space:pre-wrap;
+word-break:break-word;
+margin-bottom:24px;
+}
+
+/* LINKS */
+.linkRow{
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+}
+
+.projectLink{
+display:inline-block;
+padding:10px 18px;
+font-size:13px;
+letter-spacing:2px;
+color:#e9d8ff;
+text-decoration:none;
+border:1px solid rgba(200,160,255,0.35);
+transition:0.2s;
+word-break:break-all;
+}
+
+.projectLink:hover,
+.projectLink:focus-visible{
+outline:none;
+color:#fff;
+border-color:rgba(185,140,255,0.9);
+box-shadow:0 0 14px rgba(130,70,200,0.35);
+}
+
+.noLinks{
+font-size:13px;
+letter-spacing:1px;
+opacity:0.4;
+}
+
+/* EDITING */
+.editRow{
+margin-top:22px;
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+align-items:center;
+}
+
+.savedNote{
+font-size:12px;
+letter-spacing:2px;
+opacity:0.55;
+}
+
+/* NOT FOUND */
+.missing{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:24px;
+text-align:center;
+padding:24px;
+}
+
+.missingCode{
+font-size:clamp(26px,7vw,42px);
+letter-spacing:4px;
+}
+
+.missingText{
+opacity:0.65;
+letter-spacing:2px;
+}
+
+/* SMALL SCREENS */
+@media (max-width:560px){
+.projectHead{
+flex-direction:column;
+text-align:center;
+gap:16px;
+}
+}
+
+</style>
+</head>
+
+<body>
+
+<video autoplay muted loop playsinline disableremoteplayback class="videoBG" id="videoBG">
+<source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
+</video>
+
+<div class="overlay"></div>
+
+<div class="backBtn" id="backBtn" role="button" tabindex="0">&larr; Back</div>
+
+<div class="state" id="stateView">
+<div class="projectWrap">
+<div class="projectHead">
+<div class="projThumb" id="viewThumb"></div>
+<div>
+<div class="projectTitle" id="viewTitle"></div>
+<div class="projectId" id="viewId"></div>
+</div>
+</div>
+
+<div class="panel">
+<div class="sectionKey">DESCRIPTION</div>
+<div class="projectDescription" id="viewDescription"></div>
+
+<div class="sectionKey">LINKS</div>
+<div class="linkRow" id="viewLinks"></div>
+
+<div class="editRow" id="ownerRow" hidden>
+<button class="camNode" id="editBtn" type="button">EDIT PROJECT</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="state" id="stateEdit">
+<div class="projectWrap">
+<div class="projectHead">
+<div class="projThumb" id="editThumb"></div>
+<div>
+<div class="projectTitle">EDIT PROJECT</div>
+<div class="projectId" id="editId"></div>
+</div>
+</div>
+
+<form class="panel" id="editForm" novalidate>
+<label class="formField">
+<span>PROJECT NAME</span>
+<input class="textInput" id="editName" type="text" maxlength="80" autocomplete="off" required>
+</label>
+
+<label class="formField">
+<span>PROJECT DESCRIPTION</span>
+<textarea class="textInput" id="editDescription" maxlength="2000" required></textarea>
+</label>
+
+<label class="formField">
+<span>REPOSITORY LINK <span class="optional">(optional)</span></span>
+<input class="textInput" id="editRepo" type="url" inputmode="url" autocomplete="off"
+       placeholder="https://github.com/you/project">
+</label>
+
+<label class="formField">
+<span>DEMO LINK <span class="optional">(optional)</span></span>
+<input class="textInput" id="editDemo" type="url" inputmode="url" autocomplete="off"
+       placeholder="https://your-demo.example">
+</label>
+
+<div class="formError" id="editError" role="alert"></div>
+
+<div class="editRow">
+<button class="camNode" id="saveBtn" type="submit">SAVE CHANGES</button>
+<button class="camNode" id="cancelBtn" type="button">CANCEL</button>
+</div>
+</form>
+</div>
+</div>
+
+<div class="state" id="stateMissing">
+<div class="missing">
+<div class="missingCode">404: PROJECT NOT FOUND</div>
+<div class="missingText" id="missingText">There is nothing at this address.</div>
+<button class="camNode" id="toMenuBtn" type="button">&larr; RETURN TO MAIN MENU</button>
+</div>
+</div>
+
+<script>
+
+// state
+var projectId = window.__projectId;
+var project = null;
+var canEdit = false;
+
+// views
+function show(id) {
+    var states = document.querySelectorAll(".state");
+    for (var i = 0; i < states.length; i++) states[i].classList.remove("show");
+    document.getElementById(id).classList.add("show");
+}
+
+function missing(message) {
+    if (message) document.getElementById("missingText").textContent = message;
+    show("stateMissing");
+}
+
+// thumbnail sizing
+function thumbFontSize(name, boxPx) {
+    var text = (name || "").trim();
+    var length = text.length;
+
+    var byLines = 12;
+    if (length <= 4) byLines = 34;
+    else if (length <= 8) byLines = 26;
+    else if (length <= 14) byLines = 20;
+    else if (length <= 24) byLines = 16;
+    else if (length <= 40) byLines = 14;
+
+    var longest = text.split(/\s+/).reduce(function (max, word) {
+        return Math.max(max, word.length);
+    }, 1);
+    var byWidth = Math.floor(boxPx / (longest * 0.6 + 1));
+
+    return Math.max(9, Math.min(byLines, byWidth));
+}
+
+function paintThumb(el, name) {
+    el.textContent = name;
+    var width = el.getBoundingClientRect().width;
+
+    el.style.fontSize = thumbFontSize(name, (width > 40 ? width : 96) - 20) + "px";
+}
+
+// rendering
+function renderView() {
+    document.title = project.name + " · ZoneOut";
+
+    paintThumb(document.getElementById("viewThumb"), project.name);
+    document.getElementById("viewTitle").textContent = project.name;
+    document.getElementById("viewId").textContent = "PROJECT #" + project.projectId;
+    document.getElementById("viewDescription").textContent = project.description;
+
+    var links = document.getElementById("viewLinks");
+    links.textContent = "";
+
+    addLink(links, "REPOSITORY", project.repoUrl);
+    addLink(links, "LIVE DEMO", project.demoUrl);
+
+    if (!links.children.length) {
+        var none = document.createElement("div");
+        none.className = "noLinks";
+        none.textContent = "No links provided.";
+        links.appendChild(none);
+    }
+
+    document.getElementById("ownerRow").hidden = !canEdit;
+    show("stateView");
+}
+
+function addLink(container, label, url) {
+    if (!url) return;
+
+    var a = document.createElement("a");
+    a.className = "projectLink";
+    a.href = url;
+    a.textContent = label;
+
+    a.target = "_blank";
+    a.rel = "noopener noreferrer nofollow";
+    container.appendChild(a);
+}
+
+// editor
+function openEditor() {
+    paintThumb(document.getElementById("editThumb"), project.name);
+    document.getElementById("editId").textContent = "PROJECT #" + project.projectId;
+
+    document.getElementById("editName").value = project.name;
+    document.getElementById("editDescription").value = project.description;
+    document.getElementById("editRepo").value = project.repoUrl || "";
+    document.getElementById("editDemo").value = project.demoUrl || "";
+    document.getElementById("editError").textContent = "";
+
+    show("stateEdit");
+    document.getElementById("editName").focus();
+}
+
+// load
+function load() {
+    if (!projectId) {
+        missing();
+        return;
+    }
+
+    if (window.__projectSeed) {
+        project = window.__projectSeed;
+        canEdit = true;
+        renderView();
+    }
+
+    window.__projectPromise
+        .then(function (response) {
+            if (response.status === 404) return null;
+            if (!response.ok) throw new Error("unreachable");
+            return response.json();
+        })
+        .then(function (payload) {
+            if (!payload) { missing(); return; }
+            project = payload.project;
+            canEdit = Boolean(payload.canEdit);
+            renderView();
+        })
+        .catch(function () {
+            missing("This terminal could not reach ZoneOut.");
+        });
+}
+
+// edit controls
+document.getElementById("editBtn").addEventListener("click", openEditor);
+
+document.getElementById("cancelBtn").addEventListener("click", function () {
+    renderView();
+});
+
+document.getElementById("editForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var saveBtn = document.getElementById("saveBtn");
+    var errorEl = document.getElementById("editError");
+
+    var body = {
+        name: document.getElementById("editName").value,
+        description: document.getElementById("editDescription").value,
+        repoUrl: document.getElementById("editRepo").value,
+        demoUrl: document.getElementById("editDemo").value
+    };
+
+    if (!body.name.trim() || !body.description.trim()) {
+        errorEl.textContent = "A project needs a name and a description.";
+        return;
+    }
+
+    errorEl.textContent = "";
+    saveBtn.disabled = true;
+    saveBtn.textContent = "SAVING…";
+
+    fetch("/api/projects/" + projectId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json().then(function (payload) {
+                return { ok: response.ok, status: response.status, payload: payload };
+            });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            if (!result.ok) {
+                if (result.status === 404) {
+                    missing("You cannot edit this project.");
+                    return;
+                }
+                errorEl.textContent = result.payload.error || "Could not save.";
+                return;
+            }
+
+            project = result.payload.project;
+            canEdit = true;
+            renderView();
+            stashEdit(project);
+        })
+        .catch(function () {
+            errorEl.textContent = "Could not reach ZoneOut.";
+        })
+        .then(function () {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "SAVE CHANGES";
+        });
+});
+
+// keep this tab's project list in step
+function stashEdit(saved) {
+    try {
+        var cached = JSON.parse(sessionStorage.getItem("zoneoutProjects") || "null");
+        if (!cached || !Array.isArray(cached.list)) return;
+
+        for (var i = 0; i < cached.list.length; i++) {
+            if (cached.list[i].projectId === saved.projectId) {
+                cached.list[i] = saved;
+                sessionStorage.setItem("zoneoutProjects", JSON.stringify(cached));
+                return;
+            }
+        }
+    } catch (e) {  }
+}
+
+// back control
+function cameFromThisSite() {
+    if (!document.referrer) return false;
+    try {
+        return new URL(document.referrer).origin === location.origin;
+    } catch (e) {
+        return false;
+    }
+}
+
+function goBack() {
+    if (document.getElementById("stateEdit").classList.contains("show")) {
+        renderView();
+        return;
+    }
+
+    if (cameFromThisSite() && history.length > 1) {
+        history.back();
+        return;
+    }
+    window.location.href = "/projects";
+}
+
+var backBtn = document.getElementById("backBtn");
+backBtn.addEventListener("click", goBack);
+
+backBtn.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        goBack();
+    }
+});
+
+document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+
+    var active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+    goBack();
+});
+
+document.getElementById("toMenuBtn").addEventListener("click", function () {
+    window.location.href = "/";
+});
+
+load();
+
+var videoBG = document.getElementById("videoBG");
+
+// nothing decodes for a hidden tab
+document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+        var playing = videoBG.play();
+        if (playing && playing.catch) playing.catch(function () {});
+    } else {
+        videoBG.pause();
+    }
+});
+
+</script>
+
+</body>
+</html>

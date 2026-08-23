@@ -1,11 +1,10 @@
-// section for GET /api/auth/callback
-
 import { exchangeCode, fetchIdentity, resolveRedirectUri, verifyState, STATE_COOKIE } from "../../lib/oauth.mjs";
 import { isSecureRequest, readCookie, clearCookie } from "../../lib/cookies.mjs";
 import { setSessionCookie } from "../../lib/session.mjs";
 import { upsertUser } from "../../lib/users.mjs";
 import { warmPool } from "../../lib/db.mjs";
 
+// redirect helper
 function redirect(res, location) {
     res.setHeader("Location", location);
     return res.status(302).end();
@@ -14,6 +13,7 @@ function redirect(res, location) {
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
 
+    // method
     if (req.method !== "GET" && req.method !== "HEAD") {
         res.setHeader("Allow", "GET, HEAD");
         return res.status(405).json({ ok: false, error: "method not allowed" });
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
 
     const { code, state, error } = req.query ?? {};
 
+    // state cookie is consumed once
     clearCookie(res, STATE_COOKIE, { secure: isSecureRequest(req) });
 
     if (error) {
@@ -38,8 +39,10 @@ export default async function handler(req, res) {
         return redirect(res, "/?auth=failed");
     }
 
+    // wake the database while we talk to the provider
     warmPool();
 
+    // token exchange and profile
     let profile;
     try {
         const token = await exchangeCode(code, resolveRedirectUri(req));
@@ -54,6 +57,7 @@ export default async function handler(req, res) {
         return redirect(res, "/?auth=noemail");
     }
 
+    // store the user
     let user;
     try {
         user = await upsertUser({
@@ -67,6 +71,7 @@ export default async function handler(req, res) {
         return redirect(res, "/?auth=failed");
     }
 
+    // session
     setSessionCookie(req, res, user.user_id);
     return redirect(res, "/home");
 }

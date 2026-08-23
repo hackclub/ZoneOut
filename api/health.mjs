@@ -1,7 +1,6 @@
-// section for GET /api/health
-
 import { timingSafeEqual } from "node:crypto";
 
+// HEALTH_TOKEN gate for the detailed report
 async function isAuthorised(req) {
     let expected;
     try {
@@ -20,6 +19,7 @@ async function isAuthorised(req) {
     return a.length === b.length && timingSafeEqual(a, b);
 }
 
+// which variables are set
 async function envReport() {
     try {
         const { hasEnv } = await import("../lib/env.mjs");
@@ -35,6 +35,7 @@ async function envReport() {
     }
 }
 
+// database module
 async function databaseReport(env) {
     if (env.databaseUrl === false) return { connectionString: "missing" };
 
@@ -47,6 +48,7 @@ async function databaseReport(env) {
     }
 }
 
+// oauth module
 async function oauthReport(req) {
     try {
         const { REDIRECT_URIS, resolveRedirectUri, redirectUriMatchesHost } =
@@ -66,11 +68,13 @@ async function oauthReport(req) {
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
 
+    // method
     if (req.method !== "GET" && req.method !== "HEAD") {
         res.setHeader("Allow", "GET, HEAD");
         return res.status(405).json({ ok: false, error: "method not allowed" });
     }
 
+    // gather the reports
     const [env, detailed] = await Promise.all([envReport(), isAuthorised(req)]);
     const [database, oauth] = await Promise.all([databaseReport(env), oauthReport(req)]);
 
@@ -87,6 +91,7 @@ export default async function handler(req, res) {
         return res.status(503).json({ ok: false, error: "database not configured", config });
     }
 
+    // the probe
     const startedAt = Date.now();
     try {
         const { query } = await import("../lib/db.mjs");

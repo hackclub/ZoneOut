@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="ZoneOut - a Hack Club YSWS for horror, mystery and ARG projects. Ship something weird, win prizes.">
 <meta name="theme-color" content="#000000">
@@ -13,6 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script>
+// hide the discretion warning before the first paint
 try {
     if (localStorage.getItem("zoneoutWarningAccepted") === "true"
         && !/(^|[?&])reset(=|&|$)/.test(location.search)) {
@@ -26,7 +28,7 @@ try {
 
 <div class="warningScreen" id="warningScreen">
     <div class="warningCard">
-        <img class="warningIcon" src="https://cdn.hackclub.com/019d191c-8239-70cd-b9da-81b265c17236/caution.png" alt="Warning sign" width="120" height="120" decoding="async">
+        <img class="warningIcon" src="https://cdn.hackclub.com/019d191c-8239-70cd-b9da-81b265c17236/caution.png" alt="Warning sign">
 
         <div class="warningText">
             WARNING: VIEWER DISCRETION IS ADVISED. THE WEBSITE MAY CONTAIN LOUD NOISES AND WEIRD IMAGES THAT MAY TRIGGER CERTAIN PERSONS. PROCEED WITH CAUTION.
@@ -59,7 +61,8 @@ try {
 
 <main class="site">
     <section class="hero">
-        <video autoplay muted loop playsinline>
+
+        <video autoplay muted loop playsinline disableremoteplayback id="heroVideo">
             <source src="https://cdn.hackclub.com/019d14f6-2cd2-7a84-81bf-d68825577d2c/ds.mp4" type="video/mp4">
         </video>
 
@@ -76,7 +79,8 @@ try {
         </audio>
 
         <div class="overlay"></div>
-        <div class="crt"></div>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
 
         <div class="menu">
             <div class="title">Zone Out</div>
@@ -91,11 +95,12 @@ try {
     </section>
 
     <div class="loadingScreen" id="loadingScreen">
-        <img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading" width="200" height="200" decoding="async">
+        <img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading">
         <div class="loadingText" id="loadingText">Loading</div>
     </div>
 
     <div class="learnPage" id="learnPage">
+
         <video class="learnBgVideo" muted loop playsinline preload="none">
             <source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
         </video>
@@ -107,7 +112,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q1 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q1 toggle">
                 </button>
                 <div class="faqLabel">What is ZoneOut about?</div>
                 <div class="faqDrop">
@@ -120,7 +125,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q2 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q2 toggle">
                 </button>
                 <div class="faqLabel">What is the theme?</div>
                 <div class="faqDrop">
@@ -133,7 +138,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q3 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q3 toggle">
                 </button>
                 <div class="faqLabel">What kind of projects are to be submitted?</div>
                 <div class="faqDrop">
@@ -151,7 +156,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q4 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q4 toggle">
                 </button>
                 <div class="faqLabel">How do I track time?</div>
                 <div class="faqDrop">
@@ -164,7 +169,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q5 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q5 toggle">
                 </button>
                 <div class="faqLabel">There's a shop?</div>
                 <div class="faqDrop">
@@ -176,12 +181,9 @@ try {
                 </div>
             </div>
 
-            
-
-
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q8 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q8 toggle">
                 </button>
                 <div class="faqLabel">What is Hack Club?</div>
                 <div class="faqDrop">
@@ -195,10 +197,9 @@ try {
                 </div>
             </div>
 
-
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q12 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q12 toggle">
                 </button>
                 <div class="faqLabel">What is the age requirement?</div>
                 <div class="faqDrop">
@@ -211,7 +212,7 @@ try {
 
             <div class="faqNode">
                 <button class="faqToggle" type="button" aria-expanded="false">
-                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" width="96" height="96" decoding="async" alt="Q15 toggle">
+                    <img src="https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png" alt="Q15 toggle">
                 </button>
                 <div class="faqLabel">Is this the event website?</div>
                 <div class="faqDrop">
@@ -222,7 +223,6 @@ try {
                     </div>
                 </div>
             </div>
-
 
         </div>
     </div>

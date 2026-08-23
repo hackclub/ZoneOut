@@ -19,8 +19,13 @@
   "rewrites": [
     { "source": "/info", "destination": "/" },
     { "source": "/submit", "destination": "/home" },
+    { "source": "/projects", "destination": "/home" },
     { "source": "/profile", "destination": "/home" },
-    { "source": "/error", "destination": "/home" }
+    { "source": "/error", "destination": "/home" },
+
+    { "source": "/projects/:id", "destination": "/project" },
+
+    { "source": "/admin", "destination": "/api/admin" }
   ],
   "headers": [
     {

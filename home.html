@@ -10,16 +10,40 @@
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-
 <script>
+// session hint, read before the first paint
 document.documentElement.classList.toggle(
     "knownSession",
     /(?:^|;\s*)(?:__Host-)?zo_hint=1(?:\s*;|$)/.test(document.cookie)
 );
+
+try {
+    if (sessionStorage.getItem("zoneoutFadeIn")) {
+        sessionStorage.removeItem("zoneoutFadeIn");
+        document.documentElement.classList.add("fadeIn");
+
+        setTimeout(function () {
+            document.documentElement.classList.remove("fadeIn");
+        }, 1200);
+    }
+} catch (e) {
+}
+
+// the slowest request, started in the head
+window.__mePromise = fetch("/api/auth/me", { credentials: "same-origin" });
+window.__mePromise.catch(function () {  });
+
+// this tab's last project list
+window.__projectCache = null;
+try {
+    var cached = sessionStorage.getItem("zoneoutProjects");
+    if (cached) window.__projectCache = JSON.parse(cached);
+} catch (e) {  }
 </script>
 
 <style>
 
+/* RESET */
 *{
 margin:0;
 padding:0;
@@ -32,12 +56,13 @@ background:black;
 color:white;
 overflow-x:hidden;
 min-height:100vh;
+
 min-height:100dvh;
 -webkit-text-size-adjust:100%;
 text-size-adjust:100%;
 }
 
-
+/* BACKDROP */
 .videoBG{
 position:fixed;
 top:50%;
@@ -64,6 +89,7 @@ body.onError .overlay{
 display:none;
 }
 
+/* BACK CONTROL */
 .backBtn{
 display:block;
 position:fixed;
@@ -84,7 +110,7 @@ outline:none;
 text-shadow:0 0 6px white;
 }
 
-
+/* VIEWS */
 .state{
 display:none;
 }
@@ -93,12 +119,15 @@ display:none;
 display:block;
 }
 
-
 .loadingScreen{
 z-index:90;
 }
 
+html.fadeIn .screenVeil{
+opacity:1;
+}
 
+/* CAMERA MAP */
 .camMap{
 position:fixed;
 top:50%;
@@ -116,6 +145,7 @@ z-index:1;
 pointer-events:none;
 }
 
+/* TOUCH AND SMALL SCREENS */
 @media (pointer: coarse){
 .camNode{
 min-height:48px;
@@ -170,6 +200,7 @@ width:88px;
 }
 }
 
+/* SCROLL AND VEIL */
 body.noScroll{
 overflow:hidden;
 }
@@ -178,6 +209,7 @@ overflow:hidden;
 transition-duration:.16s;
 }
 
+/* THE WIRES */
 .camLines{
 position:absolute;
 inset:0;
@@ -185,7 +217,6 @@ width:100%;
 height:100%;
 pointer-events:none;
 }
-
 
 .camLines polyline{
 fill:none;
@@ -211,25 +242,9 @@ from{stroke-dashoffset:0;}
 to{stroke-dashoffset:1000;}
 }
 
-.camNode{
+.camMap .camNode{
 position:absolute;
 transform:translate(-50%,-50%);
-background:rgba(0,0,0,0.88);
-color:#fff;
-border:1px solid #fff;
-padding:12px 26px;
-font-size:15px;
-letter-spacing:4px;
-white-space:nowrap;
-transition:0.2s;
-}
-
-.camNode:hover,
-.camNode:focus-visible{
-outline:none;
-background:rgba(40,40,50,0.92);
-text-shadow:0 0 8px #fff;
-box-shadow:0 0 14px rgba(255,255,255,0.45);
 }
 
 @media (max-width:720px){
@@ -238,17 +253,21 @@ height:auto;
 display:flex;
 flex-direction:column;
 align-items:center;
+
 gap:24px;
 }
 
 .camMap::before{
 content:"";
 position:absolute;
+
 top:0;
 bottom:0;
 left:50%;
+
 transform:translateX(-50%);
 width:2px;
+
 z-index:-1;
 background:linear-gradient(to top,
 rgba(255,255,255,0.42) 0%,
@@ -270,16 +289,157 @@ to{background-position:50% 0%;}
 display:none;
 }
 
-.camNode{
+.camMap .camNode{
 position:static;
 transform:none;
 background:black;
+
 width:min(240px, 68vw);
 padding:13px 10px;
 letter-spacing:3px;
 }
 }
 
+/* PROJECTS */
+.projHeading{
+text-align:center;
+margin:min(9vh,80px) auto 26px;
+font-size:clamp(22px,5vw,32px);
+letter-spacing:8px;
+font-weight:bold;
+
+animation:projFlicker 5.5s infinite;
+}
+
+@keyframes projFlicker{
+0%,100%{opacity:1;text-shadow:0 0 10px rgba(255,255,255,0.25);}
+47%{opacity:1;}
+48%{opacity:0.55;text-shadow:none;}
+50%{opacity:1;}
+73%{opacity:0.72;}
+75%{opacity:1;}
+}
+
+.projGrid{
+width:min(1100px, calc(100% - 44px));
+margin:0 auto;
+padding-bottom:120px;
+display:grid;
+grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+gap:20px;
+}
+
+.projCard{
+display:flex;
+text-decoration:none;
+flex-direction:column;
+align-items:center;
+gap:12px;
+padding:18px 14px;
+text-align:center;
+color:#fff;
+background:rgba(0,0,0,0.72);
+border:1px solid rgba(200,160,255,0.35);
+box-shadow:0 0 18px rgba(130,70,200,0.14);
+transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.projCard:hover,
+.projCard:focus-visible{
+outline:none;
+transform:translateY(-3px);
+border-color:rgba(185,140,255,0.9);
+box-shadow:0 0 22px rgba(130,70,200,0.4);
+}
+
+.projThumb{
+width:100%;
+aspect-ratio:1 / 1;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:10px;
+overflow:hidden;
+word-break:break-word;
+line-height:1.15;
+letter-spacing:1px;
+font-weight:bold;
+text-transform:uppercase;
+color:#f2e9ff;
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgb(45,14,72), rgb(12,10,18));
+border:1px solid rgba(200,160,255,0.25);
+}
+
+.projName{
+font-size:14px;
+letter-spacing:2px;
+word-break:break-word;
+}
+
+.projMeta{
+font-size:11px;
+letter-spacing:1px;
+opacity:0.45;
+}
+
+.plusCard{
+justify-content:center;
+}
+
+.plusMark{
+width:100%;
+aspect-ratio:1 / 1;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:clamp(48px,9vw,72px);
+line-height:1;
+color:#fff;
+text-shadow:0 0 18px rgba(255,255,255,0.35);
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgb(35,10,55), rgb(10,10,10));
+border:1px dashed rgba(255,255,255,0.4);
+}
+
+.projEmpty{
+width:min(1100px, calc(100% - 44px));
+margin:-100px auto 0;
+text-align:center;
+font-size:13px;
+letter-spacing:2px;
+opacity:0.45;
+min-height:20px;
+}
+
+/* MODAL */
+.modalTitle{
+font-size:16px;
+letter-spacing:5px;
+margin-bottom:20px;
+padding-right:30px;
+}
+
+.modalActions{
+margin-top:6px;
+text-align:center;
+}
+
+/* SUB-PAGES */
 .subPage{
 display:none;
 }
@@ -294,6 +454,7 @@ inset:0;
 z-index:40;
 }
 
+/* PROFILE */
 .panel{
 width:min(680px,92vw);
 margin:min(12vh,110px) auto 30px;
@@ -340,15 +501,7 @@ margin:0 auto 80px;
 text-align:right;
 }
 
-.actionRow .camNode{
-position:static;
-transform:none;
-}
-
-button{
-font-family:"Courier New",monospace;
-}
-
+/* ERROR SCREEN */
 .errorScreen{
 position:fixed;
 inset:0;
@@ -375,11 +528,6 @@ letter-spacing:2px;
 line-height:1.7;
 }
 
-.errorScreen .camNode{
-position:static;
-transform:none;
-}
-
 #errorDots{
 position:fixed;
 inset:0;
@@ -392,7 +540,7 @@ background:black;
 
 <body>
 
-<video autoplay muted loop playsinline class="videoBG">
+<video autoplay muted loop playsinline disableremoteplayback class="videoBG" id="videoBG">
 <source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
 </video>
 
@@ -418,7 +566,6 @@ background:black;
 <span id="volumeValue">35%</span>
 </div>
 
-<!-- signed in -->
 <div class="state" id="stateIn">
 
 <canvas id="wireSparks"></canvas>
@@ -434,14 +581,26 @@ background:black;
 <button class="camNode" id="nodeProfile" type="button" style="left:68%;top:90%">PROFILE</button>
 </div>
 
-<!-- /submit -->
 <div class="subPage" id="pageSubmit">
 <div class="formFull">
 <div id="filloutMount" data-fillout-id="gXaU3KEUqCus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-inherit-parameters data-fillout-domain="forms.hackclub.com"></div>
 </div>
 </div>
 
-<!-- /profile -->
+<div class="subPage" id="pageProjects">
+<div class="projHeading">PROJECTS</div>
+
+<div class="projGrid" id="projGrid">
+
+<button class="projCard plusCard" id="newProjectBtn" type="button" aria-label="Create a new project">
+<span class="plusMark" aria-hidden="true">+</span>
+<span class="projName">NEW PROJECT</span>
+</button>
+</div>
+
+<div class="projEmpty" id="projEmpty"></div>
+</div>
+
 <div class="subPage" id="pageProfile">
 <div class="panel">
 <div class="field"><span class="fieldKey">NAME</span><span class="fieldVal" id="fName">—</span></div>
@@ -456,7 +615,6 @@ background:black;
 
 </div>
 
-<!-- /error -->
 <div class="state" id="stateError">
 <canvas id="errorDots"></canvas>
 <div class="errorScreen">
@@ -466,33 +624,70 @@ background:black;
 </div>
 </div>
 
+<div class="modalScrim" id="projModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="projModalTitle">
+<button class="modalClose" id="projModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="projModalTitle">NEW PROJECT</div>
+
+<form id="projForm" novalidate>
+<label class="formField">
+<span>PROJECT NAME</span>
+<input class="textInput" id="projName" type="text" maxlength="80" autocomplete="off" required>
+</label>
+
+<label class="formField">
+<span>PROJECT DESCRIPTION</span>
+<textarea class="textInput" id="projDescription" maxlength="2000" required></textarea>
+</label>
+
+<label class="formField">
+<span>REPOSITORY LINK <span class="optional">(optional)</span></span>
+<input class="textInput" id="projRepo" type="url" inputmode="url" autocomplete="off" placeholder="https://github.com/you/project">
+</label>
+
+<label class="formField">
+<span>DEMO LINK <span class="optional">(optional)</span></span>
+<input class="textInput" id="projDemo" type="url" inputmode="url" autocomplete="off" placeholder="https://your-demo.example">
+</label>
+
+<div class="formError" id="projError" role="alert"></div>
+
+<div class="modalActions">
+<button class="camNode" id="projSubmit" type="submit">CREATE PROJECT</button>
+</div>
+</form>
+</div>
+</div>
+
 <div class="loadingScreen active" id="loadingScreen">
-<img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading" width="200" height="200" decoding="async">
+<img src="https://cdn.hackclub.com/019d09b8-1577-7d2d-8b85-1cd251a5e09c/bob-eye-horror-evil.gif" alt="loading">
 <div class="loadingText" id="loadingText">Loading</div>
 </div>
 
 <script>
-/* section for the signed-in dashboard */
 
+// timings
 const VEIL_MS = 450;
 const DOTS_MS = 10000;
 
+// elements
 const loadingScreen = document.getElementById("loadingScreen");
 const loadingText = document.getElementById("loadingText");
 const screenVeil = document.getElementById("screenVeil");
 const camMap = document.getElementById("camMap");
 const toast = document.getElementById("toast");
 const backBtn = document.getElementById("backBtn");
-const videoBG = document.querySelector(".videoBG");
 
 const knownSession = document.documentElement.classList.contains("knownSession");
 
-/* section for the router */
+// views of this one document
 const VIEWS = {
-    "/home":    { state: "stateIn",    page: null },
-    "/submit":  { state: "stateIn",    page: "pageSubmit" },
-    "/profile": { state: "stateIn",    page: "pageProfile" },
-    "/error":   { state: "stateError", page: null }
+    "/home":     { state: "stateIn",    page: null },
+    "/submit":   { state: "stateIn",    page: "pageSubmit" },
+    "/projects": { state: "stateIn",    page: "pageProjects" },
+    "/profile":  { state: "stateIn",    page: "pageProfile" },
+    "/error":    { state: "stateError", page: null }
 };
 
 function pathOf(pathname) {
@@ -504,6 +699,7 @@ let currentPath = null;
 let pushedHere = false;
 let lastInputWasKeyboard = false;
 
+// rendering
 function render(path) {
     currentPath = path;
     const view = VIEWS[path];
@@ -520,19 +716,17 @@ function render(path) {
     document.body.classList.toggle("noScroll", path === "/home" || path === "/error");
 
     if (path === "/submit") mountForm();
+    if (path === "/projects") loadProjects();
     if (path === "/error") startDots(); else stopDots();
     if (path === "/home") startSparks(); else stopSparks();
 
-    if (path === "/error" || path === "/submit") pauseVideo(videoBG);
-    else playVideo(videoBG);
-
-    const first = document.querySelector(".state.show .camNode");
+    const first = document.querySelector(".state.show .camNode, .state.show .projCard");
     if (first && lastInputWasKeyboard) first.focus();
 
     window.scrollTo(0, 0);
 }
 
-/* section for view transitions */
+// transitions
 const FADE_MS = 160;
 let fadeTimer = null;
 
@@ -547,6 +741,40 @@ function transition(swap) {
     }, FADE_MS);
 }
 
+function leaveTo(href) {
+    try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {  }
+    screenVeil.classList.remove("quick");
+    screenVeil.classList.add("on");
+    setTimeout(() => { window.location.href = href; }, VEIL_MS);
+}
+
+function fadeUp() {
+    const root = document.documentElement;
+    requestAnimationFrame(() => root.classList.remove("fadeIn"));
+    setTimeout(() => root.classList.remove("fadeIn"), 80);
+    screenVeil.classList.remove("on");
+}
+
+fadeUp();
+
+window.addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    fadeUp();
+
+    if (currentPath === "/projects") {
+        try {
+            const cached = JSON.parse(sessionStorage.getItem("zoneoutProjects") || "null");
+            if (cached && Array.isArray(cached.list) && cached.userId === currentUserId) {
+                window.__projectCache = cached;
+                renderProjects(cached.list);
+            }
+        } catch (err) {  }
+
+        loadProjects({ force: true });
+    }
+});
+
+// navigation
 function go(path) {
     if (path === currentPath) return;
     history.pushState({ path }, "", path);
@@ -568,7 +796,7 @@ window.addEventListener("popstate", () => {
     transition(() => render(pathOf(location.pathname)));
 });
 
-/* section for the loading veil */
+// loading interstitial
 let loadingDotsTimer = null;
 
 function stopLoading() {
@@ -587,7 +815,7 @@ if (knownSession) {
     }, 400);
 }
 
-/* section for the toast */
+// toast
 let toastTimer = null;
 
 function hideToast() {
@@ -608,10 +836,10 @@ function showToast(message) {
         lastInputWasKeyboard = evt === "keydown";
         hideToast();
         resumeAudio();
-    }, { capture: true, passive: true });
+    }, true);
 });
 
-/* section for the menu loop */
+// audio
 const bgAudio = document.getElementById("bgAudio");
 const FADE_IN_MS = 1600;
 
@@ -645,7 +873,7 @@ function fadeInAudio() {
     }, FADE_IN_MS + 250);
 }
 
-/* section for the button click */
+// click sound
 const uiClick = document.getElementById("uiClick");
 
 function playClick() {
@@ -658,7 +886,7 @@ document.addEventListener("click", (e) => {
     if (e.target.closest(".camNode, .backBtn")) playClick();
 });
 
-/* section for the volume dock */
+// volume
 const volumeSlider = document.getElementById("masterVolume");
 const volumeValue = document.getElementById("volumeValue");
 
@@ -689,7 +917,7 @@ function resumeAudio() {
 resumeAudio();
 bgAudio.addEventListener("canplay", resumeAudio);
 
-/* section for the fillout embed */
+// the fillout embed, injected on first entry to /submit
 let formMounted = false;
 
 function mountForm() {
@@ -701,25 +929,12 @@ function mountForm() {
     document.body.appendChild(script);
 }
 
-/* section for the video backdrop */
-function playVideo(el) {
-    if (el && !document.hidden) el.play().catch(() => {});
-}
-
-function pauseVideo(el) {
-    if (el && !el.paused) el.pause();
-}
-
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) pauseVideo(videoBG);
-    else if (currentPath !== "/error" && currentPath !== "/submit") playVideo(videoBG);
-});
-
-/* section for the sparks thrown off the wire */
+// wire sparks
 const sparkCanvas = document.getElementById("wireSparks");
 const wirePulse = document.querySelector(".camLines .wirePulse");
 const PULSE_DASH = 60;
 const PULSE_UNITS = 1000;
+const MAX_SPARKS = 120;
 let sparks = [];
 let sparkFrame = null;
 let nextSpark = 0;
@@ -749,11 +964,6 @@ function startSparks() {
     const ctx = sparkCanvas.getContext("2d");
 
     function step(now) {
-        if (!sparks.length && now < nextSpark) {
-            sparkFrame = requestAnimationFrame(step);
-            return;
-        }
-
         ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
 
         if (now >= nextSpark) {
@@ -761,7 +971,8 @@ function startSparks() {
             const head = pulseHead();
 
             if (head) {
-                const burst = 1 + Math.floor(Math.random() * 3);
+                const burst = Math.min(1 + Math.floor(Math.random() * 3),
+                                       MAX_SPARKS - sparks.length);
                 for (let i = 0; i < burst; i++) {
                     sparks.push({
                         x: head.x,
@@ -777,25 +988,30 @@ function startSparks() {
             }
         }
 
-        sparks = sparks.filter(s => {
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "rgba(255,255,255,0.9)";
+        ctx.shadowBlur = 6;
+
+        let live = 0;
+        for (let i = 0; i < sparks.length; i++) {
+            const s = sparks[i];
             const dt = now - s.last;
             s.last = now;
             s.life += dt;
-            if (s.life >= s.span) return false;
+            if (s.life >= s.span) continue;
 
             s.x += s.vx * dt * 0.06;
             s.y += s.vy * dt * 0.06;
 
             const fade = 1 - s.life / s.span;
             ctx.globalAlpha = fade;
-            ctx.fillStyle = "#fff";
-            ctx.shadowColor = "rgba(255,255,255,0.9)";
-            ctx.shadowBlur = 6;
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.size * fade, 0, Math.PI * 2);
             ctx.fill();
-            return true;
-        });
+
+            sparks[live++] = s;
+        }
+        sparks.length = live;
 
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
@@ -812,7 +1028,7 @@ function stopSparks() {
     sparkCanvas.getContext("2d").clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
 }
 
-/* section for the dot field on /error */
+// the /error dot field
 const dotsCanvas = document.getElementById("errorDots");
 let dotsFrame = null;
 let dotsTimer = null;
@@ -868,24 +1084,29 @@ function stopDots() {
     dotsTimer = null;
 }
 
+// canvas sizing
 let resizeFrame = null;
 
 window.addEventListener("resize", () => {
     if (resizeFrame) return;
+
     resizeFrame = requestAnimationFrame(() => {
         resizeFrame = null;
-        if (dotsFrame) sizeDots();
-        if (sparkFrame) sizeSparks();
+
+        if (dotsFrame && (dotsCanvas.width !== window.innerWidth
+                       || dotsCanvas.height !== window.innerHeight)) sizeDots();
+
+        if (sparkFrame && (sparkCanvas.width !== window.innerWidth
+                        || sparkCanvas.height !== window.innerHeight)) sizeSparks();
     });
 });
 
-/* section for the map nodes */
 document.getElementById("nodeSubmit").addEventListener("click", () => go("/submit"));
 document.getElementById("nodeProfile").addEventListener("click", () => go("/profile"));
-document.getElementById("nodeProjects").addEventListener("click", () => showToast("Feature is under construction!"));
-document.getElementById("nodeShop").addEventListener("click", () => showToast("Shop unlocks soon!"));
+document.getElementById("nodeProjects").addEventListener("click", () => go("/projects"));
+document.getElementById("nodeShop").addEventListener("click", () => leaveTo("/shop"));
 
-/* section for the back control */
+// back control
 function goBack() {
     if (currentPath === "/home" || currentPath === "/error") {
         window.location.href = "/";
@@ -908,13 +1129,291 @@ document.getElementById("toMenuBtn").addEventListener("click", () => {
     window.location.href = "/";
 });
 
-/* section for keyboard navigation */
+// projects
+const projGrid = document.getElementById("projGrid");
+const projEmpty = document.getElementById("projEmpty");
+const newProjectBtn = document.getElementById("newProjectBtn");
+
+let meSettled = false;
+let projectsFresh = false;
+let projectsInFlight = null;
+let currentUserId = null;
+
+function stashProjects(userId, list) {
+    window.__projectCache = { userId, list };
+    try {
+        sessionStorage.setItem("zoneoutProjects", JSON.stringify({ userId, list }));
+    } catch (e) {  }
+}
+
+function forgetProjects() {
+    window.__projectCache = null;
+    try { sessionStorage.removeItem("zoneoutProjects"); } catch (e) {}
+}
+
+function adoptProjects(userId, list) {
+    meSettled = true;
+    currentUserId = userId ?? null;
+    if (!Array.isArray(list)) return;
+
+    stashProjects(currentUserId, list);
+    projectsFresh = true;
+
+    if (currentPath === "/projects") {
+        projectsFresh = false;
+        renderProjects(list);
+    }
+}
+
+function loadProjects({ force = false } = {}) {
+    if (renderedSignature === null) {
+        const cache = window.__projectCache;
+
+        if (cache && Array.isArray(cache.list) &&
+            (currentUserId === null || cache.userId === currentUserId)) {
+            renderProjects(cache.list);
+        } else {
+            projEmpty.textContent = "Loading\u2026";
+        }
+    }
+
+    if (force) return revalidateProjects();
+
+    if (!meSettled) return;
+
+    if (projectsFresh) {
+        projectsFresh = false;
+        return;
+    }
+
+    revalidateProjects();
+}
+
+function revalidateProjects() {
+    if (projectsInFlight) return projectsInFlight;
+
+    projectsInFlight = fetch("/api/projects", { credentials: "same-origin" })
+        .then(response => {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            if (!response.ok) throw new Error("could not load");
+            return response.json();
+        })
+        .then(payload => {
+            if (!payload) return;
+            projectsFresh = false;
+            stashProjects(currentUserId, payload.projects || []);
+            renderProjects(payload.projects);
+        })
+        .catch(() => {
+            if (renderedSignature === null) {
+                projEmpty.textContent = "Could not load your projects.";
+            }
+        })
+        .finally(() => { projectsInFlight = null; });
+
+    return projectsInFlight;
+}
+
+// project grid
+let renderedSignature = null;
+let currentList = [];
+
+function renderProjects(projects) {
+    const list = Array.isArray(projects) ? projects : [];
+
+    const signature = JSON.stringify(list);
+    if (signature === renderedSignature) return;
+    renderedSignature = signature;
+    currentList = list;
+
+    Array.from(projGrid.querySelectorAll(".projCard:not(.plusCard)")).forEach(el => el.remove());
+
+    const batch = document.createDocumentFragment();
+    const thumbs = list.map(project => {
+        const card = projectCard(project);
+        batch.appendChild(card);
+        return card.firstChild;
+    });
+    batch.appendChild(newProjectBtn);
+    projGrid.appendChild(batch);
+
+    const boxWidth = thumbBoxWidth();
+    thumbs.forEach((thumb, i) => {
+        thumb.style.fontSize = thumbFontSize(list[i].name, boxWidth) + "px";
+    });
+
+    projEmpty.textContent = list.length ? "" : "No projects yet. Press + to make your first.";
+}
+
+function projectCard(project) {
+    const card = document.createElement("a");
+    card.className = "projCard";
+    card.href = "/projects/" + project.projectId;
+
+    const thumb = document.createElement("div");
+    thumb.className = "projThumb";
+    thumb.textContent = project.name;
+    card.appendChild(thumb);
+
+    const name = document.createElement("div");
+    name.className = "projName";
+    name.textContent = project.name;
+    card.appendChild(name);
+
+    const meta = document.createElement("div");
+    meta.className = "projMeta";
+    meta.textContent = "#" + project.projectId;
+    card.appendChild(meta);
+
+    return card;
+}
+
+function thumbBoxWidth() {
+    const sample = projGrid.querySelector(".projThumb") || newProjectBtn;
+    const width = sample.getBoundingClientRect().width;
+
+    return (width > 40 ? width : 190) - 24;
+}
+
+function thumbFontSize(name, boxPx) {
+    const text = (name || "").trim();
+    const length = text.length;
+
+    let byLines = 13;
+    if (length <= 4) byLines = 38;
+    else if (length <= 8) byLines = 30;
+    else if (length <= 14) byLines = 23;
+    else if (length <= 24) byLines = 18;
+    else if (length <= 40) byLines = 15;
+
+    const longest = text.split(/\s+/).reduce((max, word) => Math.max(max, word.length), 1);
+    const byWidth = Math.floor(boxPx / (longest * 0.6 + 1));
+
+    return Math.max(10, Math.min(byLines, byWidth));
+}
+
+// create-project dialog
+const projModal = document.getElementById("projModal");
+const projForm = document.getElementById("projForm");
+const projError = document.getElementById("projError");
+const projSubmit = document.getElementById("projSubmit");
+const projNameInput = document.getElementById("projName");
+
+let projReturnFocus = null;
+
+function projModalOpen() {
+    return projModal.classList.contains("show");
+}
+
+function openProjectModal() {
+    projReturnFocus = document.activeElement;
+
+    projForm.reset();
+    projError.textContent = "";
+    projSubmit.disabled = false;
+    projSubmit.textContent = "CREATE PROJECT";
+
+    projModal.hidden = false;
+
+    requestAnimationFrame(() => projModal.classList.add("show"));
+
+    document.body.classList.add("noScroll");
+    setInertBehindModal(true);
+
+    projNameInput.focus();
+}
+
+function closeProjectModal() {
+    projModal.classList.remove("show");
+    setInertBehindModal(false);
+    document.body.classList.remove("noScroll");
+
+    setTimeout(() => { if (!projModalOpen()) projModal.hidden = true; }, 240);
+
+    if (projReturnFocus && document.contains(projReturnFocus)) projReturnFocus.focus();
+    projReturnFocus = null;
+}
+
+function setInertBehindModal(on) {
+    Array.from(document.body.children).forEach(child => {
+        if (child !== projModal && child.tagName !== "SCRIPT") child.inert = on;
+    });
+}
+
+newProjectBtn.addEventListener("click", openProjectModal);
+document.getElementById("projModalClose").addEventListener("click", closeProjectModal);
+
+projModal.addEventListener("mousedown", (e) => {
+    if (e.target === projModal) closeProjectModal();
+});
+
+projForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const body = {
+        name: projNameInput.value,
+        description: document.getElementById("projDescription").value,
+        repoUrl: document.getElementById("projRepo").value,
+        demoUrl: document.getElementById("projDemo").value
+    };
+
+    if (!body.name.trim() || !body.description.trim()) {
+        projError.textContent = "A project needs a name and a description.";
+        return;
+    }
+
+    projError.textContent = "";
+    projSubmit.disabled = true;
+    projSubmit.textContent = "CREATING\u2026";
+
+    fetch("/api/projects", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+        .then(response => {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json().then(payload => ({ ok: response.ok, payload }));
+        })
+        .then(result => {
+            if (!result) return;
+            if (!result.ok) {
+                projError.textContent = result.payload.error || "Could not create the project.";
+                projSubmit.disabled = false;
+                projSubmit.textContent = "CREATE PROJECT";
+                return;
+            }
+            closeProjectModal();
+
+            if (result.payload.project) {
+                renderProjects([result.payload.project].concat(currentList));
+            }
+            loadProjects({ force: true });
+            showToast("Project created.");
+        })
+        .catch(() => {
+            projError.textContent = "Could not reach ZoneOut.";
+            projSubmit.disabled = false;
+            projSubmit.textContent = "CREATE PROJECT";
+        });
+});
+
+// keyboard
 function focusables() {
-    return Array.from(document.querySelectorAll(".state.show .camNode"))
+    return Array.from(document.querySelectorAll(".state.show .camNode, .state.show .projCard"))
                 .concat([backBtn]);
 }
 
 document.addEventListener("keydown", (e) => {
+    if (projModalOpen()) {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeProjectModal();
+        }
+        return;
+    }
+
     if (e.key === "Escape") {
         e.preventDefault();
         goBack();
@@ -923,6 +1422,9 @@ document.addEventListener("keydown", (e) => {
 
     const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
     if (!step) return;
+
+    const editing = document.activeElement;
+    if (editing && (editing.tagName === "INPUT" || editing.tagName === "TEXTAREA")) return;
 
     const items = focusables();
     if (!items.length) return;
@@ -936,8 +1438,7 @@ document.addEventListener("keydown", (e) => {
     items[next].focus();
 });
 
-
-/* section for log out */
+// log out
 function forgetSessionHint() {
     const attrs = "Max-Age=0; Path=/; SameSite=Lax";
     document.cookie = `zo_hint=; ${attrs}`;
@@ -954,12 +1455,14 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 
     forgetSessionHint();
 
+    forgetProjects();
+
     try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
     screenVeil.classList.add("on");
     setTimeout(() => { window.location.href = "/"; }, VEIL_MS);
 });
 
-/* section for the session lookup */
+// profile fields
 const put = (id, value) => { document.getElementById(id).textContent = value; };
 
 function toError(message) {
@@ -971,10 +1474,11 @@ function toError(message) {
     else transition(() => render("/error"));
 }
 
+// session load
 async function load() {
     let response;
     try {
-        response = await fetch("/api/auth/me", { credentials: "same-origin" });
+        response = await window.__mePromise;
     } catch {
         stopLoading();
         return toError("The terminal could not reach ZoneOut.");
@@ -982,7 +1486,13 @@ async function load() {
 
     if (response.status === 401) {
         stopLoading();
+        forgetProjects();
         return toError("You need to first log in!");
+    }
+
+    if (response.status === 403) {
+        window.location.replace("/ban");
+        return;
     }
 
     if (!response.ok) {
@@ -1003,16 +1513,27 @@ async function load() {
     put("fEmail", user.email);
     put("fSlack", user.slackId || "not linked");
 
+    adoptProjects(user.userId, payload.projects);
+
     stopLoading();
     if (currentPath === null) render(pathOf(location.pathname));
 }
 
+// entry
 const entryPath = pathOf(location.pathname);
 history.replaceState({ path: entryPath }, "", entryPath);
 
 if (knownSession || entryPath === "/error") render(entryPath);
 
 load();
+
+// nothing decodes for a hidden tab
+const videoBG = document.getElementById("videoBG");
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") videoBG.play().catch(() => {});
+    else videoBG.pause();
+});
 </script>
 
 </body>

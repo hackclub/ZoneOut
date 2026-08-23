@@ -1,3 +1,4 @@
+/* RESET */
 *{
 margin:0;
 padding:0;
@@ -15,6 +16,7 @@ overflow-y:auto;
 text-size-adjust:100%;
 }
 
+/* VIDEO */
 video{
 position:fixed;
 top:63%;
@@ -35,6 +37,7 @@ max-height:none;
 }
 }
 
+/* OVERLAY */
 .overlay{
 position:fixed;
 width:100%;
@@ -52,9 +55,10 @@ pointer-events:none;
     color:darkturquoise
 }
 
-.crt{
+.scanlines{
 position:fixed;
-inset:0;
+width:100%;
+height:100%;
 background:repeating-linear-gradient(
 to bottom,
 rgba(255,255,255,0.05),
@@ -62,11 +66,20 @@ rgba(255,255,255,0.05) 1px,
 transparent 2px,
 transparent 4px
 );
-box-shadow:inset 0 0 200px black;
 z-index:5;
 pointer-events:none;
 }
 
+.vignette{
+position:fixed;
+width:100%;
+height:100%;
+box-shadow:inset 0 0 200px black;
+z-index:6;
+pointer-events:none;
+}
+
+/* WARNING SCREEN */
 .warningScreen{
 position:fixed;
 inset:0;
@@ -81,7 +94,7 @@ padding:24px;
 background:rgba(0,0,0,0.93);
 backdrop-filter:blur(10px) saturate(120%);
 -webkit-backdrop-filter:blur(10px) saturate(120%);
-transition:opacity .45s ease, transform .45s ease, visibility 0s;
+transition:opacity .45s ease, transform .45s ease;
 }
 
 html.skipWarning .warningScreen{
@@ -90,10 +103,8 @@ display:none;
 
 .warningScreen.hidden{
 opacity:0;
-visibility:hidden;
 pointer-events:none;
 transform:scale(1.02);
-transition:opacity .45s ease, transform .45s ease, visibility 0s linear .45s;
 }
 
 .warningCard{
@@ -178,6 +189,7 @@ text-shadow:0 0 10px rgba(255,255,255,0.12);
 }
 }
 
+/* INTRO SEQUENCE */
 .introSequence{
 position:fixed;
 inset:0;
@@ -187,12 +199,10 @@ align-items:center;
 justify-content:center;
 background:black;
 opacity:0;
-visibility:hidden;
 pointer-events:none;
 }
 
 .introSequence.playing{
-visibility:visible;
 pointer-events:all;
 animation:introVeil 4s ease-in-out forwards;
 }
@@ -235,6 +245,7 @@ animation:introOutIn 4s ease-in-out forwards;
 59%,100%{opacity:1;}
 }
 
+/* VOLUME */
 .volumeDock{
 position:fixed;
 right:16px;
@@ -263,11 +274,13 @@ text-align:right;
 opacity:0.9;
 }
 
+/* SITE */
 .site{
 position:relative;
 width:100%;
 }
 
+/* HERO */
 .hero{
 position:relative;
 min-height:100vh;
@@ -284,7 +297,6 @@ z-index:10;
 }
 
 .title{
-
 font-size:clamp(38px, 11.5vw, 64px);
 margin-bottom:18px;
 margin-left:-5px;
@@ -375,6 +387,7 @@ color:#ff3d4d;
 text-shadow:0 0 10px rgba(201,28,43,0.75), 0 0 22px rgba(201,28,43,0.35);
 }
 
+/* TOAST */
 .toast{
 position:fixed;
 left:50%;
@@ -408,6 +421,7 @@ opacity:1;
 transform:translate(-50%, 0);
 }
 
+/* NAVIGATION VEIL */
 .screenVeil{
 position:fixed;
 inset:0;
@@ -423,6 +437,7 @@ opacity:1;
 pointer-events:all;
 }
 
+/* LOADING */
 .loadingScreen{
 position:fixed;
 inset:0;
@@ -433,16 +448,13 @@ align-items:center;
 justify-content:center;
 z-index:20;
 opacity:0;
-visibility:hidden;
 pointer-events:none;
-transition:opacity .5s, visibility 0s linear .5s;
+transition:opacity .5s;
 }
 
 .loadingScreen.active{
 opacity:1;
-visibility:visible;
 pointer-events:all;
-transition:opacity .5s, visibility 0s;
 }
 
 .loadingScreen img{
@@ -461,6 +473,7 @@ font-size:24px;
 100%{transform:translateY(0px);}
 }
 
+/* FAQ PAGE */
 .learnPage{
 position:fixed;
 top:0;
@@ -473,20 +486,15 @@ visibility:hidden;
 pointer-events:none;
 transition:opacity .5s ease;
 z-index:30;
+overflow:hidden;
 overflow-y:auto;
 overflow-x:hidden;
-scrollbar-gutter:stable;
 }
 
 .learnPage.active{
 opacity:1;
 visibility:visible;
 pointer-events:auto;
-}
-
-.learnPage:not(.active) .faqNode,
-.learnPage:not(.active) .faqToggle img{
-animation-play-state:paused;
 }
 
 .learnBgVideo{
@@ -546,6 +554,7 @@ gap:22px;
 display:flex;
 flex-direction:column;
 align-items:center;
+
 position:relative;
 animation:faqFloat 5s ease-in-out infinite;
 }
@@ -658,6 +667,7 @@ overflow:hidden;
 opacity:0;
 transform:translateY(-6px) scale(0.98);
 transition:max-height .35s ease, opacity .25s ease, transform .35s ease, margin-top .35s ease, padding .35s ease;
+
 background:
 repeating-linear-gradient(
 45deg,
@@ -679,15 +689,18 @@ opacity:1;
 transform:translateY(0) scale(1);
 }
 
-
 .faqQuestion{
 font-size:18px;
+font-weight:700;
+line-height:1.2;
+letter-spacing:-0.4px;
 margin-bottom:10px;
 text-shadow:0 0 6px rgba(255,255,255,0.1);
 }
 
 .faqAnswer{
-line-height:1.5;
+line-height:1.45;
+letter-spacing:-0.3px;
 white-space:normal;
 }
 
@@ -695,6 +708,12 @@ white-space:normal;
 color:#9cf;
 text-decoration:underline;
 cursor:pointer;
+}
+
+.faqContainer.hasOpen::after{
+content:"";
+grid-column:1 / -1;
+height:320px;
 }
 
 @media (max-width: 1100px){
@@ -711,8 +730,17 @@ grid-template-columns:1fr;
 .faqDrop{
 position:static;
 }
+
+.faqNode.open{
+z-index:auto;
 }
 
+.faqContainer.hasOpen::after{
+display:none;
+}
+}
+
+/* TEXT GLITCH EFFECT */
 .glitchText{
 position:relative;
 color:white;
@@ -766,6 +794,7 @@ opacity:0 !important;
 transition:opacity .6s ease;
 }
 
+/* TOUCH AND SMALL SCREENS */
 @media (pointer: coarse){
 .option{
 padding:10px 0;
@@ -821,7 +850,6 @@ bottom:max(96px, calc(env(safe-area-inset-bottom) + 92px));
 }
 
 @media (max-width: 560px){
-
 .menu{
 top:12%;
 }
@@ -929,6 +957,203 @@ margin-top:56px;
 }
 }
 
+/* SHARED CONTROLS AND MODALS */
+.camNode{
+display:inline-block;
+background:rgba(0,0,0,0.88);
+color:#fff;
+border:1px solid #fff;
+padding:12px 26px;
+font-size:15px;
+letter-spacing:4px;
+white-space:nowrap;
+font-family:"Courier New",monospace;
+transition:0.2s;
+}
+
+.camNode:hover,
+.camNode:focus-visible{
+outline:none;
+background:rgba(40,40,50,0.92);
+text-shadow:0 0 8px #fff;
+box-shadow:0 0 14px rgba(255,255,255,0.45);
+}
+
+.camNode:disabled{
+opacity:0.4;
+border-color:rgba(255,255,255,0.4);
+cursor:not-allowed;
+box-shadow:none;
+text-shadow:none;
+background:rgba(0,0,0,0.88);
+}
+
+button,
+input,
+textarea,
+select{
+font-family:"Courier New",monospace;
+}
+
+/* MODAL */
+.modalScrim{
+position:fixed;
+inset:0;
+z-index:220;
+display:flex;
+
+align-items:flex-start;
+justify-content:center;
+overflow-y:auto;
+-webkit-overflow-scrolling:touch;
+padding:24px;
+background:rgba(0,0,0,0.86);
+backdrop-filter:blur(8px) saturate(120%);
+-webkit-backdrop-filter:blur(8px) saturate(120%);
+opacity:0;
+pointer-events:none;
+transition:opacity .22s ease;
+}
+
+.modalScrim.show{
+opacity:1;
+pointer-events:auto;
+}
+
+.modalScrim[hidden]{
+display:none;
+}
+
+.modalCard{
+margin:auto;
+width:min(760px,100%);
+padding:26px;
+position:relative;
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgb(35,10,55), rgb(10,10,10));
+border:1px solid rgba(200,160,255,0.35);
+box-shadow:0 0 18px rgba(130,70,200,0.18), 0 18px 50px rgba(0,0,0,0.7);
+transform:translateY(10px) scale(0.985);
+transition:transform .22s ease;
+}
+
+.modalScrim.show .modalCard{
+transform:translateY(0) scale(1);
+}
+
+.modalClose{
+position:absolute;
+top:10px;
+right:14px;
+background:none;
+border:none;
+color:#fff;
+font-size:22px;
+line-height:1;
+padding:6px 10px;
+opacity:0.6;
+transition:opacity .2s ease, text-shadow .2s ease;
+}
+
+.modalClose:hover,
+.modalClose:focus-visible{
+outline:none;
+opacity:1;
+text-shadow:0 0 8px #fff;
+}
+
+/* FORM FIELD */
+.formField{
+display:block;
+margin-bottom:16px;
+}
+
+.formField > span{
+display:block;
+font-size:11px;
+letter-spacing:3px;
+color:rgba(255,255,255,0.45);
+margin-bottom:6px;
+}
+
+.formField > span .optional{
+letter-spacing:1px;
+opacity:0.7;
+text-transform:none;
+}
+
+.textInput{
+width:100%;
+background:rgba(10,10,10,0.9);
+color:#fff;
+border:1px solid rgba(200,160,255,0.35);
+border-radius:4px;
+padding:10px 12px;
+font-size:14px;
+
+cursor:text;
+}
+
+textarea.textInput{
+min-height:110px;
+resize:vertical;
+line-height:1.6;
+}
+
+.textInput:focus{
+outline:none;
+border-color:rgba(185,140,255,0.9);
+box-shadow:0 0 12px rgba(130,70,200,0.35);
+}
+
+.textInput::placeholder{
+color:rgba(255,255,255,0.28);
+}
+
+.formError{
+min-height:18px;
+margin:-4px 0 14px;
+font-size:13px;
+line-height:1.5;
+color:#ff6b6b;
+}
+
+.hourMark{
+width:1em;
+height:1em;
+flex:none;
+vertical-align:-0.14em;
+}
+
+/* REDUCED MOTION */
+@media (prefers-reduced-motion: reduce){
+.warningProceed,
+.subtitle,
+#learn.firstVisit,
+.option.pointed::after,
+.loadingScreen img,
+.faqNode,
+.faqNode.attract .faqToggle img,
+.glitchText::before,
+.glitchText::after{
+animation:none !important;
+}
+
+.glitchText::before,
+.glitchText::after{
+left:0;
+opacity:0;
+}
+}
+
+/* CUSTOM CURSOR */
 @media (any-pointer: fine){
 html,
 body{

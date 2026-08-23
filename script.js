@@ -1,24 +1,16 @@
-
+// menu state
 const options = document.querySelectorAll(".option");
 let index = 1;
 
 let screen = "warning";
 
+// timings and paths
 const INFO_PATH = "/info";
 const INTRO_MS = 4000;
-const HERO_HIDE_MS = 600;
 const MENU_FADE_MS = 4000;
 const VEIL_MS = 450;
 
-const EYE_OPEN = "https://cdn.hackclub.com/019d155f-b707-7536-b45a-f45556a31211/openeye.png";
-const EYE_SHUT = "https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png";
-
-const FAQ_REVEAL_GAP = 24;
-const FAQ_DROP_PADDING = 32;
-const FAQ_DROP_OFFSET = 12;
-
-let faqScrollFrom = null;
-
+// localStorage wrapper
 const store = {
     get(key) {
         try {
@@ -39,11 +31,13 @@ const store = {
     }
 };
 
+// selection
 function updateSelection() {
     options.forEach(opt => opt.classList.remove("active", "selector"));
     options[index].classList.add("active", "selector");
 }
 
+// elements
 const uiClick = document.getElementById("uiClick");
 const warningScreen = document.getElementById("warningScreen");
 const warningProceed = document.getElementById("warningProceed");
@@ -63,7 +57,7 @@ const menuAudio = document.getElementById("bgAudio");
 const faqAudio = document.getElementById("faqAudio");
 const faqContainer = document.querySelector(".faqContainer");
 const learnBgVideo = document.querySelector(".learnBgVideo");
-const heroVideo = document.querySelector(".hero video");
+const heroVideo = document.getElementById("heroVideo");
 const faqNodes = Array.from(document.querySelectorAll(".faqNode"));
 const faqToggles = Array.from(document.querySelectorAll(".faqToggle"));
 let loadingTimer = null;
@@ -71,6 +65,7 @@ let loadingDotsTimer = null;
 let faqIndex = 0;
 let pushedInfo = false;
 
+// volume
 const savedVolume = store.get("zoneoutVolume");
 if (savedVolume !== null) {
     const level = Number(savedVolume);
@@ -102,9 +97,11 @@ function applyMasterVolume() {
     syncVolumeDisplay();
 }
 
+// first-run keys
 const FIRST_RUN_KEYS = ["zoneoutWarningAccepted", "zoneoutLearnClicked",
                         "zoneoutLoginClicked", "zoneoutEyeClicked"];
 
+// auth notices
 const AUTH_MESSAGES = {
     denied:  "Sign-in cancelled.",
     state:   "That link expired. Try signing in again.",
@@ -114,6 +111,7 @@ const AUTH_MESSAGES = {
 
 let pendingAuthNotice = null;
 
+// session hint cookie
 const HINT_COOKIE = /(?:^|;\s*)(?:__Host-)?zo_hint=1(?:\s*;|$)/;
 
 let sessionVerified = false;
@@ -126,6 +124,7 @@ function forgetSessionHint() {
     }
 }
 
+// url tidying and ?reset
 function tidyUrl() {
     let path = location.pathname.replace(/index\.html$/, "");
     if (path === "") path = "/";
@@ -172,6 +171,7 @@ try {
     }
 } catch (e) {}
 
+// menu label follows a verified session only
 function applySessionLabel() {
     loginOption.textContent = sessionVerified ? "Go to Dashboard" : "Login";
 }
@@ -184,13 +184,22 @@ if (HINT_COOKIE.test(document.cookie)) {
             if (response.ok) {
                 sessionVerified = true;
                 applySessionLabel();
-            } else if (response.status === 401 || response.status === 404) {
+                return;
+            }
+
+            if (response.status === 403) {
+                window.location.replace("/ban");
+                return;
+            }
+
+            if (response.status === 401 || response.status === 404) {
                 forgetSessionHint();
             }
         })
         .catch(() => {});
 }
 
+// backend warm-up
 let warmed = false;
 
 function warmBackend() {
@@ -202,6 +211,7 @@ function warmBackend() {
     } catch (e) {}
 }
 
+// first-run pointers
 function updatePointers() {
     const learnDone = !!store.get("zoneoutLearnClicked");
     const loginDone = !!store.get("zoneoutLoginClicked");
@@ -223,16 +233,17 @@ function retireLoginPointer() {
 
 updatePointers();
 
+// click sound
 function playClick() {
     uiClick.currentTime = 0;
     uiClick.volume = Math.max(masterVolume * 0.35, 0);
     uiClick.play().catch(() => {});
 }
 
+// audio fades
 const fadeFrames = new WeakMap();
 
 function clampVolume(level) {
-
     return Math.min(Math.max(level, 0), 1);
 }
 
@@ -286,6 +297,7 @@ function startTrack(audioEl) {
     }
 }
 
+// tracks
 function playMenuMusic() {
     cancelFade(faqAudio);
     faqAudio.pause();
@@ -313,8 +325,8 @@ function playFaqMusic() {
     fadeAudio(faqAudio, 0, masterVolume, 600);
 }
 
+// autoplay recovery
 function resumeAudio() {
-
     if (screen === "warning" || screen === "intro") return;
 
     const active = currentTrack();
@@ -335,27 +347,7 @@ function resumeAudio() {
     }
 }
 
-let heroPauseTimer = null;
-
-function playVideo(el) {
-    if (el && !document.hidden) el.play().catch(() => {});
-}
-
-function pauseVideo(el) {
-    if (el && !el.paused) el.pause();
-}
-
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        pauseVideo(heroVideo);
-        pauseVideo(learnBgVideo);
-        return;
-    }
-
-    if (screen === "faq") playVideo(learnBgVideo);
-    else playVideo(heroVideo);
-});
-
+// screen changes
 function isInfoPath() {
     return location.pathname.replace(/\/+$/, "").endsWith(INFO_PATH);
 }
@@ -366,10 +358,9 @@ function goToFaq({ music = true } = {}) {
     screen = "faq";
     setFaqFocus(0);
 
-    playVideo(learnBgVideo);
+    if (learnBgVideo) learnBgVideo.play().catch(() => {});
 
-    clearTimeout(heroPauseTimer);
-    heroPauseTimer = setTimeout(() => pauseVideo(heroVideo), HERO_HIDE_MS);
+    if (heroVideo) heroVideo.pause();
 
     if (music) playFaqMusic();
 }
@@ -377,16 +368,12 @@ function goToFaq({ music = true } = {}) {
 function goToMenu({ animate = true, music = true } = {}) {
     screen = "menu";
     clearFaqFocus();
-    closeFaqNodes(null);
-    restoreFaqScroll();
     flushAuthNotice();
-
-    clearTimeout(heroPauseTimer);
-    playVideo(heroVideo);
 
     if (!animate) {
         learnPage.classList.remove("active", "fadeOut");
-        pauseVideo(learnBgVideo);
+        if (learnBgVideo) learnBgVideo.pause();
+        if (heroVideo) heroVideo.play().catch(() => {});
         if (music) playMenuMusic();
         return;
     }
@@ -396,7 +383,9 @@ function goToMenu({ animate = true, music = true } = {}) {
 
     setTimeout(() => {
         learnPage.classList.remove("active", "fadeOut");
-        pauseVideo(learnBgVideo);
+
+        if (learnBgVideo) learnBgVideo.pause();
+        if (heroVideo) heroVideo.play().catch(() => {});
         if (music) playMenuMusic();
         requestAnimationFrame(() => screenVeil.classList.remove("on"));
     }, VEIL_MS);
@@ -413,6 +402,7 @@ function leaveFaq() {
     goToMenu();
 }
 
+// routing
 function routeToCurrentPath() {
     if (isInfoPath()) {
         pushedInfo = false;
@@ -423,12 +413,10 @@ function routeToCurrentPath() {
 }
 
 window.addEventListener("popstate", () => {
-
     if (screen === "warning" || screen === "intro") return;
 
     if (isInfoPath()) {
         if (screen !== "faq") {
-
             pushedInfo = true;
             goToFaq();
         }
@@ -438,6 +426,7 @@ window.addEventListener("popstate", () => {
     }
 });
 
+// first-visit intro
 function playIntro() {
     screen = "intro";
     introSequence.classList.add("playing");
@@ -455,14 +444,15 @@ if (store.get("zoneoutWarningAccepted") === "true") {
     routeToCurrentPath();
 }
 
+// volume slider
 volumeSlider.addEventListener("input", () => {
     masterVolume = Number(volumeSlider.value) / 100;
     store.set("zoneoutVolume", volumeSlider.value);
     applyMasterVolume();
 });
 
+// discretion warning
 warningProceed.addEventListener("click", () => {
-
     if (screen !== "warning") return;
 
     playClick();
@@ -526,6 +516,7 @@ options.forEach((opt, i) => {
     });
 });
 
+// toast
 let toastTimer = null;
 
 function hideToast() {
@@ -543,6 +534,7 @@ function showToast(message) {
     }, 2600);
 }
 
+// login
 function openLogin() {
     retireLoginPointer();
 
@@ -562,6 +554,7 @@ window.addEventListener("pageshow", () => {
     if (!loadingTimer) hideLoading();
 });
 
+// loading interstitial
 function showLoading() {
     loadingScreen.classList.add("active");
 
@@ -581,6 +574,7 @@ function hideLoading() {
     loadingScreen.classList.remove("active");
 }
 
+// learn more
 function triggerLearn() {
     if (loadingTimer) return;
 
@@ -611,6 +605,7 @@ if (firstFaqNode && !store.get("zoneoutEyeClicked")) {
     firstFaqNode.classList.add("attract");
 }
 
+// faq grid keyboard layer
 function faqColumns() {
     if (!faqContainer) return 1;
     const cols = getComputedStyle(faqContainer).gridTemplateColumns;
@@ -632,59 +627,19 @@ function clearFaqFocus() {
     faqNodes.forEach(node => node.classList.remove("focused"));
 }
 
-function setFaqNodeOpen(node, open) {
+// faq eyes
+const EYE_OPEN = "https://cdn.hackclub.com/019d155f-b707-7536-b45a-f45556a31211/openeye.png";
+const EYE_SHUT = "https://cdn.hackclub.com/019d155f-c68f-70bb-bfd9-047b7a7224bb/closed%20eye.png";
+
+function setFaqOpen(node, open) {
+    if (!node || node.classList.contains("open") === open) return;
+
     const button = node.querySelector(".faqToggle");
-    if (!button) return;
-    if (node.classList.contains("open") === open) return;
+    const img = button && button.querySelector("img");
 
     node.classList.toggle("open", open);
-    button.querySelector("img").src = open ? EYE_OPEN : EYE_SHUT;
-    button.setAttribute("aria-expanded", String(open));
-}
-
-function closeFaqNodes(except) {
-    faqNodes.forEach(node => {
-        if (node !== except) setFaqNodeOpen(node, false);
-    });
-}
-
-function faqScrollTo(top) {
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    learnPage.scrollTo({ top, behavior: still ? "auto" : "smooth" });
-}
-
-function restoreFaqScroll() {
-    if (faqContainer) faqContainer.style.paddingBottom = "";
-    if (faqScrollFrom === null) return;
-
-    const top = faqScrollFrom;
-    faqScrollFrom = null;
-    faqScrollTo(top);
-}
-
-function revealFaqDrop(node) {
-    const drop = node.querySelector(".faqDrop");
-    if (!drop || !learnPage || !faqContainer) return;
-    if (getComputedStyle(drop).position !== "absolute") return;
-
-    faqContainer.style.paddingBottom = "";
-    const basePad = parseFloat(getComputedStyle(faqContainer).paddingBottom) || 0;
-
-    const view = learnPage.getBoundingClientRect();
-    const box = node.getBoundingClientRect();
-    const panelBottom = box.bottom + FAQ_DROP_OFFSET + drop.scrollHeight + FAQ_DROP_PADDING;
-
-    const need = (panelBottom + FAQ_REVEAL_GAP) - view.bottom;
-    if (need <= 0) {
-        restoreFaqScroll();
-        return;
-    }
-
-    const slack = faqContainer.getBoundingClientRect().bottom - (panelBottom + FAQ_REVEAL_GAP);
-    if (slack < 0) faqContainer.style.paddingBottom = `${basePad - slack}px`;
-
-    if (faqScrollFrom === null) faqScrollFrom = learnPage.scrollTop;
-    faqScrollTo(learnPage.scrollTop + need);
+    if (img) img.src = open ? EYE_OPEN : EYE_SHUT;
+    if (button) button.setAttribute("aria-expanded", String(open));
 }
 
 function toggleFaqNode(button) {
@@ -699,13 +654,21 @@ function toggleFaqNode(button) {
     }
     store.set("zoneoutEyeClicked", "true");
 
-    const open = !node.classList.contains("open");
+    const isOpen = !node.classList.contains("open");
 
-    closeFaqNodes(node);
-    setFaqNodeOpen(node, open);
+    faqNodes.forEach(other => {
+        if (other !== node) setFaqOpen(other, false);
+    });
+    setFaqOpen(node, isOpen);
 
-    if (open) revealFaqDrop(node);
-    else restoreFaqScroll();
+    if (faqContainer) faqContainer.classList.toggle("hasOpen", isOpen);
+
+    if (isOpen) {
+        const drop = node.querySelector(".faqDrop");
+        if (drop) setTimeout(() => {
+            if (node.classList.contains("open")) drop.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }, 380);
+    }
 }
 
 faqToggles.forEach((button, i) => {
@@ -742,6 +705,7 @@ document.addEventListener("keydown", (e) => {
     if (handled) e.preventDefault();
 });
 
+// faq links
 document.querySelectorAll(".faqAnswer a").forEach(link => {
     link.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -754,7 +718,7 @@ document.querySelectorAll(".faqAnswer a").forEach(link => {
 
         hideToast();
         resumeAudio();
-    }, { capture: true, passive: true });
+    }, true);
 });
 
 window.addEventListener("load", resumeAudio);
@@ -768,3 +732,16 @@ window.addEventListener("load", resumeAudio);
 uiClick.volume = Math.max(masterVolume * 0.35, 0);
 syncVolumeDisplay();
 updateSelection();
+
+// nothing decodes for a hidden tab
+document.addEventListener("visibilitychange", () => {
+    const wanted = screen === "faq" ? learnBgVideo : heroVideo;
+    const visible = document.visibilityState === "visible";
+
+    [heroVideo, learnBgVideo].forEach(clip => {
+        if (!clip) return;
+        if (clip !== wanted || !visible) clip.pause();
+    });
+
+    if (visible && wanted) wanted.play().catch(() => {});
+});
