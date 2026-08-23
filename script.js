@@ -496,6 +496,7 @@ document.addEventListener("keydown", (e) => {
         playClick();
         if (index === 0) openLogin();
         if (index === 1) triggerLearn();
+        if (index === 2) openShop();
     }
 });
 
@@ -513,6 +514,7 @@ options.forEach((opt, i) => {
         playClick();
         if (i === 0) openLogin();
         if (i === 1) triggerLearn();
+        if (i === 2) openShop();
     });
 });
 
@@ -532,6 +534,17 @@ function showToast(message) {
     toastTimer = setTimeout(() => {
         toast.classList.remove("show");
     }, 2600);
+}
+
+// shop
+function openShop() {
+    try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
+
+    screenVeil.classList.add("on");
+
+    setTimeout(() => {
+        window.location.href = "/shop";
+    }, VEIL_MS);
 }
 
 // login

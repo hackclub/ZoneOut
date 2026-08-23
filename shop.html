@@ -101,15 +101,23 @@ text-shadow:0 0 6px white;
 }
 
 /* BALANCE */
-body.hasLoginBar .balanceBox{
-top:calc(var(--loginBarH, 72px) + 14px);
-}
-
-.balanceBox{
+.balanceDock{
 position:fixed;
 top:max(20px, calc(env(safe-area-inset-top) + 12px));
 right:max(20px, calc(env(safe-area-inset-right) + 14px));
 z-index:50;
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:8px;
+}
+
+body.hasLoginBar .balanceDock{
+top:calc(var(--loginBarH, 72px) + 14px);
+}
+
+.balanceBox{
+position:relative;
 display:flex;
 align-items:center;
 gap:8px;
@@ -133,6 +141,51 @@ border:1px solid rgba(255,255,255,0.2);
 padding:4px 8px;
 font-size:12px;
 letter-spacing:0;
+}
+
+/* SUGGESTIONS */
+.suggestBtn{
+padding:7px 12px;
+font-size:12px;
+letter-spacing:2px;
+}
+
+.suggestBtn[hidden]{
+display:none;
+}
+
+.glassCard{
+background:
+repeating-linear-gradient(
+45deg,
+rgba(255,255,255,0.05) 0px,
+rgba(255,255,255,0.05) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgba(120,80,190,0.22), rgba(255,255,255,0.06));
+backdrop-filter:blur(18px) saturate(150%);
+-webkit-backdrop-filter:blur(18px) saturate(150%);
+border:1px solid rgba(255,255,255,0.22);
+box-shadow:0 0 24px rgba(130,70,200,0.25), 0 24px 60px rgba(0,0,0,0.6);
+width:min(560px,100%);
+}
+
+.glassCard .textInput{
+background:rgba(255,255,255,0.07);
+border-color:rgba(255,255,255,0.24);
+}
+
+.glassCard .textInput:focus{
+border-color:rgba(255,255,255,0.7);
+box-shadow:0 0 14px rgba(200,160,255,0.35);
+}
+
+.suggestTitle{
+font-size:clamp(18px,3.4vw,24px);
+letter-spacing:4px;
+text-transform:uppercase;
+margin-bottom:22px;
 }
 
 .srOnly{
@@ -541,11 +594,15 @@ display:none;
 
 <div class="overlay"></div>
 
+<div class="balanceDock">
 <div class="balanceBox" id="balanceBox">
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="balanceValue">0</span>
 
 <span class="srOnly">Hour Balance</span>
+</div>
+
+<button class="camNode suggestBtn" id="suggestBtn" type="button" hidden>Suggest items!</button>
 </div>
 
 <div class="volumeDock">
@@ -594,6 +651,32 @@ display:none;
 </div>
 </div>
 
+<div class="modalScrim" id="suggestModal" hidden>
+<div class="modalCard glassCard" role="dialog" aria-modal="true" aria-labelledby="suggestTitle">
+<button class="modalClose" id="suggestClose" type="button" aria-label="Close">&times;</button>
+
+<div class="suggestTitle" id="suggestTitle">Suggest an Item</div>
+
+<form id="suggestForm" novalidate>
+<label class="formField">
+<span>NAME OF THE SUGGESTED ITEM</span>
+<input class="textInput" id="suggestName" type="text" maxlength="120" autocomplete="off" required>
+</label>
+
+<label class="formField">
+<span>WHY DO YOU WANT THIS ITEM TO BE ADDED IN THE SHOP?</span>
+<textarea class="textInput" id="suggestReason" maxlength="1000" required></textarea>
+</label>
+
+<div class="formError" id="suggestError" role="alert"></div>
+
+<div class="orderActions">
+<button class="camNode" id="suggestSubmit" type="submit">Send Suggestion</button>
+</div>
+</form>
+</div>
+</div>
+
 <div class="screenVeil" id="screenVeil" aria-hidden="true"></div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -615,6 +698,13 @@ const orderError = document.getElementById("orderError");
 const orderBtn = document.getElementById("orderBtn");
 const qtyInput = document.getElementById("orderQtyInput");
 const toast = document.getElementById("toast");
+const suggestBtn = document.getElementById("suggestBtn");
+const suggestModal = document.getElementById("suggestModal");
+const suggestForm = document.getElementById("suggestForm");
+const suggestName = document.getElementById("suggestName");
+const suggestReason = document.getElementById("suggestReason");
+const suggestError = document.getElementById("suggestError");
+const suggestSubmit = document.getElementById("suggestSubmit");
 const screenVeil = document.getElementById("screenVeil");
 
 // state
@@ -721,7 +811,7 @@ function focusCard(next) {
 const ARROWS = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: 0, ArrowDown: 0 };
 
 document.addEventListener("keydown", (e) => {
-    if (modal.classList.contains("show")) return;
+    if (anyModalOpen()) return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
 
     const active = document.activeElement;
@@ -798,6 +888,7 @@ async function refreshBalance() {
 
     if (response.status === 401 || response.status === 404) {
         signedIn = false;
+        suggestBtn.hidden = true;
         showLoginBar();
         stopPolling();
         updateOrderButton();
@@ -814,6 +905,7 @@ async function refreshBalance() {
     try {
         const payload = await response.json();
         signedIn = true;
+        suggestBtn.hidden = false;
         balanceHours = Number(payload.balanceHours) || 0;
         paintBalance();
     } catch {
@@ -882,7 +974,7 @@ function openOrder(itemId) {
 
     requestAnimationFrame(() => modal.classList.add("show"));
 
-    setInertBehind(true);
+    setInertBehind(true, modal);
     document.body.style.overflow = "hidden";
     qtyInput.focus();
     qtyInput.select();
@@ -890,7 +982,7 @@ function openOrder(itemId) {
 
 function closeOrder() {
     modal.classList.remove("show");
-    setInertBehind(false);
+    setInertBehind(false, modal);
     document.body.style.overflow = "";
 
     setTimeout(() => { if (!modal.classList.contains("show")) modal.hidden = true; }, 240);
@@ -900,10 +992,14 @@ function closeOrder() {
     openItem = null;
 }
 
-function setInertBehind(on) {
+function setInertBehind(on, dialog) {
     Array.from(document.body.children).forEach(child => {
-        if (child !== modal && child.tagName !== "SCRIPT") child.inert = on;
+        if (child !== dialog && child.tagName !== "SCRIPT") child.inert = on;
     });
+}
+
+function anyModalOpen() {
+    return modal.classList.contains("show") || suggestModal.classList.contains("show");
 }
 
 qtyInput.addEventListener("input", () => {
@@ -984,10 +1080,103 @@ modal.addEventListener("mousedown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("show")) {
+    if (e.key !== "Escape") return;
+
+    if (modal.classList.contains("show")) {
         e.preventDefault();
         closeOrder();
+    } else if (suggestModal.classList.contains("show")) {
+        e.preventDefault();
+        closeSuggest();
     }
+});
+
+// suggestions
+function openSuggest() {
+    if (!signedIn) return;
+
+    returnFocus = document.activeElement;
+    suggestError.textContent = "";
+
+    suggestModal.hidden = false;
+
+    requestAnimationFrame(() => suggestModal.classList.add("show"));
+
+    setInertBehind(true, suggestModal);
+    document.body.style.overflow = "hidden";
+    suggestName.focus();
+}
+
+function closeSuggest() {
+    suggestModal.classList.remove("show");
+    setInertBehind(false, suggestModal);
+    document.body.style.overflow = "";
+
+    setTimeout(() => {
+        if (!suggestModal.classList.contains("show")) suggestModal.hidden = true;
+    }, 240);
+
+    if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    returnFocus = null;
+}
+
+suggestBtn.addEventListener("click", openSuggest);
+document.getElementById("suggestClose").addEventListener("click", closeSuggest);
+
+suggestModal.addEventListener("mousedown", (e) => {
+    if (e.target === suggestModal) closeSuggest();
+});
+
+suggestForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const itemName = suggestName.value.trim();
+    const reason = suggestReason.value.trim();
+
+    if (!itemName || !reason) {
+        suggestError.textContent = "Both fields are required.";
+        return;
+    }
+
+    suggestSubmit.disabled = true;
+    suggestSubmit.textContent = "Sending…";
+    suggestError.textContent = "";
+
+    let response;
+    try {
+        response = await fetch("/api/shop/suggest", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemName, reason })
+        });
+    } catch {
+        suggestError.textContent = "Could not reach ZoneOut.";
+        suggestSubmit.disabled = false;
+        suggestSubmit.textContent = "Send Suggestion";
+        return;
+    }
+
+    if (response.status === 403) {
+        window.location.replace("/ban");
+        return;
+    }
+
+    let payload = {};
+    try { payload = await response.json(); } catch {  }
+
+    suggestSubmit.disabled = false;
+    suggestSubmit.textContent = "Send Suggestion";
+
+    if (!response.ok) {
+        suggestError.textContent = payload.error || "The suggestion could not be sent.";
+        return;
+    }
+
+    suggestName.value = "";
+    suggestReason.value = "";
+    closeSuggest();
+    showToast("Suggestion sent. Thank you!");
 });
 
 // toast
@@ -1147,7 +1336,7 @@ backBtn.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("show")) goBack();
+    if (e.key === "Escape" && !anyModalOpen()) goBack();
 });
 
 refreshBalance();
