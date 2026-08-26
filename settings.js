@@ -107,7 +107,7 @@ label.textContent = "Theme";
 
 var arrow = document.createElement("span");
 arrow.className = "settingsArrow";
-arrow.textContent = "--->";
+arrow.textContent = "";
 
 var wrap = document.createElement("div");
 wrap.className = "themeWrap";
