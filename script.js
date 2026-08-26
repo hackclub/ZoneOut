@@ -8,6 +8,7 @@ let screen = "warning";
 const INFO_PATH = "/info";
 const INTRO_MS = 4000;
 const MENU_FADE_MS = 4000;
+const DOCK_SLIDE_MS = 3200;
 const VEIL_MS = 450;
 
 // localStorage wrapper
@@ -403,7 +404,30 @@ function leaveFaq() {
 }
 
 // routing
+let dockReleased = false;
+
+// volume dock
+function releaseDock() {
+    if (dockReleased) return;
+    dockReleased = true;
+
+    const root = document.documentElement;
+    root.classList.add("dockSlide");
+    void root.offsetWidth;
+
+    const drop = () => {
+        root.classList.remove("dockHidden");
+        setTimeout(() => root.classList.remove("dockSlide"), DOCK_SLIDE_MS + 200);
+    };
+
+    requestAnimationFrame(drop);
+    setTimeout(drop, 60);
+}
+
 function routeToCurrentPath() {
+    document.documentElement.dataset.gear = "on";
+    releaseDock();
+
     if (isInfoPath()) {
         pushedInfo = false;
         goToFaq();
@@ -477,8 +501,20 @@ warningQuit.addEventListener("click", () => {
     }, 120);
 });
 
+function settingsOpen() {
+    return Boolean(window.zoneoutSettings && window.zoneoutSettings.isOpen());
+}
+
+function isTyping() {
+    const active = document.activeElement;
+    if (!active) return false;
+    const tag = active.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 document.addEventListener("keydown", (e) => {
     if (screen !== "menu") return;
+    if (settingsOpen() || isTyping()) return;
 
     if (e.key === "ArrowDown") {
         index = (index + 1) % options.length;
@@ -700,6 +736,7 @@ faqNodes.forEach((node, i) => {
 
 document.addEventListener("keydown", (e) => {
     if (screen !== "faq") return;
+    if (settingsOpen() || isTyping()) return;
 
     const cols = faqColumns();
     let handled = true;

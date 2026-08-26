@@ -6,6 +6,19 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/themes.css">
+
+<script>
+// theme, read before the first paint
+try {
+    var zoTheme = localStorage.getItem("zoneoutTheme");
+    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+        document.documentElement.setAttribute("data-theme", zoTheme);
+        var zoMeta = document.querySelector('meta[name="theme-color"]');
+        if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
+    }
+} catch (e) {}
+</script>
 <title>Banned</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -23,8 +36,8 @@ font-family:"Courier New",monospace;
 }
 
 body{
-background:black;
-color:white;
+background:rgb(var(--bg));
+color:rgb(var(--fg));
 min-height:100vh;
 min-height:100dvh;
 display:flex;
@@ -50,7 +63,7 @@ max-width:min(640px, 100%);
 font-size:clamp(14px,3.4vw,18px);
 line-height:1.7;
 letter-spacing:1px;
-color:#ff3b3b;
+color:rgb(var(--dangerBan));
 word-break:break-word;
 
 min-height:1.7em;

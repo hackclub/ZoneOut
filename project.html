@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/themes.css">
+
+<script>
+// theme, read before the first paint
+try {
+    var zoTheme = localStorage.getItem("zoneoutTheme");
+    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+        document.documentElement.setAttribute("data-theme", zoTheme);
+        var zoMeta = document.querySelector('meta[name="theme-color"]');
+        if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
+    }
+} catch (e) {}
+</script>
 <title>ZoneOut Project</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -51,8 +64,8 @@ font-family:"Courier New",monospace;
 }
 
 body{
-background:black;
-color:white;
+background:rgb(var(--bg));
+color:rgb(var(--fg));
 min-height:100vh;
 min-height:100dvh;
 overflow-x:hidden;
@@ -78,7 +91,7 @@ pointer-events:none;
 .overlay{
 position:fixed;
 inset:0;
-background:radial-gradient(circle at center, rgba(0,0,0,0.1), rgba(0,0,0,0.92));
+background:radial-gradient(circle at center, rgba(var(--bg),0.1), rgba(var(--bg),0.92));
 z-index:-1;
 pointer-events:none;
 }
@@ -94,7 +107,7 @@ font-size:16px;
 opacity:0.7;
 transition:0.2s;
 z-index:80;
-color:white;
+color:rgb(var(--fg));
 }
 
 .backBtn[hidden]{
@@ -105,7 +118,7 @@ display:none;
 .backBtn:focus-visible{
 opacity:1;
 outline:none;
-text-shadow:0 0 6px white;
+text-shadow:0 0 6px rgb(var(--fg));
 }
 
 /* VIEWS */
@@ -145,17 +158,17 @@ line-height:1.15;
 letter-spacing:1px;
 font-weight:bold;
 text-transform:uppercase;
-color:#f2e9ff;
+color:rgb(var(--accentTextSoft));
 background:
 repeating-linear-gradient(
 45deg,
-rgba(255,255,255,0.05) 0px,
-rgba(255,255,255,0.05) 2px,
+rgba(var(--fg),0.05) 0px,
+rgba(var(--fg),0.05) 2px,
 transparent 2px,
 transparent 6px
 ),
-linear-gradient(135deg, rgb(45,14,72), rgb(12,10,18));
-border:1px solid rgba(200,160,255,0.25);
+linear-gradient(135deg, rgb(var(--panelTopAlt)), rgb(var(--panelBotAlt)));
+border:1px solid rgba(var(--accent),0.25);
 }
 
 .projectTitle{
@@ -176,22 +189,22 @@ opacity:0.4;
 .panel{
 padding:22px;
 background:
-linear-gradient(135deg, rgba(35,10,55,0.96), rgba(10,10,10,0.96)),
+linear-gradient(135deg, rgba(var(--panelTop),0.96), rgba(var(--panelBot),0.96)),
 repeating-linear-gradient(
 45deg,
-rgba(255,255,255,0.05) 0px,
-rgba(255,255,255,0.05) 2px,
+rgba(var(--fg),0.05) 0px,
+rgba(var(--fg),0.05) 2px,
 transparent 2px,
 transparent 6px
 );
-border:1px solid rgba(200,160,255,0.35);
-box-shadow:0 0 18px rgba(130,70,200,0.18);
+border:1px solid rgba(var(--accent),0.35);
+box-shadow:0 0 18px rgba(var(--accentGlow),0.18);
 }
 
 .sectionKey{
 font-size:11px;
 letter-spacing:3px;
-color:rgba(255,255,255,0.45);
+color:rgba(var(--fg),0.45);
 margin-bottom:8px;
 }
 
@@ -216,9 +229,9 @@ display:inline-block;
 padding:10px 18px;
 font-size:13px;
 letter-spacing:2px;
-color:#e9d8ff;
+color:rgb(var(--accentText));
 text-decoration:none;
-border:1px solid rgba(200,160,255,0.35);
+border:1px solid rgba(var(--accent),0.35);
 transition:0.2s;
 word-break:break-all;
 }
@@ -226,9 +239,9 @@ word-break:break-all;
 .projectLink:hover,
 .projectLink:focus-visible{
 outline:none;
-color:#fff;
-border-color:rgba(185,140,255,0.9);
-box-shadow:0 0 14px rgba(130,70,200,0.35);
+color:rgb(var(--fg));
+border-color:rgba(var(--accentBright),0.9);
+box-shadow:0 0 14px rgba(var(--accentGlow),0.35);
 }
 
 .noLinks{
@@ -247,6 +260,17 @@ align-items:center;
 }
 
 .editRow[hidden]{
+display:none;
+}
+
+.adminNote{
+font-size:11px;
+letter-spacing:2px;
+color:rgb(var(--amber));
+opacity:0.85;
+}
+
+.adminNote[hidden]{
 display:none;
 }
 
@@ -285,15 +309,15 @@ overflow:hidden;
 
 /* DANGER CONTROL */
 .dangerNode{
-border-color:rgba(255,107,107,0.7);
-color:#ffdada;
+border-color:rgba(var(--danger),0.7);
+color:rgb(var(--dangerPale));
 }
 
 .dangerNode:hover,
 .dangerNode:focus-visible{
-background:rgba(60,12,12,0.92);
-text-shadow:0 0 8px #ff8a8a;
-box-shadow:0 0 14px rgba(255,80,80,0.45);
+background:rgba(var(--dangerDeep),0.92);
+text-shadow:0 0 8px rgb(var(--dangerBright));
+box-shadow:0 0 14px rgba(var(--dangerSoft),0.45);
 }
 
 /* MODAL */
@@ -409,6 +433,7 @@ gap:16px;
 <div class="editRow" id="ownerRow" hidden>
 <button class="camNode" id="editBtn" type="button">EDIT PROJECT</button>
 <button class="camNode dangerNode" id="deleteBtn" type="button">DELETE PROJECT</button>
+<span class="adminNote" id="adminNote" hidden>ADMIN OVERRIDE</span>
 </div>
 </div>
 </div>
@@ -488,6 +513,7 @@ gap:16px;
 var projectId = window.__projectId;
 var project = null;
 var canEdit = false;
+var isAdmin = false;
 var signedIn = true;
 
 // views
@@ -495,6 +521,8 @@ function show(id) {
     var states = document.querySelectorAll(".state");
     for (var i = 0; i < states.length; i++) states[i].classList.remove("show");
     document.getElementById(id).classList.add("show");
+
+    document.documentElement.dataset.gear = id === "stateMissing" ? "off" : "on";
 }
 
 function missing(message) {
@@ -558,6 +586,7 @@ function renderView() {
     }
 
     document.getElementById("ownerRow").hidden = !canEdit;
+    document.getElementById("adminNote").hidden = !isAdmin;
     show("stateView");
     focusFirstControl();
 }
@@ -615,6 +644,7 @@ function load() {
             if (!payload) { missing(); return; }
             project = payload.project;
             canEdit = Boolean(payload.canEdit);
+            isAdmin = Boolean(payload.isAdmin);
             if (payload.signedIn === false) showLoginBar();
             renderView();
         })
@@ -773,6 +803,8 @@ function isTyping() {
 
 function controls() {
     var list = [];
+
+    if (window.zoneoutSettings && window.zoneoutSettings.isOpen()) return list;
 
     if (deleteModalOpen()) {
         var inModal = deleteModal.querySelectorAll("button");
@@ -1074,6 +1106,8 @@ document.addEventListener("visibilitychange", function () {
 });
 
 </script>
+
+<script src="/settings.js" defer></script>
 
 </body>
 </html>

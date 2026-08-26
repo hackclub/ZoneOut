@@ -1,6 +1,7 @@
 import { readSession } from "../../lib/session.mjs";
-import { requireUser } from "../../lib/guard.mjs";
-import { getProjectById, updateProjectForUser, deleteProjectForUser, ValidationError } from "../../lib/users.mjs";
+import { requireUser, resolveAdmin } from "../../lib/guard.mjs";
+import { getProjectById, updateProjectForUser, deleteProjectForUser, updateProjectAsAdmin, deleteProjectAsAdmin, ValidationError } from "../../lib/users.mjs";
+import { isAdminEmail } from "../../lib/admin.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape
@@ -50,16 +51,23 @@ export default async function handler(req, res) {
         }
 
         const session = readSession(req);
-        const canEdit = Boolean(session) && session.userId === project.user_id;
+        const owns = Boolean(session) && session.userId === project.user_id;
+        const isAdmin = Boolean(session) && !owns && Boolean(await resolveAdmin(req));
 
-        return res.status(200).json({ ok: true, project: present(project), canEdit, signedIn: Boolean(session) });
+        return res.status(200).json({
+            ok: true,
+            project: present(project),
+            canEdit: owns || isAdmin,
+            isAdmin,
+            signedIn: Boolean(session)
+        });
     } catch (err) {
         console.error("project lookup failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
     }
 }
 
-// PATCH, owner only
+// PATCH, owner or administrator
 async function edit(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
@@ -74,19 +82,27 @@ async function edit(req, res, projectId) {
         throw err;
     }
 
+    const fields = {
+        name: body.name,
+        description: body.description,
+        repoUrl: body.repoUrl,
+        demoUrl: body.demoUrl
+    };
+
     try {
-        const project = await updateProjectForUser(projectId, user.user_id, {
-            name: body.name,
-            description: body.description,
-            repoUrl: body.repoUrl,
-            demoUrl: body.demoUrl
-        });
+        let project = await updateProjectForUser(projectId, user.user_id, fields);
+        let ownerName = user.name;
+
+        if (!project && isAdminEmail(user.email)) {
+            project = await updateProjectAsAdmin(projectId, fields);
+            ownerName = null;
+        }
 
         if (!project) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
-        return res.status(200).json({ ok: true, project: present(project, user.name), canEdit: true });
+        return res.status(200).json({ ok: true, project: present(project, ownerName), canEdit: true });
     } catch (err) {
         if (err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
@@ -96,13 +112,17 @@ async function edit(req, res, projectId) {
     }
 }
 
-// DELETE, owner only
+// DELETE, owner or administrator
 async function remove(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
 
     try {
-        const deleted = await deleteProjectForUser(user.user_id, projectId);
+        let deleted = await deleteProjectForUser(user.user_id, projectId);
+
+        if (!deleted && isAdminEmail(user.email)) {
+            deleted = await deleteProjectAsAdmin(projectId);
+        }
 
         if (!deleted) {
             return res.status(404).json({ ok: false, error: "not found" });

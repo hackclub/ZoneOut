@@ -8,12 +8,28 @@
 <meta name="theme-color" content="#000000">
 <title>Zone Out</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/themes.css">
+
+<script>
+// theme, read before the first paint
+try {
+    var zoTheme = localStorage.getItem("zoneoutTheme");
+    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+        document.documentElement.setAttribute("data-theme", zoTheme);
+        var zoMeta = document.querySelector('meta[name="theme-color"]');
+        if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
+    }
+} catch (e) {}
+</script>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script>
+// volume dock, held below the viewport until the intro ends
+document.documentElement.classList.add("dockHidden");
+
 // hide the discretion warning before the first paint
 try {
     if (localStorage.getItem("zoneoutWarningAccepted") === "true"
@@ -229,5 +245,6 @@ try {
     </div>
 </main>
 <script src="script.js"></script>
+<script src="/settings.js" defer></script>
 </body>
 </html>

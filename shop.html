@@ -6,6 +6,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/themes.css">
+
+<script>
+// theme, read before the first paint
+try {
+    var zoTheme = localStorage.getItem("zoneoutTheme");
+    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+        document.documentElement.setAttribute("data-theme", zoTheme);
+        var zoMeta = document.querySelector('meta[name="theme-color"]');
+        if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
+    }
+} catch (e) {}
+</script>
 <title>Marketplace Zone</title>
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -38,8 +51,8 @@ font-family:"Courier New",monospace;
 }
 
 body{
-background:black;
-color:white;
+background:rgb(var(--bg));
+color:rgb(var(--fg));
 overflow-x:hidden;
 min-height:100vh;
 min-height:100dvh;
@@ -58,7 +71,7 @@ min-width:100%;
 min-height:100%;
 object-fit:cover;
 transform:translate(-50%,-50%);
-filter:brightness(0.25) contrast(1.2);
+filter:brightness(0.25) contrast(1.2) var(--mediaFilterFn);
 z-index:-2;
 pointer-events:none;
 }
@@ -70,7 +83,7 @@ opacity:1;
 .overlay{
 position:fixed;
 inset:0;
-background:radial-gradient(circle at top, rgba(70,0,120,0.3), black 70%);
+background:radial-gradient(circle at top, rgba(var(--hazeShop),0.3), rgb(var(--bg)) 70%);
 z-index:-1;
 pointer-events:none;
 }
@@ -86,7 +99,7 @@ font-size:16px;
 opacity:0.7;
 transition:0.2s;
 z-index:50;
-color:white;
+color:rgb(var(--fg));
 }
 
 .backBtn[hidden]{
@@ -97,14 +110,30 @@ display:none;
 .backBtn:focus-visible{
 opacity:1;
 outline:none;
-text-shadow:0 0 6px white;
+text-shadow:0 0 6px rgb(var(--fg));
 }
 
 /* BALANCE */
+:root{
+--dockTop:max(20px, calc(env(safe-area-inset-top) + 12px));
+--dockRight:max(20px, calc(env(safe-area-inset-right) + 14px));
+}
+
 .balanceDock{
 position:fixed;
-top:max(20px, calc(env(safe-area-inset-top) + 12px));
-right:max(20px, calc(env(safe-area-inset-right) + 14px));
+top:var(--dockTop);
+right:var(--dockRight);
+z-index:50;
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:8px;
+}
+
+.dockButtons{
+position:absolute;
+top:calc(var(--dockTop) + 48px);
+right:var(--dockRight);
 z-index:50;
 display:flex;
 flex-direction:column;
@@ -116,6 +145,10 @@ body.hasLoginBar .balanceDock{
 top:calc(var(--loginBarH, 72px) + 14px);
 }
 
+body.hasLoginBar .dockButtons{
+top:calc(var(--loginBarH, 72px) + 62px);
+}
+
 .balanceBox{
 position:relative;
 display:flex;
@@ -124,8 +157,8 @@ gap:8px;
 padding:10px 16px;
 font-size:15px;
 letter-spacing:1px;
-background:rgba(15,15,15,0.85);
-border:1px solid rgba(255,255,255,0.2);
+background:rgba(var(--surface),0.85);
+border:1px solid rgba(var(--fg),0.2);
 border-radius:6px;
 }
 
@@ -136,11 +169,69 @@ position:absolute;
 top:calc(100% + 6px);
 right:0;
 white-space:nowrap;
-background:black;
-border:1px solid rgba(255,255,255,0.2);
+background:rgb(var(--bg));
+border:1px solid rgba(var(--fg),0.2);
 padding:4px 8px;
 font-size:12px;
 letter-spacing:0;
+}
+
+/* REGIONS */
+.regionWrap{
+position:relative;
+}
+
+.regionBtn{
+padding:7px 12px;
+font-size:12px;
+letter-spacing:2px;
+}
+
+.regionMenu{
+position:absolute;
+top:calc(100% + 6px);
+right:0;
+z-index:60;
+display:flex;
+flex-direction:column;
+min-width:170px;
+background:rgba(var(--menuBg),0.96);
+border:1px solid rgba(var(--accent),0.35);
+border-radius:6px;
+box-shadow:0 0 18px rgba(var(--accentGlow),0.25), 0 18px 40px rgba(var(--bg),0.7);
+overflow:hidden;
+}
+
+.regionMenu[hidden]{
+display:none;
+}
+
+.regionOption{
+background:none;
+border:none;
+color:rgb(var(--fg));
+text-align:left;
+padding:9px 14px;
+font-size:12px;
+letter-spacing:2px;
+opacity:0.7;
+transition:background .16s ease, opacity .16s ease;
+}
+
+.regionOption:hover,
+.regionOption:focus-visible{
+outline:none;
+opacity:1;
+background:rgba(var(--accent),0.16);
+}
+
+.regionOption[aria-checked="true"]{
+opacity:1;
+background:rgba(var(--accent),0.1);
+}
+
+.regionOption[aria-checked="true"]::before{
+content:">> ";
 }
 
 /* SUGGESTIONS */
@@ -158,27 +249,27 @@ display:none;
 background:
 repeating-linear-gradient(
 45deg,
-rgba(255,255,255,0.05) 0px,
-rgba(255,255,255,0.05) 2px,
+rgba(var(--fg),0.05) 0px,
+rgba(var(--fg),0.05) 2px,
 transparent 2px,
 transparent 6px
 ),
-linear-gradient(135deg, rgba(120,80,190,0.22), rgba(255,255,255,0.06));
+linear-gradient(135deg, rgba(var(--glassTint),0.22), rgba(var(--fg),0.06));
 backdrop-filter:blur(18px) saturate(150%);
 -webkit-backdrop-filter:blur(18px) saturate(150%);
-border:1px solid rgba(255,255,255,0.22);
-box-shadow:0 0 24px rgba(130,70,200,0.25), 0 24px 60px rgba(0,0,0,0.6);
+border:1px solid rgba(var(--fg),0.22);
+box-shadow:0 0 24px rgba(var(--accentGlow),0.25), 0 24px 60px rgba(var(--bg),0.6);
 width:min(560px,100%);
 }
 
 .glassCard .textInput{
-background:rgba(255,255,255,0.07);
-border-color:rgba(255,255,255,0.24);
+background:rgba(var(--panelBotAlt),0.94);
+border-color:rgba(var(--fg),0.24);
 }
 
 .glassCard .textInput:focus{
-border-color:rgba(255,255,255,0.7);
-box-shadow:0 0 14px rgba(200,160,255,0.35);
+border-color:rgba(var(--fg),0.7);
+box-shadow:0 0 14px rgba(var(--accent),0.35);
 }
 
 .suggestTitle{
@@ -203,7 +294,7 @@ border:0;
 /* TITLE */
 .shopTitle{
 text-align:center;
-margin-top:max(72px, calc(env(safe-area-inset-top) + 68px));
+margin-top:max(28px, calc(env(safe-area-inset-top) + 24px));
 font-size:clamp(26px,7vw,44px);
 letter-spacing:6px;
 }
@@ -215,7 +306,7 @@ animation:rgbShift 3.4s infinite steps(1);
 
 .glitchText.rgbGlitch::before{
 left:4px;
-color:#ff0044;
+color:rgb(var(--glitchRedHot));
 text-shadow:none;
 mix-blend-mode:screen;
 animation:glitch1 1.7s infinite linear alternate-reverse;
@@ -223,7 +314,7 @@ animation:glitch1 1.7s infinite linear alternate-reverse;
 
 .glitchText.rgbGlitch::after{
 left:-4px;
-color:#00fff0;
+color:rgb(var(--glitchCyanHot));
 text-shadow:none;
 mix-blend-mode:screen;
 animation:glitch2 1.7s infinite linear alternate-reverse;
@@ -237,10 +328,55 @@ animation:glitch2 1.7s infinite linear alternate-reverse;
 95%{transform:translate(2px,1px) skewX(-3deg);}
 }
 
-/* ITEM GRID */
-.shopGrid{
+/* ITEM SECTIONS */
+.shopSections{
 width:min(1100px, calc(100% - 44px));
 margin:44px auto 90px;
+}
+
+.shopSection + .shopSection{
+margin-top:54px;
+}
+
+.sectionTitle{
+font-size:clamp(16px,3.4vw,22px);
+letter-spacing:5px;
+text-transform:uppercase;
+padding-bottom:10px;
+border-bottom:1px solid rgba(var(--fg),0.12);
+color:rgba(var(--fg),0.86);
+}
+
+.sectionTitle.hallowTitle{
+animation:hallowFlicker 9s infinite;
+}
+
+@keyframes hallowFlicker{
+0%,100%{color:rgba(var(--fg),0.86);text-shadow:none;}
+11.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+12%{color:rgb(var(--pumpkin));text-shadow:0 0 14px rgba(var(--pumpkinGlow),0.75);}
+14%{color:rgb(var(--pumpkin));text-shadow:0 0 14px rgba(var(--pumpkinGlow),0.75);}
+14.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+29.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+30%{color:rgba(var(--fg),0.32);text-shadow:none;}
+31%{color:rgb(var(--pumpkinDeep));text-shadow:0 0 18px rgba(var(--pumpkinGlow),0.6);}
+31.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+52.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+53%{color:rgb(var(--pumpkinSoft));text-shadow:0 0 12px rgba(var(--pumpkinGlow2),0.7);}
+56%{color:rgb(var(--pumpkinSoft));text-shadow:0 0 12px rgba(var(--pumpkinGlow2),0.7);}
+56.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+68.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+69%{color:rgba(var(--fg),0.3);text-shadow:none;}
+69.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+87.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+88%{color:rgb(var(--pumpkin));text-shadow:0 0 16px rgba(var(--pumpkinGlow),0.8);}
+89%{color:rgb(var(--pumpkin));text-shadow:0 0 16px rgba(var(--pumpkinGlow),0.8);}
+89.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
+}
+
+/* ITEM GRID */
+.shopGrid{
+margin-top:22px;
 display:grid;
 grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
 gap:20px;
@@ -254,12 +390,12 @@ display:flex;
 flex-direction:column;
 align-items:center;
 padding:18px 14px;
-background:rgba(25,25,25,0.85);
-border:1px solid rgba(255,255,255,0.08);
+background:rgba(var(--surfaceAlt),0.85);
+border:1px solid rgba(var(--fg),0.08);
 border-radius:10px;
 text-align:center;
 overflow:hidden;
-color:#fff;
+color:rgb(var(--fg));
 transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
@@ -267,8 +403,8 @@ transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 .itemCard:focus-visible{
 outline:none;
 transform:translateY(-3px);
-border-color:rgba(200,160,255,0.6);
-box-shadow:0 0 22px rgba(130,70,200,0.35);
+border-color:rgba(var(--accent),0.6);
+box-shadow:0 0 22px rgba(var(--accentGlow),0.35);
 }
 
 .itemCard.glitch{
@@ -285,12 +421,12 @@ pointer-events:none;
 }
 
 .itemCard.glitch::before{
-background:rgba(255,0,0,0.2);
+background:rgba(var(--glitchRed),0.2);
 animation:glitchRed 4s infinite;
 }
 
 .itemCard.glitch::after{
-background:rgba(0,255,255,0.2);
+background:rgba(var(--glitchCyan),0.2);
 animation:glitchBlue 4s infinite;
 }
 
@@ -312,11 +448,24 @@ animation:glitchBlue 4s infinite;
 98%{transform:translate(3px,0);opacity:0.4;}
 }
 
+/* HALLOWEEN CARDS */
+.itemCard.hallowCard{
+border-color:rgba(var(--pumpkinBorder),0.34);
+box-shadow:0 0 12px rgba(var(--pumpkinEmberDeep),0.14), inset 0 0 20px rgba(var(--pumpkinEmberDeep),0.05);
+}
+
+.itemCard.hallowCard:hover,
+.itemCard.hallowCard:focus-visible{
+border-color:rgba(var(--pumpkinHot),0.6);
+box-shadow:0 0 20px rgba(var(--pumpkinEmber),0.26), inset 0 0 22px rgba(var(--pumpkinEmber),0.08);
+}
+
 .itemImage{
 width:90px;
 height:90px;
 object-fit:contain;
 display:block;
+transform:scale(var(--zoom, 1));
 }
 
 .itemPlaceholder{
@@ -328,10 +477,10 @@ justify-content:center;
 font-size:26px;
 font-weight:bold;
 letter-spacing:2px;
-color:rgba(255,255,255,0.55);
-border:1px dashed rgba(255,255,255,0.28);
+color:rgba(var(--fg),0.55);
+border:1px dashed rgba(var(--fg),0.28);
 border-radius:8px;
-background:rgba(255,255,255,0.03);
+background:rgba(var(--fg),0.03);
 }
 
 .itemName{
@@ -354,7 +503,7 @@ justify-content:center;
 gap:5px;
 margin-top:6px;
 font-size:13px;
-color:#c9b6e8;
+color:rgb(var(--accentMuted));
 }
 
 /* ORDER DIALOG */
@@ -389,14 +538,34 @@ opacity:0.6;
 .orderDesc{
 margin-top:14px;
 padding-top:12px;
-border-top:1px solid rgba(255,255,255,0.1);
+border-top:1px solid rgba(var(--fg),0.1);
 font-size:13px;
 line-height:1.7;
-color:rgba(255,255,255,0.72);
+color:rgba(var(--fg),0.72);
 }
 
 .orderDesc:empty{
 display:none;
+}
+
+.orderWarning{
+margin-top:14px;
+padding:10px 12px;
+font-size:12px;
+line-height:1.65;
+color:rgb(var(--pumpkinPale));
+background:rgba(var(--pumpkinEmberDeep),0.1);
+border:1px solid rgba(var(--pumpkinBorder),0.4);
+border-radius:6px;
+}
+
+.orderWarning[hidden]{
+display:none;
+}
+
+.orderDesc strong{
+color:rgb(var(--accentStrong));
+font-weight:bold;
 }
 
 .orderBalance{
@@ -405,7 +574,7 @@ align-items:center;
 gap:7px;
 margin-top:16px;
 font-size:15px;
-color:#c9b6e8;
+color:rgb(var(--accentMuted));
 }
 
 .orderQty{
@@ -415,7 +584,7 @@ gap:12px;
 margin-top:18px;
 font-size:12px;
 letter-spacing:3px;
-color:rgba(255,255,255,0.45);
+color:rgba(var(--fg),0.45);
 }
 
 .orderQty input{
@@ -432,16 +601,17 @@ aspect-ratio:1 / 1;
 display:flex;
 align-items:center;
 justify-content:center;
-padding:12px;
-background:rgba(255,255,255,0.03);
-border:1px solid rgba(255,255,255,0.12);
+overflow:hidden;
+background:rgba(var(--fg),0.03);
+border:1px solid rgba(var(--fg),0.12);
 border-radius:10px;
 }
 
 .orderArt img{
-max-width:100%;
-max-height:100%;
-object-fit:contain;
+width:100%;
+height:100%;
+object-fit:cover;
+transform:scale(var(--zoom, 1));
 }
 
 .orderArt .itemPlaceholder{
@@ -452,6 +622,15 @@ font-size:clamp(28px,7vw,44px);
 
 .orderActions{
 text-align:center;
+}
+
+.modalClose{
+top:4px;
+right:6px;
+z-index:2;
+font-size:34px;
+padding:4px 12px;
+text-shadow:0 0 8px rgba(var(--bg),0.9);
 }
 
 /* SMALL SCREENS */
@@ -482,10 +661,28 @@ text-align:center;
 }
 }
 
+@media (max-width:620px){
+.dockButtons{
+flex-direction:row-reverse;
+align-items:center;
+gap:10px;
+}
+
+.shopTitle{
+margin-top:max(44px, calc(env(safe-area-inset-top) + 40px));
+}
+}
+
 @media (max-width:480px){
 .balanceBox{
 padding:8px 12px;
 font-size:14px;
+}
+
+.suggestBtn{
+padding:6px 9px;
+font-size:11px;
+letter-spacing:1px;
 }
 
 .shopGrid{
@@ -528,7 +725,7 @@ margin-top:max(64px, calc(env(safe-area-inset-top) + 60px));
 font-size:clamp(20px,4vh,30px);
 }
 
-.shopGrid{
+.shopSections{
 margin-top:26px;
 }
 }
@@ -546,7 +743,8 @@ bottom:max(16px, calc(env(safe-area-inset-bottom) + 12px));
 .itemCard.glitch::after,
 .rgbGlitch,
 .glitchText.rgbGlitch::before,
-.glitchText.rgbGlitch::after{
+.glitchText.rgbGlitch::after,
+.sectionTitle.hallowTitle{
 animation:none !important;
 }
 
@@ -602,7 +800,15 @@ display:none;
 <span class="srOnly">Hour Balance</span>
 </div>
 
+</div>
+
+<div class="dockButtons">
 <button class="camNode suggestBtn" id="suggestBtn" type="button" hidden>Suggest items!</button>
+
+<div class="regionWrap">
+<button class="camNode regionBtn" id="regionBtn" type="button" aria-haspopup="true" aria-expanded="false">Switch Regions</button>
+<div class="regionMenu" id="regionMenu" role="menu" aria-label="Region" hidden></div>
+</div>
 </div>
 
 <div class="volumeDock">
@@ -615,7 +821,7 @@ display:none;
 <span class="glitchText rgbGlitch" data-text="Marketplace Zone">Marketplace Zone</span>
 </div>
 
-<div class="shopGrid" id="shopGrid"></div>
+<div class="shopSections" id="shopSections"></div>
 
 <div class="modalScrim" id="orderModal" hidden>
 <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="orderName">
@@ -626,6 +832,8 @@ display:none;
 <div class="orderName" id="orderName"></div>
 <div class="orderCost" id="orderCost"></div>
 <p class="orderDesc" id="orderDesc"></p>
+
+<p class="orderWarning" id="orderWarning" hidden>this item is fulfilled locally and doesn't ship from HQ - if we can't fulfill it in your region, it'll be substituted for a similar item or you'll be given a grant for it!</p>
 
 <div class="orderBalance">
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
@@ -682,16 +890,17 @@ display:none;
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHOP_ITEMS, MAX_QUANTITY, findItem } from "/catalog.js";
+import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion } from "/catalog.js";
 
 // elements
-const grid = document.getElementById("shopGrid");
+const sectionsHost = document.getElementById("shopSections");
 const balanceValue = document.getElementById("balanceValue");
 
 const modal = document.getElementById("orderModal");
 const orderName = document.getElementById("orderName");
 const orderCost = document.getElementById("orderCost");
 const orderDesc = document.getElementById("orderDesc");
+const orderWarning = document.getElementById("orderWarning");
 const orderBalanceEl = document.getElementById("orderBalance");
 const orderArt = document.getElementById("orderArt");
 const orderError = document.getElementById("orderError");
@@ -699,6 +908,8 @@ const orderBtn = document.getElementById("orderBtn");
 const qtyInput = document.getElementById("orderQtyInput");
 const toast = document.getElementById("toast");
 const suggestBtn = document.getElementById("suggestBtn");
+const regionBtn = document.getElementById("regionBtn");
+const regionMenu = document.getElementById("regionMenu");
 const suggestModal = document.getElementById("suggestModal");
 const suggestForm = document.getElementById("suggestForm");
 const suggestName = document.getElementById("suggestName");
@@ -728,6 +939,8 @@ function artwork(item, className) {
 
         img.loading = "lazy";
         img.decoding = "async";
+        if (item.zoom) img.style.setProperty("--zoom", String(item.zoom));
+        if (item.fit) img.style.objectFit = item.fit;
         return img;
     }
 
@@ -759,45 +972,176 @@ function hourGlyph() {
     return svg;
 }
 
-// the grid, cheapest first
+// description text, with **bold** spans
+function paintDescription(text) {
+    orderDesc.replaceChildren();
+    if (!text) return;
+
+    text.split(/\*\*/).forEach((piece, at) => {
+        if (!piece) return;
+
+        if (at % 2 === 1) {
+            const strong = document.createElement("strong");
+            strong.textContent = piece;
+            orderDesc.appendChild(strong);
+        } else {
+            orderDesc.appendChild(document.createTextNode(piece));
+        }
+    });
+}
+
+// the sections, each one cheapest first
 const cards = [];
-const fragment = document.createDocumentFragment();
 
-[...SHOP_ITEMS].sort((a, b) => a.hours - b.hours).forEach(item => {
-    const card = document.createElement("button");
-    card.className = "itemCard glitch";
-    card.type = "button";
-    card.dataset.itemId = item.id;
+function renderSections() {
+    sectionsHost.replaceChildren();
+    cards.length = 0;
 
-    card.appendChild(artwork(item, "itemImage"));
+    SHOP_SECTIONS.forEach(section => {
+        const items = SHOP_ITEMS
+            .filter(item => item.section === section.id && itemInRegion(item, region))
+            .sort((a, b) => a.hours - b.hours);
 
-    const name = document.createElement("div");
-    name.className = "itemName";
-    name.textContent = item.name;
-    card.appendChild(name);
+        if (!items.length) return;
 
-    if (item.note) {
-        const note = document.createElement("div");
-        note.className = "itemNote";
-        note.textContent = item.note;
-        card.appendChild(note);
+        const block = document.createElement("section");
+        block.className = "shopSection";
+
+        const heading = document.createElement("h2");
+        heading.className = "sectionTitle" + (section.id === "halloween" ? " hallowTitle" : "");
+        heading.textContent = section.name;
+        block.appendChild(heading);
+
+        const grid = document.createElement("div");
+        grid.className = "shopGrid";
+
+        const fragment = document.createDocumentFragment();
+
+        items.forEach(item => {
+            const card = document.createElement("button");
+            card.className = "itemCard glitch" + (section.id === "halloween" ? " hallowCard" : "");
+            card.type = "button";
+            card.dataset.itemId = item.id;
+
+            card.appendChild(artwork(item, "itemImage"));
+
+            const name = document.createElement("div");
+            name.className = "itemName";
+            name.textContent = item.name;
+            card.appendChild(name);
+
+            if (item.note) {
+                const note = document.createElement("div");
+                note.className = "itemNote";
+                note.textContent = item.note;
+                card.appendChild(note);
+            }
+
+            const price = document.createElement("div");
+            price.className = "itemHours";
+            price.appendChild(hourGlyph());
+            price.appendChild(document.createTextNode(hoursLabel(item.hours)));
+            card.appendChild(price);
+
+            card.addEventListener("click", () => openOrder(item.id));
+            cards.push(card);
+            fragment.appendChild(card);
+        });
+
+        grid.appendChild(fragment);
+        block.appendChild(grid);
+        sectionsHost.appendChild(block);
+    });
+}
+
+// region picker
+const REGION_KEY = "zoneoutRegion";
+const DEFAULT_REGION = "global";
+
+function readRegion() {
+    let stored = null;
+    try {
+        stored = localStorage.getItem(REGION_KEY);
+    } catch {
+    }
+    return SHOP_REGIONS.some(entry => entry.id === stored) ? stored : DEFAULT_REGION;
+}
+
+let region = readRegion();
+
+function regionName(id) {
+    const entry = SHOP_REGIONS.find(candidate => candidate.id === id);
+    return entry ? entry.name : "Global";
+}
+
+function paintRegionButton() {
+    regionBtn.textContent = "Region: " + regionName(region);
+}
+
+function buildRegionMenu() {
+    regionMenu.replaceChildren();
+
+    SHOP_REGIONS.forEach(entry => {
+        const option = document.createElement("button");
+        option.className = "regionOption";
+        option.type = "button";
+        option.setAttribute("role", "menuitemradio");
+        option.setAttribute("aria-checked", String(entry.id === region));
+        option.textContent = entry.name;
+        option.addEventListener("click", () => selectRegion(entry.id));
+        regionMenu.appendChild(option);
+    });
+}
+
+function openRegionMenu() {
+    buildRegionMenu();
+    regionMenu.hidden = false;
+    regionBtn.setAttribute("aria-expanded", "true");
+
+    const first = regionMenu.querySelector('[aria-checked="true"]') || regionMenu.firstElementChild;
+    if (first) first.focus();
+}
+
+function closeRegionMenu(refocus) {
+    regionMenu.hidden = true;
+    regionBtn.setAttribute("aria-expanded", "false");
+    if (refocus) regionBtn.focus();
+}
+
+function selectRegion(id) {
+    region = id;
+
+    try {
+        localStorage.setItem(REGION_KEY, id);
+    } catch {
     }
 
-    const price = document.createElement("div");
-    price.className = "itemHours";
-    price.appendChild(hourGlyph());
-    price.appendChild(document.createTextNode(hoursLabel(item.hours)));
-    card.appendChild(price);
+    paintRegionButton();
+    renderSections();
+    closeRegionMenu(true);
 
-    card.addEventListener("click", () => openOrder(item.id));
-    cards.push(card);
-    fragment.appendChild(card);
+    if (openItem && !itemInRegion(openItem, region)) closeOrder();
+}
+
+regionBtn.addEventListener("click", () => {
+    if (regionMenu.hidden) openRegionMenu();
+    else closeRegionMenu(true);
 });
 
-grid.appendChild(fragment);
+document.addEventListener("mousedown", (e) => {
+    if (regionMenu.hidden) return;
+    if (e.target.closest(".regionWrap")) return;
+    closeRegionMenu(false);
+});
+
+paintRegionButton();
+renderSections();
 
 // keyboard
-function columnCount() {
+function columnCount(card) {
+    const grid = card ? card.closest(".shopGrid") : sectionsHost.querySelector(".shopGrid");
+    if (!grid) return 1;
+
     const tracks = getComputedStyle(grid).gridTemplateColumns;
     if (!tracks || tracks === "none") return 1;
     return Math.max(tracks.trim().split(/\s+/).length, 1);
@@ -812,6 +1156,7 @@ const ARROWS = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: 0, ArrowDown: 0 };
 
 document.addEventListener("keydown", (e) => {
     if (anyModalOpen()) return;
+    if (!regionMenu.hidden) return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
 
     const active = document.activeElement;
@@ -828,7 +1173,8 @@ document.addEventListener("keydown", (e) => {
             return;
         }
 
-        const step = ARROWS[e.key] || (e.key === "ArrowDown" ? columnCount() : -columnCount());
+        const columns = columnCount(cards[at]);
+        const step = ARROWS[e.key] || (e.key === "ArrowDown" ? columns : -columns);
         focusCard(at + step);
         return;
     }
@@ -843,10 +1189,10 @@ document.addEventListener("keydown", (e) => {
         focusCard(cards.length - 1);
     } else if (e.key === "PageDown") {
         e.preventDefault();
-        focusCard(at + columnCount() * 3);
+        focusCard(at + columnCount(cards[at]) * 3);
     } else if (e.key === "PageUp") {
         e.preventDefault();
-        focusCard(at - columnCount() * 3);
+        focusCard(at - columnCount(cards[at]) * 3);
     }
 });
 
@@ -961,7 +1307,8 @@ function openOrder(itemId) {
 
     orderName.textContent = item.name + (item.note ? " (" + item.note + ")" : "");
 
-    orderDesc.textContent = item.description || "";
+    paintDescription(item.description || "");
+    orderWarning.hidden = !item.local;
 
     orderArt.textContent = "";
     orderArt.appendChild(artwork(item, "orderImage"));
@@ -1082,7 +1429,10 @@ modal.addEventListener("mousedown", (e) => {
 document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
 
-    if (modal.classList.contains("show")) {
+    if (!regionMenu.hidden) {
+        e.preventDefault();
+        closeRegionMenu(true);
+    } else if (modal.classList.contains("show")) {
         e.preventDefault();
         closeOrder();
     } else if (suggestModal.classList.contains("show")) {
@@ -1236,7 +1586,7 @@ function playClick() {
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.closest(".itemCard, .camNode, .backBtn, .modalClose")) playClick();
+    if (e.target.closest(".itemCard, .camNode, .backBtn, .modalClose, .regionOption")) playClick();
 });
 
 function resumeAudio() {
@@ -1336,7 +1686,7 @@ backBtn.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !anyModalOpen()) goBack();
+    if (e.key === "Escape" && !anyModalOpen() && regionMenu.hidden) goBack();
 });
 
 refreshBalance();
