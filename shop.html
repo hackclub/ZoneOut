@@ -306,7 +306,7 @@ animation:rgbShift 3.4s infinite steps(1);
 
 .glitchText.rgbGlitch::before{
 left:4px;
-color:rgb(var(--glitchRedHot));
+color:rgb(var(--rgbGlitchRed));
 text-shadow:none;
 mix-blend-mode:screen;
 animation:glitch1 1.7s infinite linear alternate-reverse;
@@ -314,7 +314,7 @@ animation:glitch1 1.7s infinite linear alternate-reverse;
 
 .glitchText.rgbGlitch::after{
 left:-4px;
-color:rgb(var(--glitchCyanHot));
+color:rgb(var(--rgbGlitchCyan));
 text-shadow:none;
 mix-blend-mode:screen;
 animation:glitch2 1.7s infinite linear alternate-reverse;
@@ -354,23 +354,23 @@ animation:hallowFlicker 9s infinite;
 @keyframes hallowFlicker{
 0%,100%{color:rgba(var(--fg),0.86);text-shadow:none;}
 11.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
-12%{color:rgb(var(--pumpkin));text-shadow:0 0 14px rgba(var(--pumpkinGlow),0.75);}
-14%{color:rgb(var(--pumpkin));text-shadow:0 0 14px rgba(var(--pumpkinGlow),0.75);}
+12%{color:rgb(var(--hallowText));text-shadow:0 0 14px rgba(var(--hallowTextGlow),0.75);}
+14%{color:rgb(var(--hallowText));text-shadow:0 0 14px rgba(var(--hallowTextGlow),0.75);}
 14.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 29.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 30%{color:rgba(var(--fg),0.32);text-shadow:none;}
-31%{color:rgb(var(--pumpkinDeep));text-shadow:0 0 18px rgba(var(--pumpkinGlow),0.6);}
+31%{color:rgb(var(--hallowTextDeep));text-shadow:0 0 18px rgba(var(--hallowTextGlow),0.6);}
 31.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 52.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
-53%{color:rgb(var(--pumpkinSoft));text-shadow:0 0 12px rgba(var(--pumpkinGlow2),0.7);}
-56%{color:rgb(var(--pumpkinSoft));text-shadow:0 0 12px rgba(var(--pumpkinGlow2),0.7);}
+53%{color:rgb(var(--hallowTextSoft));text-shadow:0 0 12px rgba(var(--hallowTextGlow2),0.7);}
+56%{color:rgb(var(--hallowTextSoft));text-shadow:0 0 12px rgba(var(--hallowTextGlow2),0.7);}
 56.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 68.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 69%{color:rgba(var(--fg),0.3);text-shadow:none;}
 69.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 87.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
-88%{color:rgb(var(--pumpkin));text-shadow:0 0 16px rgba(var(--pumpkinGlow),0.8);}
-89%{color:rgb(var(--pumpkin));text-shadow:0 0 16px rgba(var(--pumpkinGlow),0.8);}
+88%{color:rgb(var(--hallowText));text-shadow:0 0 16px rgba(var(--hallowTextGlow),0.8);}
+89%{color:rgb(var(--hallowText));text-shadow:0 0 16px rgba(var(--hallowTextGlow),0.8);}
 89.5%{color:rgba(var(--fg),0.86);text-shadow:none;}
 }
 
@@ -458,6 +458,37 @@ box-shadow:0 0 12px rgba(var(--pumpkinEmberDeep),0.14), inset 0 0 20px rgba(var(
 .itemCard.hallowCard:focus-visible{
 border-color:rgba(var(--pumpkinHot),0.6);
 box-shadow:0 0 20px rgba(var(--pumpkinEmber),0.26), inset 0 0 22px rgba(var(--pumpkinEmber),0.08);
+}
+
+/* HALLOWEEN ORDER DIALOG */
+.modalCard.hallowModal{
+border-color:rgba(var(--pumpkinBorder),0.55);
+box-shadow:0 0 26px rgba(var(--pumpkinEmber),0.24), inset 0 0 34px rgba(var(--pumpkinEmberDeep),0.09);
+}
+
+.modalCard.hallowModal .orderName{
+color:rgb(var(--hallowText));
+text-shadow:0 0 14px rgba(var(--hallowTextGlow),0.55);
+}
+
+.modalCard.hallowModal .orderCost,
+.modalCard.hallowModal .hourMark{
+color:rgba(var(--hallowTextSoft),0.9);
+}
+
+.modalCard.hallowModal .modalClose:hover,
+.modalCard.hallowModal .modalClose:focus-visible{
+color:rgb(var(--hallowText));
+}
+
+.modalCard.hallowModal #orderBtn{
+border-color:rgba(var(--pumpkinHot),0.6);
+}
+
+.modalCard.hallowModal #orderBtn:hover:not(:disabled),
+.modalCard.hallowModal #orderBtn:focus-visible:not(:disabled){
+border-color:rgb(var(--pumpkinHot));
+box-shadow:0 0 18px rgba(var(--pumpkinEmber),0.3);
 }
 
 .itemImage{
@@ -897,6 +928,7 @@ const sectionsHost = document.getElementById("shopSections");
 const balanceValue = document.getElementById("balanceValue");
 
 const modal = document.getElementById("orderModal");
+const orderCard = modal.querySelector(".modalCard");
 const orderName = document.getElementById("orderName");
 const orderCost = document.getElementById("orderCost");
 const orderDesc = document.getElementById("orderDesc");
@@ -1128,6 +1160,59 @@ regionBtn.addEventListener("click", () => {
     else closeRegionMenu(true);
 });
 
+// popup and dialog keys
+function focusStep(list, delta) {
+    const items = Array.from(list).filter(el => !el.disabled && el.getClientRects().length > 0);
+    if (!items.length) return;
+
+    const at = items.indexOf(document.activeElement);
+    const next = at === -1
+        ? (delta > 0 ? 0 : items.length - 1)
+        : (at + delta + items.length) % items.length;
+
+    items[next].focus();
+}
+
+function focusEnd(list, last) {
+    const items = Array.from(list).filter(el => !el.disabled && el.getClientRects().length > 0);
+    if (!items.length) return;
+    items[last ? items.length - 1 : 0].focus();
+}
+
+function dialogControls(dialog) {
+    return dialog.querySelectorAll("button, a[href]");
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+
+    if (!regionMenu.hidden) {
+        if (step) { e.preventDefault(); focusStep(regionMenu.children, step); }
+        else if (e.key === "Home") { e.preventDefault(); focusEnd(regionMenu.children, false); }
+        else if (e.key === "End") { e.preventDefault(); focusEnd(regionMenu.children, true); }
+        return;
+    }
+
+    if (document.activeElement === regionBtn && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+        e.preventDefault();
+        openRegionMenu();
+        return;
+    }
+
+    if (!anyModalOpen()) return;
+
+    const tag = document.activeElement ? document.activeElement.tagName : "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+    const dialog = modal.classList.contains("show") ? modal : suggestModal;
+
+    if (step) { e.preventDefault(); focusStep(dialogControls(dialog), step); }
+    else if (e.key === "Home") { e.preventDefault(); focusEnd(dialogControls(dialog), false); }
+    else if (e.key === "End") { e.preventDefault(); focusEnd(dialogControls(dialog), true); }
+});
+
 document.addEventListener("mousedown", (e) => {
     if (regionMenu.hidden) return;
     if (e.target.closest(".regionWrap")) return;
@@ -1304,6 +1389,8 @@ function openOrder(itemId) {
 
     openItem = item;
     returnFocus = document.activeElement;
+
+    orderCard.classList.toggle("hallowModal", item.section === "halloween");
 
     orderName.textContent = item.name + (item.note ? " (" + item.note + ")" : "");
 

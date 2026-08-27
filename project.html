@@ -185,6 +185,20 @@ letter-spacing:2px;
 opacity:0.4;
 }
 
+.activeHours{
+display:flex;
+align-items:center;
+gap:7px;
+margin-top:6px;
+font-size:12px;
+letter-spacing:2px;
+opacity:0.55;
+}
+
+.activeHours[hidden]{
+display:none;
+}
+
 /* PANEL */
 .panel{
 padding:22px;
@@ -389,6 +403,13 @@ gap:16px;
 
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="clockGlyph" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+<path d="M12 6.8V12l3.4 2.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</symbol>
+</svg>
+
 <video autoplay muted loop playsinline disableremoteplayback class="videoBG" id="videoBG">
 <source src="https://cdn.hackclub.com/019d1552-4f0e-7cc9-8b0c-86d538cd897e/glitcheffect.mp4" type="video/mp4">
 </video>
@@ -420,6 +441,10 @@ gap:16px;
 <div>
 <div class="projectTitle" id="viewTitle"></div>
 <div class="projectId" id="viewId"></div>
+<div class="activeHours" id="viewHours" hidden>
+<svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
+<span id="viewHoursValue"></span>
+</div>
 </div>
 </div>
 
@@ -471,6 +496,15 @@ gap:16px;
 <input class="textInput" id="editDemo" type="url" inputmode="url" autocomplete="off"
        placeholder="https://your-demo.example">
 </label>
+
+<div class="formField" id="editHtField">
+<span>LINK HACKATIME PROJECT <span class="optional">(optional)</span></span>
+<div class="htWrap" id="editHtWrap">
+<button class="camNode htBtn" id="editHtBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+<div class="htMenu" id="editHtMenu" role="listbox" aria-label="Hackatime project" hidden></div>
+</div>
+<div class="htNote" id="editHtNote" hidden></div>
+</div>
 
 <div class="formError" id="editError" role="alert"></div>
 
@@ -557,6 +591,157 @@ function paintThumb(el, name) {
     el.style.fontSize = thumbFontSize(name, (width > 40 ? width : 96) - 20) + "px";
 }
 
+// hackatime
+var editHtField = document.getElementById("editHtField");
+var editHtWrap = document.getElementById("editHtWrap");
+var editHtBtn = document.getElementById("editHtBtn");
+var editHtMenu = document.getElementById("editHtMenu");
+var editHtNote = document.getElementById("editHtNote");
+
+var NO_LINK_LABEL = "— none —";
+
+var htChoice = null;
+var htList = null;
+var htListPending = false;
+
+function hoursLine() {
+    var box = document.getElementById("viewHours");
+    var linked = project && project.hackatimeProject;
+
+    box.hidden = !linked;
+    if (!linked) return;
+
+    var hours = Number(project.hackatimeHours) || 0;
+    document.getElementById("viewHoursValue").textContent = hours + " ACTIVE HOURS";
+}
+
+function setHtChoice(name) {
+    htChoice = name || null;
+    editHtBtn.textContent = htChoice || NO_LINK_LABEL;
+    editHtBtn.dataset.empty = htChoice ? "false" : "true";
+}
+
+function showHtNote(message, withLink) {
+    editHtWrap.hidden = true;
+    editHtNote.hidden = false;
+    editHtNote.replaceChildren();
+    editHtNote.appendChild(document.createTextNode(message));
+
+    if (withLink) {
+        editHtNote.appendChild(document.createTextNode(" "));
+        var link = document.createElement("a");
+        link.href = "/api/hackatime/login";
+        link.textContent = "Connect Hackatime";
+        editHtNote.appendChild(link);
+        editHtNote.appendChild(document.createTextNode("."));
+    }
+}
+
+function buildHtMenu() {
+    editHtMenu.replaceChildren();
+
+    var entries = [{ name: null, hours: null }].concat(htList || []);
+
+    entries.forEach(function (entry) {
+        var option = document.createElement("button");
+        option.className = "htOption";
+        option.type = "button";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String((entry.name || null) === htChoice));
+        option.textContent = entry.name || NO_LINK_LABEL;
+
+        if (entry.name) {
+            var hours = document.createElement("span");
+            hours.className = "htHours";
+            hours.textContent = "  " + entry.hours + "h";
+            option.appendChild(hours);
+        }
+
+        // one hackatime project belongs to one zoneout project, this one excepted
+        if (entry.linkedTo && entry.linkedTo.projectId !== (project && project.projectId)) {
+            var taken = document.createElement("span");
+            taken.className = "htTaken";
+            taken.textContent = "  (linked to different project)";
+            option.appendChild(taken);
+            option.disabled = true;
+            option.title = "Already linked to " + entry.linkedTo.name;
+        } else {
+            option.addEventListener("click", function () {
+                setHtChoice(entry.name);
+                closeHtMenu(true);
+            });
+        }
+
+        editHtMenu.appendChild(option);
+    });
+}
+
+function openHtMenu() {
+    buildHtMenu();
+    editHtMenu.hidden = false;
+    editHtBtn.setAttribute("aria-expanded", "true");
+
+    var first = editHtMenu.querySelector('[aria-selected="true"]') || editHtMenu.firstElementChild;
+    if (first) first.focus();
+}
+
+function closeHtMenu(refocus) {
+    if (editHtMenu.hidden) return;
+    editHtMenu.hidden = true;
+    editHtBtn.setAttribute("aria-expanded", "false");
+    if (refocus) editHtBtn.focus();
+}
+
+function htMenuOpen() {
+    return !editHtMenu.hidden;
+}
+
+editHtBtn.addEventListener("click", function () {
+    if (editHtMenu.hidden) openHtMenu();
+    else closeHtMenu(true);
+});
+
+document.addEventListener("mousedown", function (e) {
+    if (editHtMenu.hidden) return;
+    if (e.target.closest(".htWrap")) return;
+    closeHtMenu(false);
+});
+
+// an administrator editing somebody else has no list to offer, and must not reassign the link
+function loadHackatimeProjects() {
+    if (isAdmin) {
+        editHtField.hidden = true;
+        return;
+    }
+
+    editHtField.hidden = false;
+    editHtNote.hidden = true;
+    editHtWrap.hidden = false;
+
+    if (htList || htListPending) return;
+    htListPending = true;
+
+    fetch("/api/hackatime/projects", { credentials: "same-origin" })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (payload) {
+            htListPending = false;
+            if (!payload || !payload.ok) return;
+
+            if (!payload.linked) {
+                showHtNote("Your Hackatime account is not connected.", true);
+                return;
+            }
+
+            htList = payload.projects || [];
+            if (!htList.length) {
+                showHtNote("No Hackatime projects have time logged since the event started.", false);
+                return;
+            }
+            if (!editHtMenu.hidden) buildHtMenu();
+        })
+        .catch(function () { htListPending = false; });
+}
+
 // owner line
 function ownerLine() {
     var name = (project && project.ownerName || "").trim();
@@ -570,6 +755,7 @@ function renderView() {
     paintThumb(document.getElementById("viewThumb"), project.name);
     document.getElementById("viewTitle").textContent = project.name;
     document.getElementById("viewId").textContent = ownerLine();
+    hoursLine();
     document.getElementById("viewDescription").textContent = project.description;
 
     var links = document.getElementById("viewLinks");
@@ -616,6 +802,9 @@ function openEditor() {
     document.getElementById("editRepo").value = project.repoUrl || "";
     document.getElementById("editDemo").value = project.demoUrl || "";
     document.getElementById("editError").textContent = "";
+
+    setHtChoice(project.hackatimeProject || null);
+    loadHackatimeProjects();
 
     show("stateEdit");
     document.getElementById("editName").focus();
@@ -672,6 +861,8 @@ document.getElementById("editForm").addEventListener("submit", function (e) {
         repoUrl: document.getElementById("editRepo").value,
         demoUrl: document.getElementById("editDemo").value
     };
+
+    if (!isAdmin) body.hackatimeProject = htChoice;
 
     if (!body.name.trim() || !body.description.trim()) {
         errorEl.textContent = "A project needs a name and a description.";
@@ -820,11 +1011,43 @@ function controls() {
     if (view) {
         var found = view.querySelectorAll("button, a.projectLink");
         for (var j = 0; j < found.length; j++) {
-            if (!found[j].disabled && found[j].offsetParent !== null) list.push(found[j]);
+            if (!found[j].disabled && found[j].getClientRects().length > 0) list.push(found[j]);
         }
     }
 
+    var gear = document.getElementById("settingsGear");
+    if (gear && document.documentElement.getAttribute("data-gear") === "on") list.push(gear);
+
     return list;
+}
+
+function htOptions() {
+    var options = [];
+    var kids = editHtMenu.children;
+
+    for (var i = 0; i < kids.length; i++) {
+        if (!kids[i].disabled) options.push(kids[i]);
+    }
+
+    return options;
+}
+
+function stepHtMenu(delta) {
+    var options = htOptions();
+    if (!options.length) return;
+
+    var at = options.indexOf(document.activeElement);
+    var next = at === -1
+        ? (delta > 0 ? 0 : options.length - 1)
+        : (at + delta + options.length) % options.length;
+
+    options[next].focus();
+}
+
+function jumpHtMenu(last) {
+    var options = htOptions();
+    if (!options.length) return;
+    options[last ? options.length - 1 : 0].focus();
 }
 
 function stepFocus(delta) {
@@ -851,6 +1074,34 @@ function focusFirstControl() {
 }
 
 document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+    if (htMenuOpen()) {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeHtMenu(true);
+        } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+            e.preventDefault();
+            stepHtMenu(1);
+        } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+            e.preventDefault();
+            stepHtMenu(-1);
+        } else if (e.key === "Home") {
+            e.preventDefault();
+            jumpHtMenu(false);
+        } else if (e.key === "End") {
+            e.preventDefault();
+            jumpHtMenu(true);
+        }
+        return;
+    }
+
+    if (document.activeElement === editHtBtn && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+        e.preventDefault();
+        openHtMenu();
+        return;
+    }
+
     if (e.key === "Escape") {
         if (deleteModalOpen()) {
             closeDeleteModal();

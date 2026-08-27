@@ -215,6 +215,29 @@ function focusMenuEnd(last) {
     options[last ? options.length - 1 : 0].focus();
 }
 
+function cardControls() {
+    var found = card.querySelectorAll("button");
+    var list = [];
+
+    for (var i = 0; i < found.length; i++) {
+        if (!found[i].disabled && found[i].getClientRects().length > 0) list.push(found[i]);
+    }
+
+    return list;
+}
+
+function stepCard(delta) {
+    var list = cardControls();
+    if (!list.length) return;
+
+    var at = list.indexOf(document.activeElement);
+    var next = at === -1
+        ? (delta > 0 ? 0 : list.length - 1)
+        : (at + delta + list.length) % list.length;
+
+    list[next].focus();
+}
+
 // the dialog
 var returnFocus = null;
 var savedOverflow = "";
@@ -322,12 +345,21 @@ document.addEventListener("keydown", function (e) {
         return;
     }
 
+    var step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+
     if (e.key === "Escape") {
         e.preventDefault();
         close();
     } else if (document.activeElement === themeBtn && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
         e.preventDefault();
         openMenu();
+    } else if (step) {
+        e.preventDefault();
+        stepCard(step);
+    } else if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        var list = cardControls();
+        if (list.length) list[e.key === "End" ? list.length - 1 : 0].focus();
     }
 
     e.stopPropagation();

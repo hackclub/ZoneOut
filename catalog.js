@@ -152,3 +152,6 @@ export function findItem(itemId) {
     if (typeof itemId !== "string") return undefined;
     return SHOP_ITEMS.find(item => item.id === itemId);
 }
+
+// hackatime
+export const HACKATIME_SINCE = "2026-08-21";

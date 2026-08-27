@@ -1,5 +1,6 @@
 import { requireUser } from "../../lib/guard.mjs";
 import { createProject, listProjectsForUser, ValidationError } from "../../lib/users.mjs";
+import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape
@@ -11,6 +12,8 @@ function present(project) {
         description: project.description,
         repoUrl: project.repo_url,
         demoUrl: project.demo_url,
+        hackatimeProject: project.hackatime_project ?? null,
+        hackatimeHours: project.hackatime_hours ?? 0,
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };
@@ -52,11 +55,16 @@ export default async function handler(req, res) {
     }
 
     try {
+        // the provider decides whether the link is real, not the form
+        const link = await resolveProjectLink(user, body.hackatimeProject);
+
         const project = await createProject(user.user_id, {
             name: body.name,
             description: body.description,
             repoUrl: body.repoUrl,
-            demoUrl: body.demoUrl
+            demoUrl: body.demoUrl,
+            hackatimeProject: link.hackatimeProject,
+            hackatimeHours: link.hackatimeHours
         });
 
         return res.status(201).json({ ok: true, project: present(project) });

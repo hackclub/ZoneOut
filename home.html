@@ -453,6 +453,20 @@ margin-top:6px;
 text-align:center;
 }
 
+.modalActions.pair{
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+justify-content:center;
+}
+
+.modalText{
+font-size:13px;
+line-height:1.7;
+margin-bottom:22px;
+opacity:0.75;
+}
+
 /* SUB-PAGES */
 .subPage{
 display:none;
@@ -620,6 +634,12 @@ background:rgb(var(--bg));
 <div class="field"><span class="fieldKey">NAME</span><span class="fieldVal" id="fName">—</span></div>
 <div class="field"><span class="fieldKey">EMAIL</span><span class="fieldVal" id="fEmail">—</span></div>
 <div class="field"><span class="fieldKey">SLACK ID</span><span class="fieldVal" id="fSlack">—</span></div>
+<div class="field"><span class="fieldKey">HACKATIME</span><span class="fieldVal" id="fHackatime">—</span></div>
+</div>
+
+<div class="actionRow">
+<button class="camNode" id="htLinkBtn" type="button" hidden>CONNECT HACKATIME</button>
+<button class="camNode" id="htUnlinkBtn" type="button" hidden>UNLINK HACKATIME</button>
 </div>
 
 <div class="actionRow">
@@ -665,12 +685,39 @@ background:rgb(var(--bg));
 <input class="textInput" id="projDemo" type="url" inputmode="url" autocomplete="off" placeholder="https://your-demo.example">
 </label>
 
+<div class="formField">
+<span>LINK HACKATIME PROJECT <span class="optional">(optional)</span></span>
+<div class="htWrap" id="projHtWrap">
+<button class="camNode htBtn" id="projHtBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+<div class="htMenu" id="projHtMenu" role="listbox" aria-label="Hackatime project" hidden></div>
+</div>
+<div class="htNote" id="projHtNote" hidden></div>
+</div>
+
 <div class="formError" id="projError" role="alert"></div>
 
 <div class="modalActions">
 <button class="camNode" id="projSubmit" type="submit">CREATE PROJECT</button>
 </div>
 </form>
+</div>
+</div>
+
+<div class="modalScrim" id="htModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="htModalTitle">
+<button class="modalClose" id="htModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="htModalTitle">CONNECT HACKATIME</div>
+
+<div class="modalText">
+ZoneOut counts the hours you spend building. Connect Hackatime and every project you make
+                    will be linked with your hackatime project.
+</div>
+
+<div class="modalActions pair">
+<button class="camNode" id="htConnect" type="button">CONNECT HACKATIME</button>
+<button class="camNode" id="htLater" type="button">LATER</button>
+</div>
 </div>
 </div>
 
@@ -736,6 +783,7 @@ function render(path) {
     if (path === "/projects") loadProjects();
     if (path === "/error") startDots(); else stopDots();
     if (path === "/home") startSparks(); else stopSparks();
+    if (path === "/home") maybePromptHackatime();
 
     const first = document.querySelector(".state.show .camNode, .state.show .projCard");
     if (first && lastInputWasKeyboard) first.focus();
@@ -1329,6 +1377,7 @@ function openProjectModal() {
     projReturnFocus = document.activeElement;
 
     projForm.reset();
+    setHtChoice(null);
     projError.textContent = "";
     projSubmit.disabled = false;
     projSubmit.textContent = "CREATE PROJECT";
@@ -1338,15 +1387,17 @@ function openProjectModal() {
     requestAnimationFrame(() => projModal.classList.add("show"));
 
     document.body.classList.add("noScroll");
-    setInertBehindModal(true);
+    setInertBehind(true, projModal);
 
+    loadHackatimeProjects();
     projNameInput.focus();
 }
 
 function closeProjectModal() {
     projModal.classList.remove("show");
-    setInertBehindModal(false);
-    document.body.classList.remove("noScroll");
+    closeHtMenu(false);
+    setInertBehind(false, projModal);
+    restoreScroll();
 
     setTimeout(() => { if (!projModalOpen()) projModal.hidden = true; }, 240);
 
@@ -1354,10 +1405,19 @@ function closeProjectModal() {
     projReturnFocus = null;
 }
 
-function setInertBehindModal(on) {
+function setInertBehind(on, dialog) {
     Array.from(document.body.children).forEach(child => {
-        if (child !== projModal && child.tagName !== "SCRIPT") child.inert = on;
+        if (child !== dialog && child.tagName !== "SCRIPT") child.inert = on;
     });
+}
+
+function anyModalOpen() {
+    return projModalOpen() || htModalOpen();
+}
+
+function restoreScroll() {
+    if (anyModalOpen()) return;
+    document.body.classList.toggle("noScroll", currentPath === "/home" || currentPath === "/error");
 }
 
 newProjectBtn.addEventListener("click", openProjectModal);
@@ -1374,7 +1434,8 @@ projForm.addEventListener("submit", (e) => {
         name: projNameInput.value,
         description: document.getElementById("projDescription").value,
         repoUrl: document.getElementById("projRepo").value,
-        demoUrl: document.getElementById("projDemo").value
+        demoUrl: document.getElementById("projDemo").value,
+        hackatimeProject: htChoice
     };
 
     if (!body.name.trim() || !body.description.trim()) {
@@ -1407,6 +1468,7 @@ projForm.addEventListener("submit", (e) => {
             closeProjectModal();
 
             if (result.payload.project) {
+                claimHtProject(result.payload.project);
                 renderProjects([result.payload.project].concat(currentList));
             }
             loadProjects({ force: true });
@@ -1419,19 +1481,360 @@ projForm.addEventListener("submit", (e) => {
         });
 });
 
+// hackatime
+const htModal = document.getElementById("htModal");
+const projHtWrap = document.getElementById("projHtWrap");
+const projHtBtn = document.getElementById("projHtBtn");
+const projHtMenu = document.getElementById("projHtMenu");
+const projHtNote = document.getElementById("projHtNote");
+
+let hackatimeLinked = false;
+let htKnown = false;
+let htChoice = null;
+let htList = null;
+let htListPending = null;
+let htPromptShown = false;
+let htReturnFocus = null;
+
+const NO_LINK_LABEL = "— none —";
+
+function htModalOpen() {
+    return htModal.classList.contains("show");
+}
+
+function openHtModal() {
+    if (htModalOpen() || projModalOpen()) return;
+
+    htReturnFocus = document.activeElement;
+    htModal.hidden = false;
+
+    const raise = () => htModal.classList.add("show");
+    requestAnimationFrame(raise);
+    setTimeout(raise, 60);
+
+    document.body.classList.add("noScroll");
+    setInertBehind(true, htModal);
+
+    document.getElementById("htConnect").focus();
+}
+
+function closeHtModal() {
+    htModal.classList.remove("show");
+    setInertBehind(false, htModal);
+    restoreScroll();
+
+    setTimeout(() => { if (!htModalOpen()) htModal.hidden = true; }, 240);
+
+    if (htReturnFocus && document.contains(htReturnFocus)) htReturnFocus.focus();
+    htReturnFocus = null;
+}
+
+// shown on every visit to /home until the account is connected
+function maybePromptHackatime() {
+    if (!htKnown || hackatimeLinked || htPromptShown) return;
+    if (currentPath !== "/home") return;
+
+    htPromptShown = true;
+    openHtModal();
+}
+
+document.getElementById("htModalClose").addEventListener("click", closeHtModal);
+document.getElementById("htLater").addEventListener("click", closeHtModal);
+document.getElementById("htConnect").addEventListener("click", () => leaveTo("/api/hackatime/login"));
+document.getElementById("htLinkBtn").addEventListener("click", () => leaveTo("/api/hackatime/login"));
+
+htModal.addEventListener("mousedown", (e) => {
+    if (e.target === htModal) closeHtModal();
+});
+
+// the picker in the create form
+function setHtChoice(name) {
+    htChoice = name || null;
+    projHtBtn.textContent = htChoice || NO_LINK_LABEL;
+    projHtBtn.dataset.empty = htChoice ? "false" : "true";
+}
+
+function showHtNote(message, withLink) {
+    projHtWrap.hidden = true;
+    projHtNote.hidden = false;
+    projHtNote.replaceChildren();
+    projHtNote.appendChild(document.createTextNode(message));
+
+    if (withLink) {
+        projHtNote.appendChild(document.createTextNode(" "));
+        const link = document.createElement("a");
+        link.href = "/api/hackatime/login";
+        link.textContent = "Connect Hackatime";
+        projHtNote.appendChild(link);
+        projHtNote.appendChild(document.createTextNode("."));
+    }
+}
+
+function showHtPicker() {
+    projHtNote.hidden = true;
+    projHtWrap.hidden = false;
+}
+
+function buildHtMenu() {
+    projHtMenu.replaceChildren();
+
+    const entries = [{ name: null, hours: null }].concat(htList || []);
+
+    entries.forEach(entry => {
+        const option = document.createElement("button");
+        option.className = "htOption";
+        option.type = "button";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String((entry.name || null) === htChoice));
+        option.textContent = entry.name || NO_LINK_LABEL;
+
+        if (entry.name) {
+            const hours = document.createElement("span");
+            hours.className = "htHours";
+            hours.textContent = "  " + entry.hours + "h";
+            option.appendChild(hours);
+        }
+
+        // one hackatime project belongs to one zoneout project
+        if (entry.linkedTo) {
+            const taken = document.createElement("span");
+            taken.className = "htTaken";
+            taken.textContent = "  (linked to different project)";
+            option.appendChild(taken);
+            option.disabled = true;
+            option.title = "Already linked to " + entry.linkedTo.name;
+        } else {
+            option.addEventListener("click", () => {
+                setHtChoice(entry.name);
+                closeHtMenu(true);
+            });
+        }
+
+        projHtMenu.appendChild(option);
+    });
+}
+
+// the cached list would otherwise still offer the name this project just took
+function claimHtProject(created) {
+    if (!created.hackatimeProject || !htList) return;
+
+    const entry = htList.find(item => item.name.toLowerCase() === created.hackatimeProject.toLowerCase());
+    if (entry) entry.linkedTo = { projectId: created.projectId, name: created.name };
+}
+
+function openHtMenu() {
+    buildHtMenu();
+    projHtMenu.hidden = false;
+    projHtBtn.setAttribute("aria-expanded", "true");
+
+    const first = projHtMenu.querySelector('[aria-selected="true"]') || projHtMenu.firstElementChild;
+    if (first) first.focus();
+}
+
+function closeHtMenu(refocus) {
+    if (projHtMenu.hidden) return;
+    projHtMenu.hidden = true;
+    projHtBtn.setAttribute("aria-expanded", "false");
+    if (refocus) projHtBtn.focus();
+}
+
+projHtBtn.addEventListener("click", () => {
+    if (projHtMenu.hidden) openHtMenu();
+    else closeHtMenu(true);
+});
+
+document.addEventListener("mousedown", (e) => {
+    if (projHtMenu.hidden) return;
+    if (e.target.closest(".htWrap")) return;
+    closeHtMenu(false);
+});
+
+// fetched on first use, so a visitor who never creates a project never pays for it
+function loadHackatimeProjects() {
+    if (!hackatimeLinked) {
+        showHtNote("Your Hackatime account is not connected.", true);
+        return;
+    }
+
+    showHtPicker();
+    if (htList || htListPending) return;
+
+    htListPending = fetch("/api/hackatime/projects", { credentials: "same-origin" })
+        .then(response => response.ok ? response.json() : null)
+        .then(payload => {
+            htListPending = null;
+            if (!payload || !payload.ok) return;
+
+            if (!payload.linked) {
+                hackatimeLinked = false;
+                showHtNote("Your Hackatime account is not connected.", true);
+                return;
+            }
+
+            htList = payload.projects || [];
+            if (!htList.length) {
+                showHtNote("No Hackatime projects have time logged since the event started.", false);
+                return;
+            }
+            if (!projHtMenu.hidden) buildHtMenu();
+        })
+        .catch(() => { htListPending = null; });
+}
+
+// the periodic refresh
+function syncHackatime() {
+    if (!hackatimeLinked) return;
+
+    fetch("/api/hackatime/sync", { method: "POST", credentials: "same-origin" })
+        .then(response => response.ok ? response.json() : null)
+        .then(payload => {
+            if (!payload || !payload.ok || !payload.projects || !payload.projects.length) return;
+            applyHours(payload.projects);
+        })
+        .catch(() => {  });
+}
+
+function applyHours(rows) {
+    // the stash is authoritative; currentList is empty until the board has been drawn once
+    const cache = window.__projectCache;
+    const source = cache && Array.isArray(cache.list) ? cache.list : null;
+    if (!source || !source.length) return;
+
+    const hours = new Map(rows.map(row => [row.projectId, row.hackatimeHours]));
+
+    const merged = source.map(project => (
+        hours.has(project.projectId)
+            ? Object.assign({}, project, { hackatimeHours: hours.get(project.projectId) })
+            : project
+    ));
+
+    stashProjects(currentUserId, merged);
+    if (currentPath === "/projects") renderProjects(merged);
+}
+
+// the profile row
+function paintHackatime() {
+    put("fHackatime", hackatimeLinked ? "linked" : "not linked");
+    document.getElementById("htLinkBtn").hidden = hackatimeLinked;
+    document.getElementById("htUnlinkBtn").hidden = !hackatimeLinked;
+}
+
+document.getElementById("htUnlinkBtn").addEventListener("click", () => {
+    const button = document.getElementById("htUnlinkBtn");
+    button.disabled = true;
+
+    fetch("/api/hackatime/unlink", { method: "POST", credentials: "same-origin" })
+        .then(response => {
+            button.disabled = false;
+            if (!response.ok) { showToast("Could not unlink Hackatime."); return; }
+
+            hackatimeLinked = false;
+            htList = null;
+            paintHackatime();
+            showToast("Hackatime disconnected.");
+        })
+        .catch(() => {
+            button.disabled = false;
+            showToast("Could not reach ZoneOut.");
+        });
+});
+
+// the message the callback leaves behind
+function flushHackatimeNotice() {
+    const params = new URLSearchParams(location.search);
+    const code = params.get("ht");
+    if (!code) return;
+
+    params.delete("ht");
+    const query = params.toString();
+    history.replaceState(history.state, "", location.pathname + (query ? "?" + query : ""));
+
+    const messages = {
+        linked: "Hackatime connected.",
+        denied: "Hackatime was not connected.",
+        state: "That link expired. Try again.",
+        failed: "Hackatime could not be reached."
+    };
+    showToast(messages[code] || "Hackatime could not be reached.");
+}
+
 // keyboard
 function focusables() {
-    return Array.from(document.querySelectorAll(".state.show .camNode, .state.show .projCard"))
-                .concat([backBtn]);
+    const list = Array.from(document.querySelectorAll(".state.show .camNode, .state.show .projCard"))
+                      .concat([backBtn]);
+
+    const gear = document.getElementById("settingsGear");
+    if (gear && document.documentElement.getAttribute("data-gear") === "on") list.push(gear);
+
+    return list.filter(el => el && !el.disabled && el.getClientRects().length > 0);
+}
+
+function dialogControls(dialog) {
+    return Array.from(dialog.querySelectorAll("button, a[href]"))
+                .filter(el => !el.disabled && el.getClientRects().length > 0);
+}
+
+function stepThrough(items, delta) {
+    if (!items.length) return;
+
+    const at = items.indexOf(document.activeElement);
+    const next = at === -1
+        ? (delta > 0 ? 0 : items.length - 1)
+        : (at + delta + items.length) % items.length;
+
+    items[next].focus();
+}
+
+function jumpTo(items, last) {
+    if (!items.length) return;
+    items[last ? items.length - 1 : 0].focus();
 }
 
 document.addEventListener("keydown", (e) => {
     if (window.zoneoutSettings && window.zoneoutSettings.isOpen()) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
 
-    if (projModalOpen()) {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+
+    if (!projHtMenu.hidden) {
         if (e.key === "Escape") {
             e.preventDefault();
-            closeProjectModal();
+            closeHtMenu(true);
+        } else if (step) {
+            e.preventDefault();
+            stepThrough(Array.from(projHtMenu.children).filter(el => !el.disabled), step);
+        } else if (e.key === "Home" || e.key === "End") {
+            e.preventDefault();
+            jumpTo(Array.from(projHtMenu.children).filter(el => !el.disabled), e.key === "End");
+        }
+        return;
+    }
+
+    if (anyModalOpen()) {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            if (projModalOpen()) closeProjectModal();
+            else closeHtModal();
+            return;
+        }
+
+        const editing = document.activeElement;
+        if (editing === projHtBtn && step) {
+            e.preventDefault();
+            openHtMenu();
+            return;
+        }
+
+        if (editing && (editing.tagName === "INPUT" || editing.tagName === "TEXTAREA")) return;
+
+        const dialog = projModalOpen() ? projModal : htModal;
+
+        if (step) {
+            e.preventDefault();
+            stepThrough(dialogControls(dialog), step);
+        } else if (e.key === "Home" || e.key === "End") {
+            e.preventDefault();
+            jumpTo(dialogControls(dialog), e.key === "End");
         }
         return;
     }
@@ -1442,22 +1845,16 @@ document.addEventListener("keydown", (e) => {
         return;
     }
 
-    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-    if (!step) return;
-
     const editing = document.activeElement;
     if (editing && (editing.tagName === "INPUT" || editing.tagName === "TEXTAREA")) return;
 
-    const items = focusables();
-    if (!items.length) return;
-
-    e.preventDefault();
-    const at = items.indexOf(document.activeElement);
-    const next = at === -1
-        ? (step > 0 ? 0 : items.length - 1)
-        : (at + step + items.length) % items.length;
-
-    items[next].focus();
+    if (step) {
+        e.preventDefault();
+        stepThrough(focusables(), step);
+    } else if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        jumpTo(focusables(), e.key === "End");
+    }
 });
 
 // log out
@@ -1535,10 +1932,18 @@ async function load() {
     put("fEmail", user.email);
     put("fSlack", user.slackId || "not linked");
 
+    hackatimeLinked = Boolean(user.hackatimeLinked);
+    htKnown = true;
+    paintHackatime();
+
     adoptProjects(user.userId, user.name, payload.projects);
 
     stopLoading();
     if (currentPath === null) render(pathOf(location.pathname));
+
+    flushHackatimeNotice();
+    syncHackatime();
+    maybePromptHackatime();
 }
 
 // entry

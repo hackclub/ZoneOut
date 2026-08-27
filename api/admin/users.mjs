@@ -30,6 +30,7 @@ export function presentUsers(rows) {
         name: row.name,
         email: row.email,
         status: row.status,
+        hackatimeLinked: Boolean(row.hackatime_linked),
         balanceHours: row.balance_hours,
         isBanned: row.is_banned,
         banReason: row.ban_reason,

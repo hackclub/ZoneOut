@@ -2,6 +2,7 @@ import { readSession } from "../../lib/session.mjs";
 import { requireUser, resolveAdmin } from "../../lib/guard.mjs";
 import { getProjectById, updateProjectForUser, deleteProjectForUser, updateProjectAsAdmin, deleteProjectAsAdmin, ValidationError } from "../../lib/users.mjs";
 import { isAdminEmail } from "../../lib/admin.mjs";
+import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape
@@ -13,6 +14,8 @@ function present(project, ownerName) {
         description: project.description,
         repoUrl: project.repo_url,
         demoUrl: project.demo_url,
+        hackatimeProject: project.hackatime_project ?? null,
+        hackatimeHours: project.hackatime_hours ?? 0,
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };
@@ -90,7 +93,14 @@ async function edit(req, res, projectId) {
     };
 
     try {
-        let project = await updateProjectForUser(projectId, user.user_id, fields);
+        // the provider decides whether the link is real, not the form
+        const link = await resolveProjectLink(user, body.hackatimeProject, projectId);
+
+        let project = await updateProjectForUser(projectId, user.user_id, {
+            ...fields,
+            hackatimeProject: link.hackatimeProject,
+            hackatimeHours: link.hackatimeHours
+        });
         let ownerName = user.name;
 
         if (!project && isAdminEmail(user.email)) {

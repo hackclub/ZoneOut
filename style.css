@@ -52,6 +52,14 @@
 --glitchCyan:0,255,255;
 --glitchRedHot:255,0,68;
 --glitchCyanHot:0,255,240;
+/* FIXED EFFECT COLOURS, NEVER THEMED */
+--rgbGlitchRed:255,0,68;
+--rgbGlitchCyan:0,255,240;
+--hallowText:232,151,74;
+--hallowTextSoft:224,160,102;
+--hallowTextDeep:224,135,58;
+--hallowTextGlow:220,130,60;
+--hallowTextGlow2:210,145,85;
 /* HALLOWEEN CARDS */
 --pumpkin:232,151,74;
 --pumpkinSoft:224,160,102;
@@ -1072,6 +1080,10 @@ text-shadow:0 0 8px rgb(var(--fg));
 box-shadow:0 0 14px rgba(var(--fg),0.45);
 }
 
+.camNode[hidden]{
+display:none;
+}
+
 .camNode:disabled{
 opacity:0.4;
 border-color:rgba(var(--fg),0.4);
@@ -1223,6 +1235,116 @@ width:1em;
 height:1em;
 flex:none;
 vertical-align:-0.14em;
+}
+
+/* HACKATIME PICKER */
+.htWrap{
+position:relative;
+}
+
+.htBtn{
+display:block;
+width:100%;
+text-align:left;
+padding:10px 12px;
+font-size:13px;
+letter-spacing:2px;
+white-space:normal;
+background:rgba(var(--panelBot),0.9);
+border:1px solid rgba(var(--accent),0.35);
+border-radius:4px;
+}
+
+.htBtn::after{
+content:" \25BE";
+opacity:0.6;
+}
+
+.htBtn[data-empty="true"]{
+opacity:0.55;
+}
+
+.htMenu{
+position:absolute;
+top:calc(100% + 6px);
+left:0;
+right:0;
+z-index:6;
+display:flex;
+flex-direction:column;
+max-height:220px;
+overflow-y:auto;
+background:rgba(var(--menuBg),0.96);
+border:1px solid rgba(var(--accent),0.35);
+border-radius:6px;
+box-shadow:0 0 18px rgba(var(--accentGlow),0.25), 0 18px 40px rgba(var(--bg),0.7);
+}
+
+.htMenu[hidden]{
+display:none;
+}
+
+.htOption{
+background:none;
+border:none;
+color:rgb(var(--fg));
+text-align:left;
+padding:9px 14px;
+font-size:12px;
+letter-spacing:2px;
+opacity:0.7;
+transition:background .16s ease, opacity .16s ease;
+}
+
+.htOption:hover,
+.htOption:focus-visible{
+outline:none;
+opacity:1;
+background:rgba(var(--accent),0.16);
+}
+
+.htOption[aria-selected="true"]{
+opacity:1;
+background:rgba(var(--accent),0.1);
+}
+
+.htOption[aria-selected="true"]::before{
+content:">> ";
+}
+
+.htOption .htHours{
+opacity:0.55;
+}
+
+.htOption:disabled{
+opacity:0.4;
+cursor:not-allowed;
+}
+
+.htOption:disabled:hover{
+background:none;
+opacity:0.4;
+}
+
+.htOption .htTaken{
+font-style:italic;
+font-size:10px;
+letter-spacing:1px;
+opacity:0.75;
+}
+
+.htNote{
+padding:10px 12px;
+font-size:12px;
+line-height:1.6;
+letter-spacing:1px;
+opacity:0.6;
+border:1px dashed rgba(var(--accent),0.35);
+border-radius:4px;
+}
+
+.htNote a{
+color:rgb(var(--accentLink));
 }
 
 /* SIGNED-OUT LOGIN BAR */

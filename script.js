@@ -512,9 +512,14 @@ function isTyping() {
     return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 }
 
+function gearFocused() {
+    const gear = document.getElementById("settingsGear");
+    return Boolean(gear) && document.activeElement === gear;
+}
+
 document.addEventListener("keydown", (e) => {
     if (screen !== "menu") return;
-    if (settingsOpen() || isTyping()) return;
+    if (settingsOpen() || isTyping() || gearFocused()) return;
 
     if (e.key === "ArrowDown") {
         index = (index + 1) % options.length;
@@ -736,7 +741,7 @@ faqNodes.forEach((node, i) => {
 
 document.addEventListener("keydown", (e) => {
     if (screen !== "faq") return;
-    if (settingsOpen() || isTyping()) return;
+    if (settingsOpen() || isTyping() || gearFocused()) return;
 
     const cols = faqColumns();
     let handled = true;
