@@ -1686,7 +1686,7 @@ backBtn.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !anyModalOpen() && regionMenu.hidden) goBack();
+    if (e.key === "Escape" && !e.defaultPrevented && !anyModalOpen() && regionMenu.hidden) goBack();
 });
 
 refreshBalance();
