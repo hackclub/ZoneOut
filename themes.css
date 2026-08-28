@@ -148,6 +148,17 @@ html[data-theme="fnaf"] .orderImage{
 filter:none;
 }
 
+/* HERO BACKDROP */
+html[data-theme="fnaf"] .hero > .overlay,
+html[data-theme="fnaf"] .hero > .scanlines,
+html[data-theme="fnaf"] .hero > .vignette{
+display:none;
+}
+
+html[data-theme="fnaf"] #heroVideo{
+filter:none;
+}
+
 /* HALLOWEEN */
 html[data-theme="halloween"]{
 /* SURFACES */
@@ -231,10 +242,83 @@ html[data-theme="halloween"] input[type="range"]{
 accent-color:#f59e42;
 }
 
-/* SHOP HALLOWEEN CARDS */
-html[data-theme="halloween"] .itemCard.hallowCard{
+/* HALLOWEEN CARDS KEEP THEIR PALETTE UNDER EVERY THEME */
+.itemCard.hallowCard,
+.modalCard.hallowModal{
+/* SURFACES */
+--bg:8,4,2;
+--panelTop:58,22,6;
+--panelBot:14,8,4;
+--panelTopAlt:74,30,8;
+--panelBotAlt:18,10,5;
+--surface:20,12,7;
+--surfaceAlt:32,19,10;
+--menuBg:16,9,5;
+--camHover:56,32,16;
+--haze:120,40,0;
+--hazeShop:140,48,0;
+/* FOREGROUND */
+--fg:255,244,230;
+--glow1:255,205,140;
+--glow2:255,205,140;
+--glow3:255,205,140;
+--glow4:255,205,140;
+/* ACCENT */
+--accent:245,158,66;
+--accentBright:255,186,92;
+--accentGlow:200,90,20;
+--accentDeep:255,140,40;
+--accentText:255,214,163;
+--accentTextSoft:255,232,204;
+--accentLink:255,190,110;
+--accentMuted:226,178,124;
+--accentStrong:255,226,186;
+--glassTint:190,95,30;
+/* STATE */
+--danger:255,96,72;
+--dangerSoft:240,60,40;
+--dangerBright:255,130,110;
+--dangerPale:255,214,206;
+--dangerDeep:72,16,10;
+--dangerBan:255,64,48;
+--warn:250,196,48;
+--warnGlow:255,190,70;
+--warnIcon:255,210,110;
+--amber:255,176,60;
+--proceed:178,38,16;
+--quitBg:243,238,230;
+--quitFg:26,16,10;
+/* BRAND AND GLITCH */
+--brandHackclub:214,52,44;
+--brandHackclubHot:255,90,64;
+--brandSlack:120,200,190;
+--linkFaq:255,196,120;
+--glitchRed:255,60,0;
+--glitchCyan:0,220,190;
+--glitchRedHot:255,80,0;
+--glitchCyanHot:0,235,200;
+/* HALLOWEEN CARDS */
+--pumpkin:255,208,92;
+--pumpkinSoft:255,224,150;
+--pumpkinDeep:255,190,60;
+--pumpkinPale:255,240,210;
+--pumpkinGlow:255,200,60;
+--pumpkinGlow2:255,214,120;
+--pumpkinHot:255,236,150;
+--pumpkinBorder:255,214,110;
+--pumpkinEmber:255,180,40;
+--pumpkinEmberDeep:235,160,30;
+}
+
+html .itemCard.hallowCard{
 border-color:rgba(var(--pumpkinBorder),0.75);
 box-shadow:0 0 16px rgba(var(--pumpkinEmber),0.30), inset 0 0 26px rgba(var(--pumpkinEmberDeep),0.10);
+}
+
+html .itemCard.hallowCard:hover,
+html .itemCard.hallowCard:focus-visible{
+border-color:rgba(var(--pumpkinHot),0.75);
+box-shadow:0 0 22px rgba(var(--pumpkinEmber),0.34), inset 0 0 26px rgba(var(--pumpkinEmber),0.10);
 }
 
 /* CURSOR */
