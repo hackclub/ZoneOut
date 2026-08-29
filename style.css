@@ -60,6 +60,9 @@
 --hallowTextDeep:224,135,58;
 --hallowTextGlow:220,130,60;
 --hallowTextGlow2:210,145,85;
+--newFlag:255,80,80;
+--newFlagText:12,0,0;
+--newFlagGlow:255,107,107;
 /* HALLOWEEN CARDS */
 --pumpkin:232,151,74;
 --pumpkinSoft:224,160,102;
@@ -95,6 +98,7 @@ background:rgb(var(--bg));
 color:rgb(var(--fg));
 overflow-x:hidden;
 overflow-y:auto;
+line-height:1.6;
 
 -webkit-text-size-adjust:100%;
 text-size-adjust:100%;
@@ -345,7 +349,7 @@ background:rgba(var(--surface),0.42);
 backdrop-filter:blur(12px);
 -webkit-backdrop-filter:blur(12px);
 color:rgb(var(--fg));
-font-size:14px;
+font-size:15px;
 }
 
 html.dockHidden .volumeDock{
@@ -472,7 +476,7 @@ position:absolute;
 left:6%;
 bottom:26px;
 z-index:10;
-font-size:14px;
+font-size:15px;
 letter-spacing:1px;
 opacity:0.85;
 }
@@ -967,7 +971,7 @@ font-size:24px;
 .volumeDock{
 gap:8px;
 padding:8px 10px;
-font-size:12px;
+font-size:13px;
 }
 
 .volumeDock input[type="range"]{
@@ -980,7 +984,7 @@ min-width:34px;
 
 .footer{
 bottom:max(62px, calc(env(safe-area-inset-bottom) + 62px));
-font-size:12px;
+font-size:13px;
 }
 
 .faqContainer{
@@ -1066,6 +1070,7 @@ color:rgb(var(--fg));
 border:1px solid rgb(var(--fg));
 padding:12px 26px;
 font-size:15px;
+line-height:1.25;
 letter-spacing:4px;
 white-space:nowrap;
 font-family:"Courier New",monospace;
@@ -1110,6 +1115,9 @@ display:flex;
 align-items:flex-start;
 justify-content:center;
 overflow-y:auto;
+overscroll-behavior:contain;
+scrollbar-width:thin;
+scrollbar-color:rgba(var(--accent),0.55) transparent;
 -webkit-overflow-scrolling:touch;
 padding:24px;
 background:rgba(var(--bg),0.86);
@@ -1118,6 +1126,26 @@ backdrop-filter:blur(8px) saturate(120%);
 opacity:0;
 pointer-events:none;
 transition:opacity .22s ease;
+}
+
+.modalScrim::-webkit-scrollbar{
+width:10px;
+}
+
+.modalScrim::-webkit-scrollbar-track{
+background:transparent;
+}
+
+.modalScrim::-webkit-scrollbar-thumb{
+background:rgba(var(--accent),0.45);
+border:3px solid transparent;
+background-clip:content-box;
+border-radius:6px;
+}
+
+.modalScrim::-webkit-scrollbar-thumb:hover{
+background:rgba(var(--accent),0.75);
+background-clip:content-box;
 }
 
 .modalScrim.show{
@@ -1156,21 +1184,29 @@ transform:translateY(0) scale(1);
 .modalClose{
 position:absolute;
 top:10px;
-right:14px;
+right:10px;
+width:42px;
+height:42px;
+display:flex;
+align-items:center;
+justify-content:center;
 background:none;
-border:none;
+border:1px solid transparent;
+border-radius:6px;
 color:rgb(var(--fg));
-font-size:22px;
+font-size:30px;
 line-height:1;
-padding:6px 10px;
-opacity:0.6;
-transition:opacity .2s ease, text-shadow .2s ease;
+padding:0;
+opacity:0.65;
+transition:opacity .2s ease, text-shadow .2s ease, border-color .2s ease, background-color .2s ease;
 }
 
 .modalClose:hover,
 .modalClose:focus-visible{
 outline:none;
 opacity:1;
+border-color:rgba(var(--accent),0.5);
+background:rgba(var(--fg),0.06);
 text-shadow:0 0 8px rgb(var(--fg));
 }
 
@@ -1180,9 +1216,13 @@ display:block;
 margin-bottom:16px;
 }
 
+.formField[hidden]{
+display:none;
+}
+
 .formField > span{
 display:block;
-font-size:11px;
+font-size:12px;
 letter-spacing:3px;
 color:rgba(var(--fg),0.45);
 margin-bottom:6px;
@@ -1201,7 +1241,7 @@ color:rgb(var(--fg));
 border:1px solid rgba(var(--accent),0.35);
 border-radius:4px;
 padding:10px 12px;
-font-size:14px;
+font-size:15px;
 
 cursor:text;
 }
@@ -1225,7 +1265,7 @@ color:rgba(var(--fg),0.28);
 .formError{
 min-height:18px;
 margin:-4px 0 14px;
-font-size:13px;
+font-size:14px;
 line-height:1.5;
 color:rgb(var(--danger));
 }
@@ -1247,7 +1287,7 @@ display:block;
 width:100%;
 text-align:left;
 padding:10px 12px;
-font-size:13px;
+font-size:14px;
 letter-spacing:2px;
 white-space:normal;
 background:rgba(var(--panelBot),0.9);
@@ -1290,7 +1330,7 @@ border:none;
 color:rgb(var(--fg));
 text-align:left;
 padding:9px 14px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.7;
 transition:background .16s ease, opacity .16s ease;
@@ -1328,14 +1368,14 @@ opacity:0.4;
 
 .htOption .htTaken{
 font-style:italic;
-font-size:10px;
+font-size:11px;
 letter-spacing:1px;
 opacity:0.75;
 }
 
 .htNote{
 padding:10px 12px;
-font-size:12px;
+font-size:13px;
 line-height:1.6;
 letter-spacing:1px;
 opacity:0.6;
@@ -1440,7 +1480,7 @@ width:min(440px,100%);
 }
 
 .settingsTitle{
-font-size:13px;
+font-size:14px;
 letter-spacing:5px;
 color:rgba(var(--fg),0.75);
 margin-bottom:22px;
@@ -1454,7 +1494,7 @@ flex-wrap:wrap;
 }
 
 .settingsLabel{
-font-size:13px;
+font-size:14px;
 letter-spacing:3px;
 color:rgba(var(--fg),0.86);
 }
@@ -1471,7 +1511,7 @@ margin-left:auto;
 
 .themeBtn{
 padding:8px 14px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 min-width:150px;
 text-align:left;
@@ -1507,7 +1547,7 @@ border:none;
 color:rgb(var(--fg));
 text-align:left;
 padding:9px 14px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.7;
 transition:background .16s ease, opacity .16s ease;

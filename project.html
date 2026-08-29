@@ -66,6 +66,7 @@ font-family:"Courier New",monospace;
 body{
 background:rgb(var(--bg));
 color:rgb(var(--fg));
+line-height:1.6;
 min-height:100vh;
 min-height:100dvh;
 overflow-x:hidden;
@@ -105,7 +106,7 @@ left:max(20px, calc(env(safe-area-inset-left) + 14px));
 cursor:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%3E%3Cpath%20d='M2%2014s5-7%2012-7%2012%207%2012%207-5%207-12%207S2%2014%202%2014z'%20fill='%23000000'%20stroke='%23ffffff'%20stroke-width='1.6'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='4.8'%20fill='%23ffffff'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='1.7'%20fill='%23000000'/%3E%3C/svg%3E") 14 14, pointer;
 font-size:16px;
 opacity:0.7;
-transition:0.2s;
+transition:opacity .2s ease, transform .2s ease, text-shadow .2s ease;
 z-index:80;
 color:rgb(var(--fg));
 }
@@ -180,7 +181,7 @@ word-break:break-word;
 
 .projectId{
 margin-top:8px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.4;
 }
@@ -190,7 +191,7 @@ display:flex;
 align-items:center;
 gap:7px;
 margin-top:6px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.55;
 }
@@ -216,7 +217,7 @@ box-shadow:0 0 18px rgba(var(--accentGlow),0.18);
 }
 
 .sectionKey{
-font-size:11px;
+font-size:12px;
 letter-spacing:3px;
 color:rgba(var(--fg),0.45);
 margin-bottom:8px;
@@ -241,7 +242,7 @@ gap:12px;
 .projectLink{
 display:inline-block;
 padding:10px 18px;
-font-size:13px;
+font-size:14px;
 letter-spacing:2px;
 color:rgb(var(--accentText));
 text-decoration:none;
@@ -259,7 +260,7 @@ box-shadow:0 0 14px rgba(var(--accentGlow),0.35);
 }
 
 .noLinks{
-font-size:13px;
+font-size:14px;
 letter-spacing:1px;
 opacity:0.4;
 }
@@ -278,7 +279,7 @@ display:none;
 }
 
 .adminNote{
-font-size:11px;
+font-size:12px;
 letter-spacing:2px;
 color:rgb(var(--amber));
 opacity:0.85;
@@ -289,7 +290,7 @@ display:none;
 }
 
 .savedNote{
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.55;
 }
@@ -339,7 +340,7 @@ box-shadow:0 0 14px rgba(var(--dangerSoft),0.45);
 font-size:16px;
 letter-spacing:5px;
 margin-bottom:20px;
-padding-right:30px;
+padding-right:48px;
 }
 
 .modalActions{
@@ -351,7 +352,7 @@ justify-content:center;
 }
 
 .confirmText{
-font-size:14px;
+font-size:15px;
 line-height:1.8;
 margin-bottom:18px;
 word-break:break-word;
@@ -367,7 +368,7 @@ bottom:max(16px, calc(env(safe-area-inset-bottom) + 12px));
 .volumeDock{
 gap:8px;
 padding:8px 10px;
-font-size:12px;
+font-size:13px;
 }
 
 .volumeDock input[type="range"]{

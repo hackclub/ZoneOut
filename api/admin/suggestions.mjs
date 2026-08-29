@@ -29,6 +29,7 @@ function present(rows) {
         suggestionId: row.suggestion_id,
         userId: row.user_id,
         userName: row.user_name,
+        region: row.region,
         itemName: row.item_name,
         reason: row.reason,
         createdAt: row.created_at

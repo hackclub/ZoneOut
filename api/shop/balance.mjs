@@ -1,5 +1,5 @@
 import { readSession } from "../../lib/session.mjs";
-import { getBalanceHours } from "../../lib/shop.mjs";
+import { getBalanceHours, grantsFor } from "../../lib/shop.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -29,7 +29,12 @@ export default async function handler(req, res) {
                 reason: row.ban_reason || "No reason was given."
             });
         }
-        return res.status(200).json({ ok: true, balanceHours: row.balance_hours });
+        return res.status(200).json({
+            ok: true,
+            balanceHours: row.balance_hours,
+            region: row.region ?? null,
+            grants: grantsFor(row)
+        });
     } catch (err) {
         console.error("balance lookup failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });

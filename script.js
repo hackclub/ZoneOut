@@ -604,8 +604,12 @@ function openLogin() {
     window.location.href = "/api/auth/login";
 }
 
-window.addEventListener("pageshow", () => {
+window.addEventListener("pageshow", (e) => {
     if (!loadingTimer) hideLoading();
+    if (!e.persisted) return;
+
+    try { sessionStorage.removeItem("zoneoutFadeIn"); } catch (err) {}
+    screenVeil.classList.remove("on");
 });
 
 // loading interstitial

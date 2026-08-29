@@ -49,6 +49,7 @@ export default async function handler(req, res) {
                 status: user.status,
 
                 balanceHours: user.balance_hours,
+                region: user.region ?? null,
                 hackatimeLinked: Boolean(user.hackatime_user_id)
             },
             projects: user.projects.map(p => ({

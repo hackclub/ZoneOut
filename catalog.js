@@ -6,6 +6,15 @@ export const SHOP_SECTIONS = [
     { id: "games", name: "Fun Games and Plushies!" }
 ];
 
+// new-item label expiry
+const NEW_UNTIL = "2026-08-31T23:59:59Z";
+
+export function itemIsNew(item, now) {
+    if (!item || !item.newUntil) return false;
+    const until = Date.parse(item.newUntil);
+    return Number.isFinite(until) && (now === undefined ? Date.now() : now) < until;
+}
+
 export const SHOP_ITEMS = [
     {
         id: "big-blahaj", fit: "contain", name: "Big Blahaj", hours: 7, section: "games", image: "https://cdn.hackclub.com/01a03ec8-3c66-7650-982f-0031f7fc041a/blahaj.webp",
@@ -89,7 +98,12 @@ export const SHOP_ITEMS = [
     },
     {
         id: "peripherals-grant", name: "Peripherals Grant (20$)", hours: 5, section: "grants", image: "https://cdn.hackclub.com/019d202f-1142-7f3e-9851-d3c3b0ce00ad/perpherals.png", note: "Stackable",
-        description: "To build a more cooler setup and flex it!"
+        description: "To build a more cooler setup and flex it! supports RAM sticks too"
+    },
+    {
+        id: "movie-grant", name: "Movie Grant (5$)", hours: 1, section: "halloween", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/019d2022-bcc0-7c96-bd2d-ad90363804d4/moviegrant.png",
+        description: "Watch any type of movie you like!"
     },
     {
         id: "sticker-pile", name: "Bunch of Stickers", hours: 1, section: "halloween", image: "https://cdn.hackclub.com/019d1fe2-db71-782b-b9d0-60423696377d/pile_of_stickers.png",
@@ -104,10 +118,6 @@ export const SHOP_ITEMS = [
         description: "a very fast NVME. you can store so many pictures and files in this one and QUICK"
     },
     {
-        id: "crucial-p310-1tb", local: true, regions: ["india"], fit: "contain", name: "Crucial P310 1TB NVME SSD", hours: 43, section: "tech", note: "India only", image: "https://cdn.hackclub.com/01a03ed1-0cee-737c-8fd9-7bf1e6abf172/crucial_ind.png",
-        description: "ships for indians only; a pretty good NVME"
-    },
-    {
         id: "keyboard-grant", name: "Keyboard Grant (10$)", hours: 2, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ec8-351c-743b-9507-ad976c6cf2a5/keygrant.png",
         description: "a 10$ grant you can stack to buy any keyboard of your choice!"
     },
@@ -116,7 +126,7 @@ export const SHOP_ITEMS = [
         description: "one of peakest keyboards in existence! I use it daily"
     },
     {
-        id: "phone-grant", name: "Phone Grant (50$)", hours: 12, section: "grants", image: "https://cdn.hackclub.com/01a03ed1-0bb6-739d-b9d8-6258a7922585/samsung.png",
+        id: "phone-grant", name: "Phone Grant (50$)", hours: 11, section: "grants", image: "https://cdn.hackclub.com/01a03ed1-0bb6-739d-b9d8-6258a7922585/samsung.png",
         description: "A 50$ grant to buy any type of phone u want!"
     },
     {
@@ -126,10 +136,46 @@ export const SHOP_ITEMS = [
     {
         id: "pacman-keycaps", local: true, name: "Pacman Keycaps", hours: 3, section: "halloween", note: "OEM/Cherry/XDA only", image: "https://cdn.hackclub.com/01a03ed1-0e05-70a0-8861-2c80406402dc/pacmancaps.png",
         description: "ghostly keycaps from the game we all know and love - Pacman!!"
+    },
+    {
+        id: "crucial-500gb-gen4", local: true, fit: "contain", name: "Crucial 500GB SSD NVMe PCIe Gen4", hours: 28, section: "tech", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a049b5-8931-7fec-afb5-db25c4c0bfbc/crucial_500gb.png",
+        rates: { us: 23, india: 33, uae: 23, canada: 30, eu: 25, australia: 23, uk: 25 },
+        description: "A high performance NVME. High Speed, stores a lot of stuff at once ^_^"
+    },
+    {
+        id: "ssd-usb-enclosure", name: "SSD SATA To USB Encloser", hours: 2.5, section: "tech", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a049b5-8bc2-7d11-b892-03717542ccac/encloser.png",
+        description: "keep your SSD safe by enclosing it inside this case! protective cover."
+    },
+    {
+        id: "completion-grant", name: "Completion Grant (2.5$)", hours: 0.5, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a049b5-8aa0-7ea8-a003-5e512509c5a7/usd.png",
+        access: "cg", newUntil: NEW_UNTIL,
+        description: "This is bought to accomodate any extra funds you need for your item or use it to pay customs or taxes!"
+    },
+    {
+        id: "sata-ssd-2tb", local: true, fit: "contain", name: "SATA SSD 2TB", hours: 33, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["global", "eu", "us", "india", "canada", "uae", "uk"],
+        image: "https://cdn.hackclub.com/01a04d22-9205-7fb6-b69d-5f0cf947719e/WD_2TB.png",
+        rates: { us: 28, india: 27, uae: 22, canada: 34, uk: 32, eu: 25 },
+        description: "A high speed 2.5inch SSD. You can store 2TB worth of data in this one. so peak"
+    },
+    {
+        id: "crucial-1tb-nvme", local: true, fit: "contain", name: "Crucial 1TB NVME SSD", hours: 36, section: "tech", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a04d22-93c1-7daf-9678-409af677843e/crucial_E100_1TB.png",
+        images: {
+            uk: "https://cdn.hackclub.com/01a03ed1-0cee-737c-8fd9-7bf1e6abf172/crucial_ind.png",
+            eu: "https://cdn.hackclub.com/01a03ed1-0cee-737c-8fd9-7bf1e6abf172/crucial_ind.png",
+            australia: "https://cdn.hackclub.com/01a03ed1-0cee-737c-8fd9-7bf1e6abf172/crucial_ind.png"
+        },
+        rates: { us: 32, india: 35, uae: 33, canada: 36, uk: 36, eu: 40, australia: 35 },
+        description: "Another High-End Gen 4 NVME for all of your needs! this one's 1TB! so much space :O"
+    },
+    {
+        id: "storage-grant", name: "Storage Grant (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a04d2b-1a86-7aba-ba27-5c66b34b7642/storage.png",
+        description: "10$ grant to buy a storage device of your choice!"
     }
 ];
 
-// order limits
 // regions
 export const SHOP_REGIONS = [
     { id: "global", name: "Global" },
@@ -137,7 +183,9 @@ export const SHOP_REGIONS = [
     { id: "us", name: "United States" },
     { id: "india", name: "India" },
     { id: "canada", name: "Canada" },
-    { id: "australia", name: "Australia" }
+    { id: "australia", name: "Australia" },
+    { id: "uae", name: "United Arab Emirates" },
+    { id: "uk", name: "United Kingdom" }
 ];
 
 export function itemInRegion(item, regionId) {
@@ -145,7 +193,40 @@ export function itemInRegion(item, regionId) {
     return item.regions.includes(regionId);
 }
 
-export const MAX_QUANTITY = 5;
+export function isRegion(id) {
+    return SHOP_REGIONS.some(entry => entry.id === id);
+}
+
+export function regionName(id) {
+    const entry = SHOP_REGIONS.find(item => item.id === id);
+    return entry ? entry.name : null;
+}
+
+// regional artwork
+export function itemImage(item, regionId) {
+    if (!item) return "";
+    if (item.images && Object.prototype.hasOwnProperty.call(item.images, regionId)) {
+        return item.images[regionId];
+    }
+    return item.image;
+}
+
+// regional pricing
+export function itemHours(item, regionId) {
+    if (!item) return 0;
+    if (item.rates && Object.prototype.hasOwnProperty.call(item.rates, regionId)) {
+        return item.rates[regionId];
+    }
+    return item.hours;
+}
+
+// restricted items
+export function itemUnlocked(item, grants) {
+    if (!item || !item.access) return true;
+    return Array.isArray(grants) && grants.includes(item.access);
+}
+
+export const MAX_QUANTITY = 999;
 
 // lookup
 export function findItem(itemId) {

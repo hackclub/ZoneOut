@@ -1,6 +1,7 @@
 import { requireUser } from "../../lib/guard.mjs";
-import { placeOrder, OrderRejected } from "../../lib/shop.mjs";
+import { setUserRegion } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
+import { isRegion } from "../../catalog.js";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -26,23 +27,17 @@ export default async function handler(req, res) {
         throw err;
     }
 
-    try {
-        // the order
-        const order = await placeOrder(user, body.itemId, body.quantity);
+    if (!isRegion(body.region)) {
+        return res.status(400).json({ ok: false, error: "unknown region" });
+    }
 
-        return res.status(200).json({
-            ok: true,
-            orderId: order.orderId,
-            balanceHours: order.balanceHours,
-            item: { id: order.item.id, name: order.item.name },
-            quantity: order.quantity,
-            hoursSpent: order.hoursSpent
-        });
+    try {
+        const row = await setUserRegion(user.user_id, body.region);
+        if (!row) return res.status(403).json({ ok: false, error: "banned" });
+
+        return res.status(200).json({ ok: true, region: row.region });
     } catch (err) {
-        if (err instanceof OrderRejected) {
-            return res.status(400).json({ ok: false, error: err.message });
-        }
-        console.error("order failed:", err.message);
-        return res.status(503).json({ ok: false, error: "the shop could not reach ZoneOut" });
+        console.error("region update failed:", err.message);
+        return res.status(503).json({ ok: false, error: "database unreachable" });
     }
 }

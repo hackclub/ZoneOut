@@ -54,6 +54,7 @@ body{
 background:rgb(var(--bg));
 color:rgb(var(--fg));
 overflow-x:hidden;
+line-height:1.6;
 min-height:100vh;
 min-height:100dvh;
 -webkit-text-size-adjust:100%;
@@ -97,7 +98,7 @@ left:max(20px, calc(env(safe-area-inset-left) + 14px));
 cursor:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%3E%3Cpath%20d='M2%2014s5-7%2012-7%2012%207%2012%207-5%207-12%207S2%2014%202%2014z'%20fill='%23000000'%20stroke='%23ffffff'%20stroke-width='1.6'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='4.8'%20fill='%23ffffff'/%3E%3Ccircle%20cx='14'%20cy='14'%20r='1.7'%20fill='%23000000'/%3E%3C/svg%3E") 14 14, pointer;
 font-size:16px;
 opacity:0.7;
-transition:0.2s;
+transition:opacity .2s ease, transform .2s ease, text-shadow .2s ease;
 z-index:50;
 color:rgb(var(--fg));
 }
@@ -131,10 +132,6 @@ gap:8px;
 }
 
 .dockButtons{
-position:absolute;
-top:calc(var(--dockTop) + 48px);
-right:var(--dockRight);
-z-index:50;
 display:flex;
 flex-direction:column;
 align-items:flex-end;
@@ -145,8 +142,139 @@ body.hasLoginBar .balanceDock{
 top:calc(var(--loginBarH, 72px) + 14px);
 }
 
-body.hasLoginBar .dockButtons{
-top:calc(var(--loginBarH, 72px) + 62px);
+/* REGION WARNING BAR */
+.regionBar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+z-index:120;
+padding:20px 24px;
+text-align:center;
+font-size:clamp(13px, 1.9vw, 17px);
+letter-spacing:2px;
+text-transform:uppercase;
+color:rgb(var(--warn));
+background:
+repeating-linear-gradient(
+45deg,
+rgba(var(--amber),0.07) 0px,
+rgba(var(--amber),0.07) 2px,
+transparent 2px,
+transparent 6px
+),
+linear-gradient(135deg, rgba(var(--panelTop),1), rgba(var(--panelBot),1));
+border-bottom:2px solid rgba(var(--warn),0.55);
+box-shadow:0 0 26px rgba(var(--warnGlow),0.3);
+}
+
+.regionBar[hidden]{
+display:none;
+}
+
+.regionBarBack{
+background:none;
+border:none;
+padding:0;
+margin-left:10px;
+color:rgb(var(--warn));
+font-family:"Courier New",monospace;
+font-size:inherit;
+letter-spacing:inherit;
+text-transform:inherit;
+text-decoration:underline;
+text-underline-offset:4px;
+transition:0.2s;
+}
+
+.regionBarBack:hover,
+.regionBarBack:focus-visible{
+outline:none;
+color:rgb(var(--amber));
+text-shadow:0 0 8px rgba(var(--warnGlow),0.75);
+}
+
+body.hasRegionBar{
+padding-top:var(--regionBarH, 68px);
+}
+
+body.hasRegionBar .backBtn{
+top:calc(var(--regionBarH, 68px) + 20px);
+}
+
+body.hasRegionBar .balanceDock{
+top:calc(var(--regionBarH, 68px) + 14px);
+}
+
+.balanceRow{
+position:relative;
+z-index:1;
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+/* info control */
+.infoBtn{
+flex:none;
+display:block;
+padding:6px;
+line-height:0;
+background:none;
+border:none;
+color:rgb(var(--fg));
+opacity:0.65;
+transition:opacity .2s ease, transform .3s ease, filter .2s ease;
+}
+
+.infoBtn svg{
+display:block;
+width:26px;
+height:26px;
+}
+
+.infoBtn:hover,
+.infoBtn:focus-visible{
+outline:none;
+opacity:1;
+transform:scale(1.12);
+filter:drop-shadow(0 0 8px rgba(var(--fg),0.6));
+}
+
+/* the fullfillment notice and the info panel */
+.noticeText,
+.infoSection p{
+margin:0;
+font-size:14.5px;
+line-height:1.8;
+color:rgba(var(--fg),0.75);
+}
+
+.infoSection{
+margin-bottom:26px;
+}
+
+.infoSection:last-of-type{
+margin-bottom:0;
+}
+
+.infoSection h3{
+margin:0 0 12px;
+padding-bottom:8px;
+font-size:15px;
+font-weight:normal;
+letter-spacing:4px;
+text-transform:uppercase;
+border-bottom:1px solid rgba(var(--fg),0.12);
+color:rgba(var(--fg),0.86);
+}
+
+.noticeActions{
+display:flex;
+flex-wrap:wrap;
+gap:12px;
+justify-content:center;
+margin-top:22px;
 }
 
 .balanceBox{
@@ -172,7 +300,7 @@ white-space:nowrap;
 background:rgb(var(--bg));
 border:1px solid rgba(var(--fg),0.2);
 padding:4px 8px;
-font-size:12px;
+font-size:13px;
 letter-spacing:0;
 }
 
@@ -183,7 +311,7 @@ position:relative;
 
 .regionBtn{
 padding:7px 12px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 }
 
@@ -212,7 +340,7 @@ border:none;
 color:rgb(var(--fg));
 text-align:left;
 padding:9px 14px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 opacity:0.7;
 transition:background .16s ease, opacity .16s ease;
@@ -237,7 +365,7 @@ content:">> ";
 /* SUGGESTIONS */
 .suggestBtn{
 padding:7px 12px;
-font-size:12px;
+font-size:13px;
 letter-spacing:2px;
 }
 
@@ -491,6 +619,76 @@ border-color:rgb(var(--pumpkinHot));
 box-shadow:0 0 18px rgba(var(--pumpkinEmber),0.3);
 }
 
+/* new item flag */
+.newFlag{
+position:absolute;
+top:8px;
+right:8px;
+padding:3px 7px;
+font-size:11px;
+font-weight:bold;
+letter-spacing:1.5px;
+line-height:1;
+border-radius:4px;
+background:rgb(var(--newFlag));
+color:rgb(var(--newFlagText));
+box-shadow:0 0 12px rgba(var(--newFlagGlow),0.45);
+pointer-events:none;
+}
+
+/* full view of an item picture */
+.lightbox{
+position:fixed;
+inset:0;
+z-index:240;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:24px;
+background:rgb(var(--bg));
+opacity:0;
+pointer-events:none;
+transition:opacity .2s ease;
+}
+
+.lightbox.show{
+opacity:1;
+pointer-events:auto;
+}
+
+.lightbox[hidden]{
+display:none;
+}
+
+.lightbox img{
+max-width:100%;
+max-height:100%;
+object-fit:contain;
+border-radius:10px;
+}
+
+.lightboxClose{
+position:absolute;
+top:max(12px, env(safe-area-inset-top));
+right:16px;
+padding:6px 12px;
+font-size:22px;
+line-height:1;
+background:none;
+border:1px solid rgba(var(--fg),0.35);
+border-radius:6px;
+color:rgb(var(--fg));
+}
+
+.orderArtBtn{
+width:100%;
+height:100%;
+padding:0;
+background:none;
+border:none;
+display:block;
+}
+
 .itemImage{
 width:90px;
 height:90px;
@@ -522,7 +720,7 @@ line-height:1.4;
 
 .itemNote{
 margin-top:2px;
-font-size:11px;
+font-size:12px;
 letter-spacing:1px;
 opacity:0.5;
 }
@@ -533,7 +731,7 @@ align-items:center;
 justify-content:center;
 gap:5px;
 margin-top:6px;
-font-size:13px;
+font-size:14px;
 color:rgb(var(--accentMuted));
 }
 
@@ -561,16 +759,28 @@ word-break:break-word;
 
 .orderCost{
 margin-top:10px;
-font-size:13px;
+font-size:14px;
 letter-spacing:1px;
 opacity:0.6;
+}
+
+.orderCharge{
+margin-top:8px;
+font-size:13px;
+line-height:1.6;
+letter-spacing:0.5px;
+color:rgb(var(--amber));
+}
+
+.orderCharge[hidden]{
+display:none;
 }
 
 .orderDesc{
 margin-top:14px;
 padding-top:12px;
 border-top:1px solid rgba(var(--fg),0.1);
-font-size:13px;
+font-size:14px;
 line-height:1.7;
 color:rgba(var(--fg),0.72);
 }
@@ -582,7 +792,7 @@ display:none;
 .orderWarning{
 margin-top:14px;
 padding:10px 12px;
-font-size:12px;
+font-size:13px;
 line-height:1.65;
 color:rgb(var(--pumpkinPale));
 background:rgba(var(--pumpkinEmberDeep),0.1);
@@ -613,7 +823,7 @@ display:flex;
 align-items:center;
 gap:12px;
 margin-top:18px;
-font-size:12px;
+font-size:13px;
 letter-spacing:3px;
 color:rgba(var(--fg),0.45);
 }
@@ -687,7 +897,8 @@ text-align:center;
 justify-content:center;
 }
 
-.orderCost{
+.orderCost,
+.orderCharge{
 text-align:center;
 }
 }
@@ -707,12 +918,12 @@ margin-top:max(44px, calc(env(safe-area-inset-top) + 40px));
 @media (max-width:480px){
 .balanceBox{
 padding:8px 12px;
-font-size:14px;
+font-size:15px;
 }
 
 .suggestBtn{
 padding:6px 9px;
-font-size:11px;
+font-size:12px;
 letter-spacing:1px;
 }
 
@@ -732,7 +943,7 @@ padding:20px 16px;
 }
 
 .orderDesc{
-font-size:12.5px;
+font-size:13.5px;
 line-height:1.6;
 }
 }
@@ -746,7 +957,12 @@ letter-spacing:3px;
 .balanceBox{
 gap:6px;
 padding:7px 10px;
-font-size:13px;
+font-size:14px;
+}
+
+.infoBtn svg{
+width:22px;
+height:22px;
 }
 }
 
@@ -821,16 +1037,28 @@ display:none;
 
 <div class="loginBar" id="loginBar" hidden>You need to <a href="/">log in</a> to explore more!</div>
 
+<div class="regionBar" id="regionBar" role="status" aria-live="polite" hidden>Switching Regions May Cause Unwanted Taxes To The Items ordered.
+<button class="regionBarBack" id="regionBarBack" type="button"></button>
+</div>
+
 <div class="overlay"></div>
 
 <div class="balanceDock">
+<div class="balanceRow">
+<button class="infoBtn" id="infoBtn" type="button" aria-haspopup="dialog" aria-label="Shop information">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<circle cx="12" cy="12" r="9.2"/>
+<path d="M12 10.6v6"/>
+<path d="M12 7.3h.01"/>
+</svg>
+</button>
+
 <div class="balanceBox" id="balanceBox">
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="balanceValue">0</span>
 
 <span class="srOnly">Hour Balance</span>
 </div>
-
 </div>
 
 <div class="dockButtons">
@@ -840,6 +1068,8 @@ display:none;
 <button class="camNode regionBtn" id="regionBtn" type="button" aria-haspopup="true" aria-expanded="false">Switch Regions</button>
 <div class="regionMenu" id="regionMenu" role="menu" aria-label="Region" hidden></div>
 </div>
+</div>
+
 </div>
 
 <div class="volumeDock">
@@ -862,6 +1092,7 @@ display:none;
 <div class="orderInfo">
 <div class="orderName" id="orderName"></div>
 <div class="orderCost" id="orderCost"></div>
+<div class="orderCharge" id="orderCharge" hidden></div>
 <p class="orderDesc" id="orderDesc"></p>
 
 <p class="orderWarning" id="orderWarning" hidden>this item is fulfilled locally and doesn't ship from HQ - if we can't fulfill it in your region, it'll be substituted for a similar item or you'll be given a grant for it!</p>
@@ -874,7 +1105,7 @@ display:none;
 
 <div class="orderQty">
 <label for="orderQtyInput">QUANTITY</label>
-<input class="textInput" id="orderQtyInput" type="number" min="1" max="5" step="1" value="1"
+<input class="textInput" id="orderQtyInput" type="number" min="1" max="999" step="1" value="1"
        inputmode="numeric" autocomplete="off">
 </div>
 </div>
@@ -888,6 +1119,44 @@ display:none;
 <button class="camNode" id="orderBtn" type="button">Place Order!</button>
 </div>
 </div>
+</div>
+
+<div class="modalScrim" id="noticeModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+<button class="modalClose" id="noticeClose" type="button" aria-label="Close">&times;</button>
+
+<div class="suggestTitle" id="noticeTitle">Before You Shop</div>
+
+<p class="noticeText">Fullfillment of all items will be done after the event ends. Reviews will be done earlier but fullfillment after 7th of September.</p>
+
+<div class="orderActions noticeActions">
+<button class="camNode" id="noticeOk" type="button">Close</button>
+<button class="camNode" id="noticeMute" type="button">Don't show this again</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="infoModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+<button class="modalClose" id="infoClose" type="button" aria-label="Close">&times;</button>
+
+<div class="suggestTitle" id="infoTitle">Shop Information</div>
+
+<div class="infoSection">
+<h3>Fullfillment</h3>
+<p>Fullfillment will be done at the end of the event. Submissions will close by September 7th.</p>
+</div>
+
+<div class="infoSection">
+<h3>Contribute</h3>
+<p>ZoneOut is happy to add more items to its shop so feel free to recommend the items YOU wish to see in the shop by submitting your suggestion through the "Suggest Items!" button.</p>
+</div>
+</div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+<button class="lightboxClose" id="lightboxClose" type="button" aria-label="Close">&times;</button>
+<img id="lightboxImg" alt="">
 </div>
 
 <div class="modalScrim" id="suggestModal" hidden>
@@ -921,7 +1190,7 @@ display:none;
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion } from "/catalog.js";
+import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
 
 // elements
 const sectionsHost = document.getElementById("shopSections");
@@ -933,11 +1202,13 @@ const orderName = document.getElementById("orderName");
 const orderCost = document.getElementById("orderCost");
 const orderDesc = document.getElementById("orderDesc");
 const orderWarning = document.getElementById("orderWarning");
+const orderCharge = document.getElementById("orderCharge");
 const orderBalanceEl = document.getElementById("orderBalance");
 const orderArt = document.getElementById("orderArt");
 const orderError = document.getElementById("orderError");
 const orderBtn = document.getElementById("orderBtn");
 const qtyInput = document.getElementById("orderQtyInput");
+qtyInput.max = String(MAX_QUANTITY);
 const toast = document.getElementById("toast");
 const suggestBtn = document.getElementById("suggestBtn");
 const regionBtn = document.getElementById("regionBtn");
@@ -949,6 +1220,9 @@ const suggestReason = document.getElementById("suggestReason");
 const suggestError = document.getElementById("suggestError");
 const suggestSubmit = document.getElementById("suggestSubmit");
 const screenVeil = document.getElementById("screenVeil");
+const infoBtn = document.getElementById("infoBtn");
+const noticeModal = document.getElementById("noticeModal");
+const infoModal = document.getElementById("infoModal");
 
 // state
 let balanceHours = 0;
@@ -963,10 +1237,12 @@ function initials(name) {
 }
 
 function artwork(item, className) {
-    if (item.image) {
+    const source = itemImage(item, priceRegion());
+
+    if (source) {
         const img = document.createElement("img");
         img.className = className;
-        img.src = item.image;
+        img.src = source;
         img.alt = "";
 
         img.loading = "lazy";
@@ -1026,13 +1302,20 @@ function paintDescription(text) {
 const cards = [];
 
 function renderSections() {
+    const focused = cardId(document.activeElement);
+    const returning = cardId(returnFocus);
+
     sectionsHost.replaceChildren();
     cards.length = 0;
 
+    const priced = priceRegion();
+
     SHOP_SECTIONS.forEach(section => {
         const items = SHOP_ITEMS
-            .filter(item => item.section === section.id && itemInRegion(item, region))
-            .sort((a, b) => a.hours - b.hours);
+            .filter(item => item.section === section.id
+                         && itemInRegion(item, region)
+                         && itemUnlocked(item, grants))
+            .sort((a, b) => itemHours(a, priced) - itemHours(b, priced));
 
         if (!items.length) return;
 
@@ -1062,6 +1345,13 @@ function renderSections() {
             name.textContent = item.name;
             card.appendChild(name);
 
+            if (itemIsNew(item)) {
+                const flag = document.createElement("div");
+                flag.className = "newFlag";
+                flag.textContent = "NEW";
+                card.appendChild(flag);
+            }
+
             if (item.note) {
                 const note = document.createElement("div");
                 note.className = "itemNote";
@@ -1072,7 +1362,7 @@ function renderSections() {
             const price = document.createElement("div");
             price.className = "itemHours";
             price.appendChild(hourGlyph());
-            price.appendChild(document.createTextNode(hoursLabel(item.hours)));
+            price.appendChild(document.createTextNode(hoursLabel(itemHours(item, priced))));
             card.appendChild(price);
 
             card.addEventListener("click", () => openOrder(item.id));
@@ -1084,30 +1374,86 @@ function renderSections() {
         block.appendChild(grid);
         sectionsHost.appendChild(block);
     });
+
+    if (focused) {
+        const card = findCard(focused);
+        if (card) card.focus();
+    }
+    if (returning) returnFocus = findCard(returning) || returnFocus;
+}
+
+// a rebuild replaces every card, so focus is carried across by item id
+function cardId(el) {
+    return el && el.classList && el.classList.contains("itemCard") ? el.dataset.itemId : null;
+}
+
+function findCard(itemId) {
+    return cards.find(card => card.dataset.itemId === itemId) || null;
 }
 
 // region picker
 const REGION_KEY = "zoneoutRegion";
 const DEFAULT_REGION = "global";
 
-function readRegion() {
-    let stored = null;
+function readStoredRegion() {
     try {
-        stored = localStorage.getItem(REGION_KEY);
+        return localStorage.getItem(REGION_KEY);
     } catch {
+        return null;
     }
-    return SHOP_REGIONS.some(entry => entry.id === stored) ? stored : DEFAULT_REGION;
+}
+
+function readRegion() {
+    const stored = readStoredRegion();
+    return isRegion(stored) ? stored : DEFAULT_REGION;
 }
 
 let region = readRegion();
+let regionChosen = isRegion(readStoredRegion());
+let homeRegion = null;
+let grants = [];
 
-function regionName(id) {
-    const entry = SHOP_REGIONS.find(candidate => candidate.id === id);
-    return entry ? entry.name : "Global";
+// pricing region
+function priceRegion() {
+    return region;
+}
+
+// the region the server charges and fulfils against
+function chargeRegion() {
+    if (!signedIn) return priceRegion();
+    return isRegion(homeRegion) ? homeRegion : DEFAULT_REGION;
 }
 
 function paintRegionButton() {
-    regionBtn.textContent = "Region: " + regionName(region);
+    regionBtn.textContent = "Region: " + (regionName(region) || "Global");
+}
+
+// the declared region
+function adoptHomeRegion(id) {
+    if (!isRegion(id) || homeRegion === id) return;
+
+    homeRegion = id;
+
+    if (!regionChosen && region !== id) {
+        region = id;
+        paintRegionButton();
+    }
+
+    renderSections();
+    if (openItem && !itemInRegion(openItem, region)) closeOrder();
+    else updateOrderButton();
+
+    paintRegionBar();
+}
+
+// restricted items
+function adoptGrants(list) {
+    const next = Array.isArray(list) ? list.filter(entry => typeof entry === "string") : [];
+    if (next.length === grants.length && next.every((entry, at) => entry === grants[at])) return;
+
+    grants = next;
+    renderSections();
+    if (openItem && !itemUnlocked(openItem, grants)) closeOrder();
 }
 
 function buildRegionMenu() {
@@ -1135,6 +1481,7 @@ function openRegionMenu() {
 }
 
 function closeRegionMenu(refocus) {
+    if (regionMenu.hidden) return;
     regionMenu.hidden = true;
     regionBtn.setAttribute("aria-expanded", "false");
     if (refocus) regionBtn.focus();
@@ -1148,11 +1495,15 @@ function selectRegion(id) {
     } catch {
     }
 
+    regionChosen = true;
+
     paintRegionButton();
     renderSections();
+    paintRegionBar();
     closeRegionMenu(true);
 
     if (openItem && !itemInRegion(openItem, region)) closeOrder();
+    else updateOrderButton();
 }
 
 regionBtn.addEventListener("click", () => {
@@ -1202,11 +1553,13 @@ document.addEventListener("keydown", (e) => {
     }
 
     if (!anyModalOpen()) return;
+    if (lightboxOpen()) return;
 
     const tag = document.activeElement ? document.activeElement.tagName : "";
     if (tag === "INPUT" || tag === "TEXTAREA") return;
 
-    const dialog = modal.classList.contains("show") ? modal : suggestModal;
+    const dialog = openDialog();
+    if (!dialog) return;
 
     if (step) { e.preventDefault(); focusStep(dialogControls(dialog), step); }
     else if (e.key === "Home") { e.preventDefault(); focusEnd(dialogControls(dialog), false); }
@@ -1320,9 +1673,14 @@ async function refreshBalance() {
     if (response.status === 401 || response.status === 404) {
         signedIn = false;
         suggestBtn.hidden = true;
+        homeRegion = null;
+        grants = [];
+        renderSections();
+        if (openItem && !itemUnlocked(openItem, grants)) closeOrder();
+        else updateOrderButton();
+        paintRegionBar();
         showLoginBar();
         stopPolling();
-        updateOrderButton();
         return;
     }
 
@@ -1337,8 +1695,11 @@ async function refreshBalance() {
         const payload = await response.json();
         signedIn = true;
         suggestBtn.hidden = false;
+        hideLoginBar();
         balanceHours = Number(payload.balanceHours) || 0;
         paintBalance();
+        adoptGrants(payload.grants);
+        adoptHomeRegion(payload.region);
     } catch {
     }
 }
@@ -1362,10 +1723,35 @@ function updateOrderButton() {
     if (!openItem) return;
 
     const quantity = readQuantity();
-    const cost = Math.round(openItem.hours * quantity * 100) / 100;
+    const each = itemHours(openItem, priceRegion());
+    const cost = Math.round(each * quantity * 100) / 100;
 
-    orderCost.textContent = hoursLabel(openItem.hours) + " each · "
+    orderCost.textContent = hoursLabel(each) + " each · "
                           + hoursLabel(cost) + " total";
+
+    // the declared region is what is charged
+    const charge = chargeRegion();
+    const charged = itemHours(openItem, charge);
+    const chargedCost = Math.round(charged * quantity * 100) / 100;
+    const available = itemInRegion(openItem, charge);
+    const declared = signedIn && isRegion(homeRegion);
+
+    if (!available) {
+        orderCharge.textContent = declared
+            ? "Not sold in your own region (" + regionName(charge) + ")."
+            : "Set your region on your profile — you are served at Global rates.";
+        orderCharge.hidden = false;
+    } else if (charged !== each) {
+        orderCharge.textContent = (declared
+                                    ? "Charged at your own region (" + regionName(charge) + "): "
+                                    : "Charged at Global rates until you set your region: ")
+                                + hoursLabel(charged) + " each · "
+                                + hoursLabel(chargedCost) + " total";
+        orderCharge.hidden = false;
+    } else {
+        orderCharge.textContent = "";
+        orderCharge.hidden = true;
+    }
 
     if (!signedIn) {
         orderBtn.textContent = "Log In to Order";
@@ -1373,7 +1759,13 @@ function updateOrderButton() {
         return;
     }
 
-    if (balanceHours >= cost) {
+    if (!available) {
+        orderBtn.textContent = "Not in Your Region.";
+        orderBtn.disabled = true;
+        return;
+    }
+
+    if (balanceHours >= chargedCost) {
         orderBtn.textContent = "Place Order!";
         orderBtn.disabled = false;
     } else {
@@ -1385,7 +1777,7 @@ function updateOrderButton() {
 // order dialog
 function openOrder(itemId) {
     const item = findItem(itemId);
-    if (!item) return;
+    if (!item || !itemUnlocked(item, grants)) return;
 
     openItem = item;
     returnFocus = document.activeElement;
@@ -1398,7 +1790,20 @@ function openOrder(itemId) {
     orderWarning.hidden = !item.local;
 
     orderArt.textContent = "";
-    orderArt.appendChild(artwork(item, "orderImage"));
+
+    const picture = artwork(item, "orderImage");
+
+    if (picture.tagName === "IMG") {
+        const opener = document.createElement("button");
+        opener.className = "orderArtBtn";
+        opener.type = "button";
+        opener.setAttribute("aria-label", "View picture of " + item.name);
+        opener.appendChild(picture);
+        opener.addEventListener("click", () => openLightbox(picture.src, item.name));
+        orderArt.appendChild(opener);
+    } else {
+        orderArt.appendChild(picture);
+    }
 
     qtyInput.value = "1";
     orderError.textContent = "";
@@ -1426,14 +1831,60 @@ function closeOrder() {
     openItem = null;
 }
 
+// full view of an item picture
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightboxImg");
+let lightboxReturn = null;
+
+function lightboxOpen() {
+    return lightbox.classList.contains("show");
+}
+
+function openLightbox(source, name) {
+    lightboxReturn = document.activeElement;
+
+    lightboxImg.src = source;
+    lightboxImg.alt = name || "";
+
+    lightbox.hidden = false;
+    requestAnimationFrame(() => lightbox.classList.add("show"));
+    setTimeout(() => lightbox.classList.add("show"), 60);
+
+    setInertBehind(true, lightbox);
+    document.getElementById("lightboxClose").focus();
+}
+
+function closeLightbox() {
+    lightbox.classList.remove("show");
+    setTimeout(() => { if (!lightbox.classList.contains("show")) lightbox.hidden = true; }, 240);
+
+    setInertBehind(true, modal);
+
+    if (lightboxReturn && document.contains(lightboxReturn)) lightboxReturn.focus();
+    lightboxReturn = null;
+}
+
+document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+
+lightbox.addEventListener("click", (e) => {
+    if (e.target !== lightboxImg) closeLightbox();
+});
+
 function setInertBehind(on, dialog) {
     Array.from(document.body.children).forEach(child => {
-        if (child !== dialog && child.tagName !== "SCRIPT") child.inert = on;
+        if (child.tagName === "SCRIPT") return;
+        child.inert = on && child !== dialog;
     });
 }
 
+const DIALOGS = [modal, suggestModal, noticeModal, infoModal];
+
+function openDialog() {
+    return DIALOGS.find(dialog => dialog.classList.contains("show")) || null;
+}
+
 function anyModalOpen() {
-    return modal.classList.contains("show") || suggestModal.classList.contains("show");
+    return !!openDialog() || lightboxOpen();
 }
 
 qtyInput.addEventListener("input", () => {
@@ -1516,7 +1967,10 @@ modal.addEventListener("mousedown", (e) => {
 document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
 
-    if (!regionMenu.hidden) {
+    if (lightboxOpen()) {
+        e.preventDefault();
+        closeLightbox();
+    } else if (!regionMenu.hidden) {
         e.preventDefault();
         closeRegionMenu(true);
     } else if (modal.classList.contains("show")) {
@@ -1525,6 +1979,12 @@ document.addEventListener("keydown", (e) => {
     } else if (suggestModal.classList.contains("show")) {
         e.preventDefault();
         closeSuggest();
+    } else if (noticeModal.classList.contains("show")) {
+        e.preventDefault();
+        closeNotice();
+    } else if (infoModal.classList.contains("show")) {
+        e.preventDefault();
+        closeInfo();
     }
 });
 
@@ -1556,6 +2016,83 @@ function closeSuggest() {
     if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
     returnFocus = null;
 }
+
+// the fullfillment notice and the info panel
+const NOTICE_KEY = "zoneoutShopNotice";
+
+function noticeMuted() {
+    try {
+        return localStorage.getItem(NOTICE_KEY) === "off";
+    } catch {
+        return false;
+    }
+}
+
+function raise(dialog, focusFirst) {
+    returnFocus = document.activeElement;
+
+    dialog.hidden = false;
+    requestAnimationFrame(() => dialog.classList.add("show"));
+    setTimeout(() => dialog.classList.add("show"), 60);
+
+    setInertBehind(true, dialog);
+    document.body.style.overflow = "hidden";
+    if (focusFirst) focusFirst.focus();
+}
+
+function drop(dialog) {
+    dialog.classList.remove("show");
+    setInertBehind(false, dialog);
+    document.body.style.overflow = "";
+
+    setTimeout(() => {
+        if (!dialog.classList.contains("show")) dialog.hidden = true;
+    }, 240);
+
+    if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    returnFocus = null;
+}
+
+function openNotice() {
+    raise(noticeModal, document.getElementById("noticeOk"));
+}
+
+function closeNotice() {
+    drop(noticeModal);
+}
+
+function openInfo() {
+    raise(infoModal, document.getElementById("infoClose"));
+}
+
+function closeInfo() {
+    drop(infoModal);
+}
+
+document.getElementById("noticeClose").addEventListener("click", closeNotice);
+document.getElementById("noticeOk").addEventListener("click", closeNotice);
+
+document.getElementById("noticeMute").addEventListener("click", () => {
+    try {
+        localStorage.setItem(NOTICE_KEY, "off");
+    } catch {
+    }
+
+    closeNotice();
+});
+
+noticeModal.addEventListener("mousedown", (e) => {
+    if (e.target === noticeModal) closeNotice();
+});
+
+infoBtn.addEventListener("click", openInfo);
+document.getElementById("infoClose").addEventListener("click", closeInfo);
+
+infoModal.addEventListener("mousedown", (e) => {
+    if (e.target === infoModal) closeInfo();
+});
+
+if (!noticeMuted()) openNotice();
 
 suggestBtn.addEventListener("click", openSuggest);
 document.getElementById("suggestClose").addEventListener("click", closeSuggest);
@@ -1673,7 +2210,7 @@ function playClick() {
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.closest(".itemCard, .camNode, .backBtn, .modalClose, .regionOption")) playClick();
+    if (e.target.closest(".itemCard, .camNode, .backBtn, .modalClose, .regionOption, .regionBarBack, .infoBtn")) playClick();
 });
 
 function resumeAudio() {
@@ -1758,7 +2295,54 @@ function showLoginBar() {
     measureLoginBar();
 }
 
-window.addEventListener("resize", measureLoginBar);
+function hideLoginBar() {
+    if (loginBar.hidden) return;
+    loginBar.hidden = true;
+    backBtn.hidden = false;
+    document.body.classList.remove("hasLoginBar");
+}
+
+// region warning bar
+const regionBar = document.getElementById("regionBar");
+const regionBarBack = document.getElementById("regionBarBack");
+
+function measureRegionBar() {
+    if (regionBar.hidden) return;
+    document.body.style.setProperty("--regionBarH", regionBar.offsetHeight + "px");
+}
+
+function paintRegionBar() {
+    const warn = Boolean(homeRegion) && region !== homeRegion;
+
+    if (!warn) {
+        regionBar.hidden = true;
+        document.body.classList.remove("hasRegionBar");
+        return;
+    }
+
+    regionBarBack.textContent = "Switch back to " + regionName(homeRegion);
+    regionBar.hidden = false;
+    document.body.classList.add("hasRegionBar");
+    measureRegionBar();
+}
+
+regionBarBack.addEventListener("click", () => {
+    if (homeRegion) selectRegion(homeRegion);
+});
+
+// bar heights, measured once per frame
+let measureFrame = 0;
+
+function measureBars() {
+    measureFrame = 0;
+    measureLoginBar();
+    measureRegionBar();
+}
+
+window.addEventListener("resize", () => {
+    if (measureFrame) return;
+    measureFrame = requestAnimationFrame(measureBars);
+});
 
 // back control
 const backBtn = document.getElementById("backBtn");
