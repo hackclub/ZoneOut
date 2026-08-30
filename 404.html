@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/themes.css">
+<script>try{var t=localStorage.getItem("zoneoutTheme");if(t&&t!=="default"&&/^[a-z0-9-]{1,24}$/.test(t))document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Not Found</title>
+<style>
+body{background:rgb(var(--bg));color:rgb(var(--fg));line-height:1.6;min-height:100vh;min-height:100dvh;display:flex;
+flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:24px;text-align:center;}
+.errCode{font-size:clamp(28px,7vw,44px);letter-spacing:4px;}
+.errText{opacity:0.7;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div class="errCode">404: PAGE NOT FOUND</div>
+<div class="errText">There is nothing at this address.</div>
+<button class="camNode" id="toMenuBtn" type="button">&larr; RETURN TO MAIN MENU</button>
+<script>
+document.getElementById('toMenuBtn').addEventListener('click', function () {
+  window.location.href = '/';
+});
+</script>
+</body>
+</html>

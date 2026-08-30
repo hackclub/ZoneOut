@@ -7,6 +7,19 @@ import { presentUsers } from "./users.mjs";
 
 const MAX_BATCH = 200;
 
+// a browser sends Origin on every cross-site POST, so a mismatch is never this page
+function sameOrigin(req) {
+    const origin = req.headers?.origin;
+    if (!origin) return true;
+
+    const host = Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host;
+    try {
+        return new URL(origin).host === host;
+    } catch {
+        return false;
+    }
+}
+
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
@@ -19,6 +32,11 @@ export default async function handler(req, res) {
     if (req.method !== "POST") {
         res.setHeader("Allow", "POST");
         return res.status(405).json({ ok: false, error: "method not allowed" });
+    }
+
+    // origin
+    if (!sameOrigin(req)) {
+        return res.status(403).json({ ok: false, error: "bad origin" });
     }
 
     // request body
@@ -54,6 +72,14 @@ export default async function handler(req, res) {
             return res.status(400).json({ ok: false, error: err.message });
         }
         throw err;
+    }
+
+    // an administrator who banned themselves could never reach the panel to undo it
+    const selfBan = staged.commands.find(
+        command => command.verb === "BAN" && command.userId === admin.user_id
+    );
+    if (selfBan) {
+        return res.status(400).json({ ok: false, error: "you cannot ban your own account" });
     }
 
     // apply balances and commands in one transaction

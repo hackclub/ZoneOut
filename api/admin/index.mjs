@@ -33,15 +33,15 @@ export default async function handler(req, res) {
 
     res.setHeader("Referrer-Policy", "no-referrer");
 
-    // method
-    if (req.method !== "GET" && req.method !== "HEAD") {
-        res.setHeader("Allow", "GET, HEAD");
-        return sendHtml(res, 404, NOT_FOUND_PAGE);
-    }
-
     // admin gate, 404 for everyone else
     const admin = await resolveAdmin(req);
     if (!admin) return sendHtml(res, 404, NOT_FOUND_PAGE);
+
+    // method
+    if (req.method !== "GET" && req.method !== "HEAD") {
+        res.setHeader("Allow", "GET, HEAD");
+        return sendHtml(res, 405, NOT_FOUND_PAGE);
+    }
 
     return sendHtml(res, 200, ADMIN_PAGE);
 }
