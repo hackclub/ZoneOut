@@ -278,6 +278,18 @@ align-items:center;
 display:none;
 }
 
+.htAdmin{
+margin-top:6px;
+font-size:13px;
+letter-spacing:2px;
+color:rgb(var(--amber));
+opacity:0.85;
+}
+
+.htAdmin[hidden]{
+display:none;
+}
+
 .adminNote{
 font-size:12px;
 letter-spacing:2px;
@@ -446,6 +458,7 @@ gap:16px;
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="viewHoursValue"></span>
 </div>
+<div class="htAdmin" id="viewHtAdmin" hidden></div>
 </div>
 </div>
 
@@ -607,13 +620,22 @@ var htListPending = false;
 
 function hoursLine() {
     var box = document.getElementById("viewHours");
-    var linked = project && project.hackatimeProject;
+    var linked = project && (project.hackatimeLinked || project.hackatimeProject);
 
     box.hidden = !linked;
     if (!linked) return;
 
     var hours = Number(project.hackatimeHours) || 0;
     document.getElementById("viewHoursValue").textContent = hours + " ACTIVE HOURS";
+}
+
+// the attached hackatime project, administrators only
+function hackatimeAdminLine() {
+    var line = document.getElementById("viewHtAdmin");
+    var name = isAdmin && project ? project.hackatimeProject : null;
+
+    line.hidden = !name;
+    line.textContent = name ? "HACKATIME PROJECT: " + name : "";
 }
 
 function setHtChoice(name) {
@@ -774,6 +796,7 @@ function renderView() {
 
     document.getElementById("ownerRow").hidden = !canEdit;
     document.getElementById("adminNote").hidden = !isAdmin;
+    hackatimeAdminLine();
     show("stateView");
     focusFirstControl();
 }

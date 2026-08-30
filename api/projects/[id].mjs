@@ -5,8 +5,8 @@ import { isAdminEmail } from "../../lib/admin.mjs";
 import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
-// response shape
-function present(project, ownerName) {
+// response shape, the hackatime name is for the owner and administrators only
+function present(project, ownerName, showLink = true) {
     return {
         projectId: project.project_id,
         ownerName: ownerName ?? project.owner_name ?? null,
@@ -14,7 +14,8 @@ function present(project, ownerName) {
         description: project.description,
         repoUrl: project.repo_url,
         demoUrl: project.demo_url,
-        hackatimeProject: project.hackatime_project ?? null,
+        hackatimeLinked: Boolean(project.hackatime_project),
+        hackatimeProject: showLink ? (project.hackatime_project ?? null) : null,
         hackatimeHours: project.hackatime_hours ?? 0,
         createdAt: project.created_at,
         updatedAt: project.updated_at
@@ -59,7 +60,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             ok: true,
-            project: present(project),
+            project: present(project, null, owns || isAdmin),
             canEdit: owns || isAdmin,
             isAdmin,
             signedIn: Boolean(session)

@@ -1,5 +1,5 @@
 import { requireAdmin } from "../../lib/guard.mjs";
-import { listAllUsersForAdmin } from "../../lib/users.mjs";
+import { listAllProjectsForAdmin } from "../../lib/users.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -16,27 +16,31 @@ export default async function handler(req, res) {
     }
 
     try {
-        return res.status(200).json({ ok: true, users: presentUsers(await listAllUsersForAdmin()) });
+        return res.status(200).json({ ok: true, projects: present(await listAllProjectsForAdmin()) });
     } catch (err) {
-        console.error("admin user list failed:", err.message);
+        console.error("admin project list failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
     }
 }
 
 // row shape for the admin table
-export function presentUsers(rows) {
+function present(rows) {
     return rows.map(row => ({
+        projectId: row.project_id,
         userId: row.user_id,
-        name: row.name,
+        ownerName: row.owner_name,
         email: row.email,
         slackId: row.slack_id,
-        status: row.status,
         region: row.region,
-        hackatimeLinked: Boolean(row.hackatime_linked),
-        cgAccess: Boolean(row.cg_access),
-        balanceHours: row.balance_hours,
         isBanned: row.is_banned,
-        banReason: row.ban_reason,
-        projectIds: row.project_ids
+        name: row.name,
+        description: row.description,
+        repoUrl: row.repo_url,
+        demoUrl: row.demo_url,
+        hackatimeProject: row.hackatime_project,
+        hackatimeHours: row.hackatime_hours ?? 0,
+        hackatimeSyncedAt: row.hackatime_synced_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
     }));
 }
