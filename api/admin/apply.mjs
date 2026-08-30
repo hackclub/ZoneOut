@@ -3,6 +3,7 @@ import { withTransaction } from "../../lib/db.mjs";
 import { setBalanceHours, listAllUsersForAdmin, MAX_BALANCE_HOURS } from "../../lib/users.mjs";
 import { parseCommand, applyCommand, CommandError } from "../../lib/adminCommands.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
+import { syncAllLinkedUsers, isConfigured } from "../../lib/hackatime.mjs";
 import { presentUsers } from "./users.mjs";
 
 const MAX_BATCH = 200;
@@ -74,6 +75,14 @@ export default async function handler(req, res) {
         throw err;
     }
 
+    // the sweep talks to hackatime, so it runs outside the transaction
+    const sweeping = staged.commands.some(command => command.verb === "HACKATIME");
+    staged.commands = staged.commands.filter(command => command.verb !== "HACKATIME");
+
+    if (sweeping && !isConfigured()) {
+        return res.status(400).json({ ok: false, error: "hackatime is not configured on this deployment" });
+    }
+
     // an administrator who banned themselves could never reach the panel to undo it
     const selfBan = staged.commands.find(
         command => command.verb === "BAN" && command.userId === admin.user_id
@@ -84,8 +93,10 @@ export default async function handler(req, res) {
 
     // apply balances and commands in one transaction
     const applied = [];
+    const writing = staged.balances.length > 0 || staged.commands.length > 0;
+
     try {
-        await withTransaction(async client => {
+        if (writing) await withTransaction(async client => {
             for (const edit of staged.balances) {
                 const row = await setBalanceHours(edit.userId, edit.balanceHours, client);
                 if (!row) throw new CommandError(`no user ${edit.userId}`);
@@ -104,6 +115,8 @@ export default async function handler(req, res) {
         return res.status(503).json({ ok: false, error: "the batch could not be applied" });
     }
 
+    if (sweeping) applied.push(await sweep());
+
     try {
         return res.status(200).json({
             ok: true,
@@ -113,6 +126,25 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("admin reload failed:", err.message);
         return res.status(200).json({ ok: true, applied, users: null });
+    }
+}
+
+// the hackatime sweep, reported rather than thrown: the batch has already committed
+async function sweep() {
+    try {
+        const result = await syncAllLinkedUsers();
+
+        if (!result.linked) return "hackatime: nobody has a linked project to refresh";
+
+        const parts = [`refreshed ${result.users} of ${result.linked} linked users`];
+        if (result.projects) parts.push(`${result.projects} projects`);
+        if (result.failed) parts.push(`${result.failed} failed`);
+        if (result.skipped) parts.push(`${result.skipped} left for the next run`);
+
+        return `hackatime: ${parts.join(", ")}`;
+    } catch (err) {
+        console.error("hackatime sweep failed:", err.message);
+        return "hackatime: the refresh could not run";
     }
 }
 
