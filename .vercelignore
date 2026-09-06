@@ -8,5 +8,6 @@ db
 .claude
 skills-lock.json
 filloutform.txt
+fillout_prefill_guide*
 .gitignore
 .gitattributes

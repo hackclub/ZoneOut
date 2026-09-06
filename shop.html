@@ -665,6 +665,7 @@ max-width:100%;
 max-height:100%;
 object-fit:contain;
 border-radius:10px;
+filter:none;
 }
 
 .lightboxClose{
@@ -804,8 +805,27 @@ border-radius:6px;
 display:none;
 }
 
+.orderNote{
+margin-top:14px;
+padding:10px 12px;
+font-size:13px;
+line-height:1.65;
+color:rgb(var(--amber));
+background:rgba(var(--accentDeep),0.12);
+border:1px solid rgba(var(--amber),0.35);
+border-radius:6px;
+}
+
+.orderNote[hidden]{
+display:none;
+}
+
 .orderDesc strong{
 color:rgb(var(--accentStrong));
+font-weight:bold;
+}
+
+.orderNote strong{
 font-weight:bold;
 }
 
@@ -1095,6 +1115,8 @@ display:none;
 <div class="orderCharge" id="orderCharge" hidden></div>
 <p class="orderDesc" id="orderDesc"></p>
 
+<p class="orderNote" id="orderNote" hidden></p>
+
 <p class="orderWarning" id="orderWarning" hidden>this item is fulfilled locally and doesn't ship from HQ - if we can't fulfill it in your region, it'll be substituted for a similar item or you'll be given a grant for it!</p>
 
 <div class="orderBalance">
@@ -1203,6 +1225,7 @@ const orderCost = document.getElementById("orderCost");
 const orderDesc = document.getElementById("orderDesc");
 const orderWarning = document.getElementById("orderWarning");
 const orderCharge = document.getElementById("orderCharge");
+const orderNote = document.getElementById("orderNote");
 const orderBalanceEl = document.getElementById("orderBalance");
 const orderArt = document.getElementById("orderArt");
 const orderError = document.getElementById("orderError");
@@ -1281,8 +1304,8 @@ function hourGlyph() {
 }
 
 // description text, with **bold** spans
-function paintDescription(text) {
-    orderDesc.replaceChildren();
+function paintRich(target, text) {
+    target.replaceChildren();
     if (!text) return;
 
     text.split(/\*\*/).forEach((piece, at) => {
@@ -1291,9 +1314,9 @@ function paintDescription(text) {
         if (at % 2 === 1) {
             const strong = document.createElement("strong");
             strong.textContent = piece;
-            orderDesc.appendChild(strong);
+            target.appendChild(strong);
         } else {
-            orderDesc.appendChild(document.createTextNode(piece));
+            target.appendChild(document.createTextNode(piece));
         }
     });
 }
@@ -1786,7 +1809,9 @@ function openOrder(itemId) {
 
     orderName.textContent = item.name + (item.note ? " (" + item.note + ")" : "");
 
-    paintDescription(item.description || "");
+    paintRich(orderDesc, item.description || "");
+    paintRich(orderNote, item.modalNote || "");
+    orderNote.hidden = !item.modalNote;
     orderWarning.hidden = !item.local;
 
     orderArt.textContent = "";
@@ -1867,7 +1892,7 @@ function closeLightbox() {
 document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
 
 lightbox.addEventListener("click", (e) => {
-    if (e.target !== lightboxImg) closeLightbox();
+    if (e.target === lightbox) closeLightbox();
 });
 
 function setInertBehind(on, dialog) {

@@ -64,6 +64,8 @@ export default async function handler(req, res) {
             email: profile.email,
             slackId: profile.slackId,
             name: profile.name,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
             status: "verified"
         });
     } catch (err) {

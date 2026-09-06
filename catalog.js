@@ -65,8 +65,9 @@ export const SHOP_ITEMS = [
         description: "get a 10$ grant to buy some ai creds :3 stackable!"
     },
     {
-        id: "steam-gift-card", name: "Steam Gift Card", hours: 3, section: "games", image: "https://cdn.hackclub.com/019d2025-f118-7993-b534-8c3c129d92f6/steam.png", note: "stackable",
-        description: "A 10$ steam gift card! buy any sort of horror game u want"
+        id: "games-grant", name: "Games Grant", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a05379-d126-716e-a62a-aa5a433c3b93/gamegrant.png",
+        description: "buy any sort of **game** using this grant from various sellers.",
+        modalNote: "This grant allows you to buy games but prohibits spending on any in-app purchases or cosmetics."
     },
     {
         id: "minecraft", name: "Minecraft", hours: 7, section: "games", image: "https://cdn.hackclub.com/01a02cc0-c1f3-71bf-9fab-4fe3c3f0af43/minecraft.png",

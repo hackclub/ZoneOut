@@ -565,6 +565,97 @@ margin:0 0 8px;
 color:rgb(var(--accentText));
 }
 
+/* section for rulebook illustrations */
+.proseFigs{
+margin:0 0 16px;
+}
+
+.proseFig{
+margin:0 0 18px;
+width:min(70%,420px);
+}
+
+.proseFig.right{
+margin-left:auto;
+}
+
+.proseFigBtn{
+display:block;
+width:100%;
+padding:0;
+border:1px solid rgba(var(--accent),0.35);
+background:none;
+box-shadow:0 0 18px rgba(var(--accentGlow),0.25);
+transition:border-color 0.2s, box-shadow 0.2s;
+}
+
+.proseFigBtn:hover,
+.proseFigBtn:focus-visible{
+border-color:rgba(var(--fg),0.7);
+box-shadow:0 0 22px rgba(var(--accentGlow),0.55);
+outline:none;
+}
+
+.proseFig img{
+display:block;
+width:100%;
+height:auto;
+filter:none;
+}
+
+.lightbox{
+position:fixed;
+inset:0;
+z-index:240;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:24px;
+background:rgba(0,0,0,0.92);
+opacity:0;
+pointer-events:none;
+transition:opacity 0.2s;
+}
+
+.lightbox.show{
+opacity:1;
+pointer-events:auto;
+}
+
+.lightbox[hidden]{
+display:none;
+}
+
+.lightbox .modalClose{
+top:16px;
+right:16px;
+z-index:1;
+}
+
+.lightbox img{
+display:block;
+width:auto;
+height:auto;
+max-width:100%;
+max-height:calc(100vh - 48px);
+object-fit:contain;
+filter:none;
+}
+
+.proseCaption{
+font-style:italic;
+font-size:13px;
+opacity:0.75;
+text-align:center;
+margin:0;
+}
+
+@media (max-width:650px){
+.proseFig{
+width:100%;
+}
+}
+
 .modalProse em{
 font-style:italic;
 opacity:0.85;
@@ -603,6 +694,24 @@ display:block;
 position:fixed;
 inset:0;
 z-index:40;
+}
+.formNote{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+z-index:41;
+color:rgb(var(--fg));
+font-size:0.85rem;
+letter-spacing:2px;
+text-align:center;
+opacity:0.7;
+}
+.formNote a{
+color:rgb(var(--accentLink));
+}
+.formNote[hidden]{
+display:none;
 }
 
 /* PROFILE */
@@ -742,7 +851,8 @@ background:rgb(var(--bg));
 
 <div class="subPage" id="pageSubmit">
 <div class="formFull">
-<div id="filloutMount" data-fillout-id="gXaU3KEUqCus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-inherit-parameters data-fillout-domain="forms.hackclub.com"></div>
+<div id="filloutMount" data-fillout-id="gXaU3KEUqCus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-domain="forms.hackclub.com"></div>
+<div class="formNote" id="formNote">PREPARING FORM&hellip;</div>
 </div>
 </div>
 
@@ -779,12 +889,14 @@ background:rgb(var(--bg));
 <div class="field"><span class="fieldKey">SLACK ID</span><span class="fieldVal" id="fSlack">—</span></div>
 <div class="field"><span class="fieldKey">HACKATIME</span><span class="fieldVal" id="fHackatime">—</span></div>
 <div class="field"><span class="fieldKey">REGION</span><span class="fieldVal" id="fRegion">—</span></div>
+<div class="field"><span class="fieldKey">SHIPPING DETAILS</span><span class="fieldVal" id="fSubmit">—</span></div>
 </div>
 
 <div class="actionRow">
 <button class="camNode" id="htLinkBtn" type="button" hidden>CONNECT HACKATIME</button>
 <button class="camNode" id="htUnlinkBtn" type="button" hidden>UNLINK HACKATIME</button>
 <button class="camNode" id="regChangeBtn" type="button">SET REGION</button>
+<button class="camNode" id="submitForgetBtn" type="button" hidden>FORGET DETAILS</button>
 </div>
 
 <div class="actionRow">
@@ -1030,12 +1142,26 @@ description to prove that you spent x hours working on your project.</li>
 <p>As always feel free to contact me on Slack &mdash;
 <a href="https://hackclub.enterprise.slack.com/team/U08GCDHM0QZ" target="_blank" rel="noopener noreferrer">@Kuzu</a>
 &mdash; if you need further help or just want creative help or brainstorm ideas together!</p>
+
+<div class="proseSection">SECTION 5: ILLUSTRATIONS</div>
+
+<div class="proseFigs">
+<figure class="proseFig"><button class="proseFigBtn" type="button" aria-label="View image 1 in full size"><img src="https://cdn.hackclub.com/01a04dd3-6f66-7001-8fbe-bae43f89ddae/image1.png" alt="Lomando website visual 1" loading="lazy"></button></figure>
+<figure class="proseFig right"><button class="proseFigBtn" type="button" aria-label="View image 2 in full size"><img src="https://cdn.hackclub.com/01a04dd3-71ed-769a-97c2-dec553fcd2d0/image2.png" alt="Lomando website visual 2" loading="lazy"></button></figure>
+<figure class="proseFig"><button class="proseFigBtn" type="button" aria-label="View image 3 in full size"><img src="https://cdn.hackclub.com/01a04dd8-ad95-728c-9143-b512165e0ab8/image3.png" alt="Lomando website visual 3" loading="lazy"></button></figure>
+<p class="proseCaption"><em>visuals from the lomando.com website</em></p>
+</div>
 </div>
 
 <div class="modalActions">
 <button class="camNode" id="bookModalOk" type="button">CLOSE</button>
 </div>
 </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+<button class="modalClose" id="lightboxClose" type="button" aria-label="Close">&times;</button>
+<img id="lightboxImg" src="" alt="">
 </div>
 
 <div class="loadingScreen active" id="loadingScreen">
@@ -1046,6 +1172,7 @@ description to prove that you spent x hours working on your project.</li>
 <script type="module">
 
 import { SHOP_REGIONS, isRegion, regionName } from "/catalog.js";
+import { PREFILL_KEYS } from "/submitFields.js";
 
 // timings
 const VEIL_MS = 450;
@@ -1269,7 +1396,7 @@ function playClick() {
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .projCard")) playClick();
+    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .projCard, .proseFigBtn")) playClick();
 });
 
 // volume
@@ -1304,15 +1431,87 @@ resumeAudio();
 bgAudio.addEventListener("canplay", resumeAudio);
 
 // the fillout embed, injected on first entry to /submit
+const FORM_URL = "https://forms.hackclub.com/t/gXaU3KEUqCus";
+const PREFILL_MS = 2500;
+const filloutMount = document.getElementById("filloutMount");
+const formNote = document.getElementById("formNote");
+
 let formMounted = false;
+let formPending = null;
 
 function mountForm() {
     if (formMounted) return;
-    formMounted = true;
+    formPending ??= prepareForm().catch(() => { formPending = null; });
+}
+
+async function prepareForm() {
+    formNote.hidden = false;
+    formNote.textContent = "PREPARING FORM…";
+
+    const params = await Promise.race([
+        prefillParams(),
+        new Promise(resolve => setTimeout(() => resolve(null), PREFILL_MS))
+    ]);
+
+    if (formMounted) return;
+
+    if (params) {
+        for (const [key, value] of Object.entries(params)) {
+            if (PREFILL_KEYS.includes(key)) filloutMount.setAttribute("data-" + key, value);
+        }
+    }
 
     const script = document.createElement("script");
     script.src = "https://server.fillout.com/embed/v1/";
+    script.addEventListener("load", () => { formNote.hidden = true; });
+    script.addEventListener("error", () => {
+        formNote.hidden = false;
+        formNote.textContent = "";
+
+        const link = document.createElement("a");
+        link.href = FORM_URL;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "OPEN THE FORM IN A NEW TAB";
+        formNote.append("THE FORM COULD NOT LOAD. ");
+        formNote.appendChild(link);
+
+        teardownForm();
+    });
+
+    formMounted = true;
     document.body.appendChild(script);
+}
+
+// prefill values belong to the session, never to the tab
+async function prefillParams() {
+    try {
+        const response = await fetch("/api/submit/prefill", { credentials: "same-origin" });
+        if (!response.ok) return null;
+
+        const payload = await response.json();
+        const params = { ...payload.params };
+        if (payload.ref) params.zo_ref = payload.ref;
+
+        return params;
+    } catch {
+        return null;
+    }
+}
+
+// a tab outlives a log out, and the next person must not inherit the form
+function teardownForm() {
+    formMounted = false;
+    formPending = null;
+
+    for (const attribute of [...filloutMount.attributes]) {
+        if (attribute.name.startsWith("data-") && !attribute.name.startsWith("data-fillout")) {
+            filloutMount.removeAttribute(attribute.name);
+        }
+    }
+
+    filloutMount.removeAttribute("data-fillout-initialized");
+    filloutMount.replaceChildren();
 }
 
 // wire sparks
@@ -1729,13 +1928,15 @@ function closeProjectModal() {
 }
 
 function setInertBehind(on, dialog) {
+    if (on) dialog.inert = false;
+
     Array.from(document.body.children).forEach(child => {
         if (child !== dialog && child.tagName !== "SCRIPT") child.inert = on;
     });
 }
 
 function anyModalOpen() {
-    return projModalOpen() || htModalOpen() || regModalOpen()
+    return projModalOpen() || htModalOpen() || regModalOpen() || lightboxOpen()
         || panelOpen(infoModal) || panelOpen(bookModal);
 }
 
@@ -1779,6 +1980,7 @@ function closePanel(modal) {
 }
 
 function currentModal() {
+    if (lightboxOpen()) return { el: lightbox, close: closeLightbox };
     if (projModalOpen()) return { el: projModal, close: closeProjectModal };
     if (regModalOpen()) return { el: regModal, close: closeRegionModal };
     if (htModalOpen()) return { el: htModal, close: closeHtModal };
@@ -1801,6 +2003,63 @@ infoModal.addEventListener("mousedown", (e) => {
 
 bookModal.addEventListener("mousedown", (e) => {
     if (e.target === bookModal) closePanel(bookModal);
+});
+
+// rulebook image lightbox
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightboxImg");
+
+let lightboxReturnFocus = null;
+
+function lightboxOpen() {
+    return lightbox.classList.contains("show");
+}
+
+function openLightbox(img) {
+    if (lightboxOpen()) return;
+
+    lightboxReturnFocus = document.activeElement;
+
+    lightboxImg.src = img.currentSrc || img.src;
+    lightboxImg.alt = img.alt;
+
+    lightbox.hidden = false;
+    requestAnimationFrame(() => lightbox.classList.add("show"));
+
+    document.body.classList.add("noScroll");
+    setInertBehind(true, lightbox);
+
+    document.getElementById("lightboxClose").focus({ preventScroll: true });
+}
+
+function closeLightbox() {
+    lightbox.classList.remove("show");
+
+    setTimeout(() => {
+        if (!lightboxOpen()) {
+            lightbox.hidden = true;
+            lightboxImg.removeAttribute("src");
+        }
+    }, 240);
+
+    if (panelOpen(bookModal)) setInertBehind(true, bookModal);
+    else setInertBehind(false, lightbox);
+
+    restoreScroll();
+
+    if (lightboxReturnFocus && document.contains(lightboxReturnFocus)) lightboxReturnFocus.focus();
+    lightboxReturnFocus = null;
+}
+
+bookModal.addEventListener("click", (e) => {
+    const btn = e.target.closest(".proseFigBtn");
+    if (btn) openLightbox(btn.querySelector("img"));
+});
+
+document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+
+lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) closeLightbox();
 });
 
 function restoreScroll() {
@@ -2236,6 +2495,34 @@ function paintRegion() {
     regChangeBtn.textContent = userRegion ? "CHANGE REGION" : "SET REGION";
 }
 
+// shipping details, shown as whether and never as what
+let submitProfileOn = false;
+
+const submitForgetBtn = document.getElementById("submitForgetBtn");
+
+function paintSubmitProfile() {
+    put("fSubmit", submitProfileOn ? "on file" : "not on file");
+    submitForgetBtn.hidden = !submitProfileOn;
+}
+
+submitForgetBtn.addEventListener("click", async () => {
+    submitForgetBtn.disabled = true;
+
+    try {
+        const response = await fetch("/api/submit/prefill", { method: "DELETE", credentials: "same-origin" });
+        if (response.status === 403) return window.location.replace("/ban");
+
+        if (response.ok) {
+            submitProfileOn = false;
+            paintSubmitProfile();
+            teardownForm();
+        }
+    } catch {
+    } finally {
+        submitForgetBtn.disabled = false;
+    }
+});
+
 regPickBtn.addEventListener("click", () => {
     if (regMenu.hidden) openRegMenu();
     else closeRegMenu(true);
@@ -2478,6 +2765,7 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
     forgetSessionHint();
 
     forgetProjects();
+    teardownForm();
 
     try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
     screenVeil.classList.add("on");
@@ -2509,6 +2797,7 @@ async function load() {
     if (response.status === 401) {
         stopLoading();
         forgetProjects();
+        teardownForm();
         return toError("You need to first log in!");
     }
 
@@ -2542,6 +2831,9 @@ async function load() {
     userRegion = isRegion(user.region) ? user.region : null;
     regionKnown = true;
     paintRegion();
+
+    submitProfileOn = Boolean(user.submitProfile);
+    paintSubmitProfile();
 
     adoptProjects(user.userId, user.name, payload.projects);
 
