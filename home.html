@@ -757,8 +757,21 @@ word-break:break-all;
 
 .actionRow{
 width:min(680px,92vw);
-margin:0 auto 80px;
-text-align:right;
+margin:0 auto 14px;
+display:flex;
+flex-wrap:wrap;
+justify-content:flex-end;
+gap:12px;
+}
+
+.actionRow:last-of-type{
+margin-bottom:130px;
+}
+
+.actionRow .camNode{
+padding:9px 18px;
+font-size:13px;
+letter-spacing:3px;
 }
 
 /* ERROR SCREEN */
