@@ -34,7 +34,10 @@ export default async function handler(req, res) {
 
     const fields = collect(body);
     if (!fields) {
-        console.error(`submission hook carried no usable fields for user_id ${userId}`);
+        console.error(
+            `submission hook carried no usable fields for user_id ${userId}; ` +
+            `body keys: ${keyNames(body)}; ${why(body)}`
+        );
         return res.status(204).end();
     }
 
@@ -99,6 +102,28 @@ function resolveRef(value) {
     }
 
     return userId;
+}
+
+// key names only, never a value
+function keyNames(body) {
+    const keys = Object.keys(body).map(key => key.slice(0, 40));
+    return keys.length ? keys.slice(0, 40).join(", ") : "(none)";
+}
+
+// which expected field failed and how, never a value
+function why(body) {
+    const notes = [];
+
+    for (const [key, max] of Object.entries(CAPTURED_FIELDS)) {
+        const raw = body[key];
+
+        if (raw === undefined) notes.push(`${key}=absent`);
+        else if (typeof raw !== "string") notes.push(`${key}=${typeof raw}`);
+        else if (!raw.trim()) notes.push(`${key}=blank`);
+        else if (!(key === "birthday" ? birthday(raw) : text(raw, max))) notes.push(`${key}=rejected`);
+    }
+
+    return notes.join(" ");
 }
 
 // the captured fields, never coerced
