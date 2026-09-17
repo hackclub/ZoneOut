@@ -1,4 +1,4 @@
-import { exchangeCode, fetchHackatimeIdentity, resolveRedirectUri, verifyState, storeLink, STATE_COOKIE } from "../../lib/hackatime.mjs";
+import { exchangeCode, fetchHackatimeIdentity, resolveRedirectUri, verifyState, storeLink, HackatimeTaken, STATE_COOKIE } from "../../lib/hackatime.mjs";
 import { isSecureRequest, readCookie, clearCookie } from "../../lib/cookies.mjs";
 import { readSession } from "../../lib/session.mjs";
 import { warmPool } from "../../lib/db.mjs";
@@ -64,6 +64,7 @@ export default async function handler(req, res) {
         const linked = await storeLink(session.userId, identity.hackatimeUserId, token.access_token);
         if (!linked) return redirect(res, "/home?ht=failed");
     } catch (err) {
+        if (err instanceof HackatimeTaken) return redirect(res, "/home?ht=taken");
         console.error("could not store hackatime link:", err.message);
         return redirect(res, "/home?ht=failed");
     }

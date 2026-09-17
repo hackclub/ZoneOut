@@ -11,6 +11,10 @@
     }
   },
 
+  "crons": [
+    { "path": "/api/cron/sync", "schedule": "0 * * * *" }
+  ],
+
   "redirects": [
     { "source": "/lib/:path*", "destination": "/", "permanent": false },
     { "source": "/.gitattributes", "destination": "/", "permanent": false }

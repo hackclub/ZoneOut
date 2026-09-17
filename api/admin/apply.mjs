@@ -1,25 +1,15 @@
-import { requireAdmin } from "../../lib/guard.mjs";
+import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
 import { withTransaction } from "../../lib/db.mjs";
-import { setBalanceHours, listAllUsersForAdmin, MAX_BALANCE_HOURS } from "../../lib/users.mjs";
+import { setBalanceHours, listAllUsersForAdmin, setProjectReview, listProjectsForReview, normaliseRemarks, MAX_BALANCE_HOURS, ValidationError } from "../../lib/users.mjs";
 import { parseCommand, applyCommand, CommandError } from "../../lib/adminCommands.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { syncAllLinkedUsers, isConfigured } from "../../lib/hackatime.mjs";
 import { presentUsers } from "./users.mjs";
+import { presentReviews } from "./reviews.mjs";
+import { presentOrders } from "./orders.mjs";
+import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
 
 const MAX_BATCH = 200;
-
-// a browser sends Origin on every cross-site POST, so a mismatch is never this page
-function sameOrigin(req) {
-    const origin = req.headers?.origin;
-    if (!origin) return true;
-
-    const host = Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host;
-    try {
-        return new URL(origin).host === host;
-    } catch {
-        return false;
-    }
-}
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -53,11 +43,15 @@ export default async function handler(req, res) {
 
     const balances = Array.isArray(body.balances) ? body.balances : [];
     const rawCommands = Array.isArray(body.commands) ? body.commands : [];
+    const rawReviews = Array.isArray(body.reviews) ? body.reviews : [];
+    const rawOrders = Array.isArray(body.orders) ? body.orders : [];
 
-    if (balances.length + rawCommands.length === 0) {
+    const size = balances.length + rawCommands.length + rawReviews.length + rawOrders.length;
+
+    if (size === 0) {
         return res.status(400).json({ ok: false, error: "nothing to save" });
     }
-    if (balances.length + rawCommands.length > MAX_BATCH) {
+    if (size > MAX_BATCH) {
         return res.status(400).json({ ok: false, error: "too many changes in one save" });
     }
 
@@ -66,10 +60,12 @@ export default async function handler(req, res) {
     try {
         staged = {
             balances: balances.map(readBalanceEdit),
-            commands: rawCommands.map(line => parseCommand(line))
+            commands: rawCommands.map(line => parseCommand(line)),
+            reviews: rawReviews.map(readReviewEdit),
+            orders: rawOrders.map(readOrderEdit)
         };
     } catch (err) {
-        if (err instanceof CommandError || err instanceof RangeError) {
+        if (err instanceof CommandError || err instanceof RangeError || err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
         }
         throw err;
@@ -93,7 +89,8 @@ export default async function handler(req, res) {
 
     // apply balances and commands in one transaction
     const applied = [];
-    const writing = staged.balances.length > 0 || staged.commands.length > 0;
+    const writing = staged.balances.length > 0 || staged.commands.length > 0
+                 || staged.reviews.length > 0 || staged.orders.length > 0;
 
     try {
         if (writing) await withTransaction(async client => {
@@ -105,6 +102,25 @@ export default async function handler(req, res) {
 
             for (const command of staged.commands) {
                 applied.push(await applyCommand(command, client));
+            }
+
+            for (const review of staged.reviews) {
+                const row = await setProjectReview(
+                    review.projectId, review.status, review.remarks, admin.user_id, client
+                );
+                if (!row) throw new CommandError(`no project ${review.projectId}`);
+                applied.push(`${review.status} project ${review.projectId}`);
+            }
+
+            for (const order of staged.orders) {
+                const row = await setOrderStatus(
+                    order.orderId, order.status, admin.user_id, client, order.refund
+                );
+                if (!row) throw new CommandError(`no order ${order.orderId}`);
+                applied.push(
+                    `${order.status} order ${order.orderId}`
+                    + (row.refund_paid ? ` and refunded ${row.hours_spent} hours` : "")
+                );
             }
         });
     } catch (err) {
@@ -121,12 +137,52 @@ export default async function handler(req, res) {
         return res.status(200).json({
             ok: true,
             applied,
-            users: presentUsers(await listAllUsersForAdmin())
+            users: presentUsers(await listAllUsersForAdmin()),
+            reviews: staged.reviews.length ? presentReviews(await listProjectsForReview()) : null,
+            orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null
         });
     } catch (err) {
         console.error("admin reload failed:", err.message);
-        return res.status(200).json({ ok: true, applied, users: null });
+        return res.status(200).json({ ok: true, applied, users: null, reviews: null, orders: null });
     }
+}
+
+// order decision validation
+function readOrderEdit(entry) {
+    const orderId = Number(entry?.orderId);
+
+    if (!Number.isSafeInteger(orderId) || orderId < 1) {
+        throw new RangeError(`"${entry?.orderId}" is not an order id`);
+    }
+
+    const status = entry?.decision === "approve" ? "approved"
+                 : entry?.decision === "reject"  ? "rejected"
+                 : null;
+
+    if (!status) {
+        throw new RangeError(`order ${orderId} must be approved or rejected`);
+    }
+
+    return { orderId, status, refund: status === "rejected" && entry?.refund === true };
+}
+
+// review edit validation
+function readReviewEdit(entry) {
+    const projectId = Number(entry?.projectId);
+
+    if (!Number.isSafeInteger(projectId) || projectId < 1) {
+        throw new RangeError(`"${entry?.projectId}" is not a project id`);
+    }
+
+    const status = entry?.decision === "approve" ? "approved"
+                 : entry?.decision === "reject"  ? "rejected"
+                 : null;
+
+    if (!status) {
+        throw new RangeError(`project ${projectId} must be approved or rejected`);
+    }
+
+    return { projectId, status, remarks: normaliseRemarks(entry?.remarks) };
 }
 
 // the hackatime sweep, reported rather than thrown: the batch has already committed
@@ -138,6 +194,7 @@ async function sweep() {
 
         const parts = [`refreshed ${result.users} of ${result.linked} linked users`];
         if (result.projects) parts.push(`${result.projects} projects`);
+        if (result.event) parts.push(`${result.event} event participants`);
         if (result.failed) parts.push(`${result.failed} failed`);
         if (result.skipped) parts.push(`${result.skipped} left for the next run`);
 

@@ -1,6 +1,7 @@
 import { requireUser } from "../../lib/guard.mjs";
 import { readToken, fetchProjectStats } from "../../lib/hackatime.mjs";
 import { listHackatimeLinks } from "../../lib/users.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -14,6 +15,9 @@ export default async function handler(req, res) {
         res.setHeader("Allow", "GET, HEAD");
         return res.status(405).json({ ok: false, error: "method not allowed" });
     }
+
+    // rate limit, every call reaches the provider
+    if (await limited(res, "ht-projects", user.user_id, 20, 60)) return;
 
     if (!user.hackatime_user_id) {
         return res.status(200).json({ ok: true, linked: false, projects: [] });

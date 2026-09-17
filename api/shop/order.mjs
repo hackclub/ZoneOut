@@ -1,6 +1,7 @@
 import { requireUser } from "../../lib/guard.mjs";
 import { placeOrder, OrderRejected } from "../../lib/shop.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -14,6 +15,9 @@ export default async function handler(req, res) {
     // session
     const user = await requireUser(req, res);
     if (!user) return;
+
+    // rate limit
+    if (await limited(res, "shop-order", user.user_id, 20, 60)) return;
 
     // request body
     let body;

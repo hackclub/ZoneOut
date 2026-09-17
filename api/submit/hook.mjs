@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { notFound } from "../../lib/guard.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
-import { writeSubmitProfile } from "../../lib/users.mjs";
+import { writeSubmitProfile, markProjectUnderReview } from "../../lib/users.mjs";
 import { openRef, sealProfile } from "../../lib/secretbox.mjs";
 import { readEnv, hasEnv } from "../../lib/env.mjs";
 import { CAPTURED_FIELDS, PROFILE_MAX } from "../../submitFields.js";
@@ -29,30 +29,47 @@ export default async function handler(req, res) {
         throw err;
     }
 
-    const userId = resolveRef(body.zo_ref);
-    if (!userId) return res.status(204).end();
+    const reference = resolveRef(body.zo_ref);
+    if (!reference) return res.status(204).end();
+
+    const { userId, projectId } = reference;
 
     const fields = collect(body);
+    const payload = fields ? JSON.stringify({ v: 1, ...fields }) : null;
+
     if (!fields) {
         console.error(
             `submission hook carried no usable fields for user_id ${userId}; ` +
             `body keys: ${keyNames(body)}; ${why(body)}`
         );
-        return res.status(204).end();
     }
 
-    const payload = JSON.stringify({ v: 1, ...fields });
-    if (payload.length > PROFILE_MAX) {
+    const submissionId = text(body.submission_id, 128)
+        || (payload ? digest(payload) : "t:" + Date.now());
+
+    // the project moves first, so a blank profile cannot cost a submission its state
+    if (projectId) {
+        try {
+            const moved = await markProjectUnderReview(projectId, userId, submissionId);
+            if (!moved) {
+                console.error(`submission hook could not move project ${projectId} for user_id ${userId}`);
+            }
+        } catch (err) {
+            console.error("project review mark failed:", err.message);
+        }
+    }
+
+    if (payload && payload.length > PROFILE_MAX) {
         console.error(`submission hook payload too large for user_id ${userId}`);
         return res.status(204).end();
     }
 
-    const submissionId = text(body.submission_id, 128) || digest(payload);
-
-    try {
-        await writeSubmitProfile(userId, sealProfile(payload, userId), submissionId);
-    } catch (err) {
-        console.error("submit profile write failed:", err.message);
+    if (payload) {
+        try {
+            await writeSubmitProfile(userId, sealProfile(payload, userId), submissionId);
+        } catch (err) {
+            console.error("submit profile write failed:", err.message);
+        }
     }
 
     return res.status(204).end();
@@ -75,7 +92,7 @@ function digest(payload) {
     return "sha:" + crypto.createHash("sha256").update(payload).digest("base64url").slice(0, 32);
 }
 
-// which zoneout account this submission belongs to
+// which zoneout account and project this submission belongs to
 function resolveRef(value) {
     const raw = typeof value === "string" ? value.trim() : "";
     if (!raw) {
@@ -89,7 +106,7 @@ function resolveRef(value) {
         return null;
     }
 
-    const [rawId, rawIssued] = opened.split(".");
+    const [rawId, rawIssued, rawProject] = opened.split(".");
     const userId = Number(rawId);
     const issuedAt = Number(rawIssued);
 
@@ -101,7 +118,10 @@ function resolveRef(value) {
         return null;
     }
 
-    return userId;
+    const projectId = Number(rawProject);
+    const project = Number.isSafeInteger(projectId) && projectId >= 1 ? projectId : null;
+
+    return { userId, projectId: project };
 }
 
 // key names only, never a value

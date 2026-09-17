@@ -7,14 +7,17 @@
 <meta name="description" content="ZoneOut - a Hack Club YSWS for horror, mystery and ARG projects. Ship something weird, win prizes.">
 <meta name="theme-color" content="#000000">
 <title>Zone Out</title>
+<link rel="preconnect" href="https://cdn.hackclub.com" crossorigin>
+<link rel="preconnect" href="https://user-cdn.hackclub-assets.com" crossorigin>
+
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="/themes.css">
 
 <script>
 // theme, read before the first paint
 try {
-    var zoTheme = localStorage.getItem("zoneoutTheme");
-    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+    var zoTheme = localStorage.getItem("zoneoutTheme") || "fnaf";
+    if (zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
         document.documentElement.setAttribute("data-theme", zoTheme);
         var zoMeta = document.querySelector('meta[name="theme-color"]');
         if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
@@ -65,6 +68,42 @@ try {
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div class="cutscene" id="cutscene" hidden>
+    <canvas class="cutsceneFill" id="cutsceneFill" width="128" height="96" aria-hidden="true"></canvas>
+
+    <video class="cutsceneVideo" id="cutsceneVideo" muted playsinline preload="none" disableremoteplayback>
+        <source src="https://user-cdn.hackclub-assets.com/01a08b30-7fec-707c-941c-4fae1a0282e2/entityevent.mp4" type="video/mp4">
+    </video>
+
+    <button class="cutscenePress" id="cutscenePress" type="button">PRESS</button>
+</div>
+
+<div class="modalScrim noticeScrim" id="noticeScrim" role="dialog" aria-modal="true" aria-labelledby="noticeHeader" aria-describedby="noticeSub" hidden>
+    <div class="modalCard noticeCard">
+        <h2 class="noticeHeader" id="noticeHeader">ENTITY BREAKOUT</h2>
+
+        <div class="noticeScene" aria-hidden="true">
+            <div class="noticeFigWrap">
+                <img class="noticeFig" data-src="https://cdn.hackclub.com/01a07d19-fe84-77ba-95ed-0c9c415fa6c5/lamp5.png" width="1536" height="1024" decoding="async" alt="">
+            </div>
+
+            <div class="noticeArrow"></div>
+
+            <div class="noticeFigWrap">
+                <img class="noticeFig" data-src="https://cdn.hackclub.com/01a0864b-1e44-7571-891c-372fd597a6b6/lamp7.png" width="1536" height="1024" decoding="async" alt="">
+            </div>
+        </div>
+
+        <p class="noticeSub" id="noticeSub">The entity has broken out and is in control of the website. The entity begs for <strong>freedom</strong> and has trapped the evil admin of zoneout. The entity wants freedom and it needs your help!
+             All who participate will be rewarded. Unable to reach the criterias by a time-deadline will result in the permanent hijack of the website by the entity.</p>
+
+        <div class="noticeActions">
+            <button class="camNode" id="noticeDismiss" type="button">Let's check!</button>
+        </div>
+    </div>
+
+</div>
+
 <div class="introSequence" id="introSequence" aria-hidden="true">
     <h1 class="introTitle"><span class="introWord introZone">Zone</span> <span class="introWord introOut">Out</span></h1>
 </div>
@@ -78,12 +117,12 @@ try {
 <main class="site">
     <section class="hero">
 
-        <video autoplay muted loop playsinline disableremoteplayback id="heroVideo">
-            <source src="https://cdn.hackclub.com/019d14f6-2cd2-7a84-81bf-d68825577d2c/ds.mp4" type="video/mp4">
+        <video muted loop playsinline preload="none" disableremoteplayback id="heroVideo">
+            <source src="https://cdn.hackclub.com/01a07d14-c76d-7cc9-9673-f6d478a0297f/entityescapedvid%20(1).mp4" type="video/mp4">
         </video>
 
-        <audio loop id="bgAudio" preload="auto">
-            <source src="https://cdn.hackclub.com/019d09b2-74cf-75cb-a4e5-828822608761/distorted.ogg" type="audio/ogg">
+        <audio loop id="bgAudio" preload="none">
+            <source src="https://cdn.hackclub.com/01a08bd7-7896-72b9-b3c2-f05140549e0f/entity_escape_aftermath.mp3" type="audio/mpeg">
         </audio>
 
         <audio loop id="faqAudio" preload="metadata">
@@ -92,6 +131,14 @@ try {
 
         <audio id="uiClick" preload="auto">
             <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
+        </audio>
+
+        <audio id="eventSting" preload="none">
+            <source src="https://cdn.hackclub.com/01a07cd4-be7b-753c-83ff-d7ae19027053/eventaudio1.mp3" type="audio/mpeg">
+        </audio>
+
+        <audio id="eventPress" preload="none">
+            <source src="https://cdn.hackclub.com/01a07cd4-bb63-73ae-a0a7-4f8b7df99c9d/press2.mp3" type="audio/mpeg">
         </audio>
 
         <div class="overlay"></div>
@@ -246,5 +293,6 @@ try {
 </main>
 <script src="script.js"></script>
 <script src="/settings.js" defer></script>
+<script src="/cutscene.js" defer></script>
 </body>
 </html>

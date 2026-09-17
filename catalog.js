@@ -7,7 +7,9 @@ export const SHOP_SECTIONS = [
 ];
 
 // new-item label expiry
-const NEW_UNTIL = "2026-08-31T23:59:59Z";
+const DEPLOYED_AT = "2026-09-13T00:00:00Z";
+const NEW_DAYS = 6;
+const NEW_UNTIL = new Date(Date.parse(DEPLOYED_AT) + NEW_DAYS * 86400000).toISOString();
 
 export function itemIsNew(item, now) {
     if (!item || !item.newUntil) return false;
@@ -29,7 +31,7 @@ export const SHOP_ITEMS = [
         description: "Cieling. large seal: 60cm long. not horror though"
     },
     {
-        id: "hardware-grant", fit: "contain", name: "Hardware Equipment Grant (10$)", hours: 2.5, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-573e-709c-a690-49a94b9ba762/hardware.png",
+        id: "hardware-grant", fit: "contain", name: "Hardware Equipment Grant (10$)", hours: 2, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-573e-709c-a690-49a94b9ba762/hardware.png",
         description: "Get a 10$ hardware grant to buy new tech parts for your project!"
     },
     {
@@ -78,7 +80,7 @@ export const SHOP_ITEMS = [
         description: "need me some devices - stackable!"
     },
     {
-        id: "yubikey-5c-nfc", fit: "contain", name: "YubiKey 5C NFC", hours: 14, section: "tech", image: "https://cdn.hackclub.com/01a03ee8-5dc9-7610-9f4e-1e82f758f935/yubikey.png",
+        id: "yubikey-5c-nfc", local: true, fit: "contain", name: "YubiKey 5C NFC", hours: 14, section: "tech", image: "https://cdn.hackclub.com/01a03ee8-5dc9-7610-9f4e-1e82f758f935/yubikey.png",
         description: "A yubikey :) keep things secure"
     },
     {
@@ -99,10 +101,10 @@ export const SHOP_ITEMS = [
     },
     {
         id: "peripherals-grant", name: "Peripherals Grant (20$)", hours: 5, section: "grants", image: "https://cdn.hackclub.com/019d202f-1142-7f3e-9851-d3c3b0ce00ad/perpherals.png", note: "Stackable",
-        description: "To build a more cooler setup and flex it! supports RAM sticks too"
+        description: "To build a more cooler setup and flex it!"
     },
     {
-        id: "movie-grant", name: "Movie Grant (5$)", hours: 1, section: "halloween", newUntil: NEW_UNTIL,
+        id: "movie-grant", name: "Movie Grant (5$)", hours: 1, section: "halloween", note: "Stackable", newUntil: NEW_UNTIL,
         image: "https://cdn.hackclub.com/019d2022-bcc0-7c96-bd2d-ad90363804d4/moviegrant.png",
         description: "Watch any type of movie you like!"
     },
@@ -127,7 +129,7 @@ export const SHOP_ITEMS = [
         description: "one of peakest keyboards in existence! I use it daily"
     },
     {
-        id: "phone-grant", name: "Phone Grant (50$)", hours: 11, section: "grants", image: "https://cdn.hackclub.com/01a03ed1-0bb6-739d-b9d8-6258a7922585/samsung.png",
+        id: "phone-grant", name: "Phone Grant (50$)", hours: 11, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ed1-0bb6-739d-b9d8-6258a7922585/samsung.png",
         description: "A 50$ grant to buy any type of phone u want!"
     },
     {
@@ -144,13 +146,18 @@ export const SHOP_ITEMS = [
         description: "A high performance NVME. High Speed, stores a lot of stuff at once ^_^"
     },
     {
-        id: "ssd-usb-enclosure", name: "SSD SATA To USB Encloser", hours: 2.5, section: "tech", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a049b5-8bc2-7d11-b892-03717542ccac/encloser.png",
+        id: "ssd-usb-enclosure", local: true, name: "SSD SATA To USB Encloser", hours: 2.5, section: "tech", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a049b5-8bc2-7d11-b892-03717542ccac/encloser.png",
         description: "keep your SSD safe by enclosing it inside this case! protective cover."
     },
     {
         id: "completion-grant", name: "Completion Grant (2.5$)", hours: 0.5, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a049b5-8aa0-7ea8-a003-5e512509c5a7/usd.png",
         access: "cg", newUntil: NEW_UNTIL,
         description: "This is bought to accomodate any extra funds you need for your item or use it to pay customs or taxes!"
+    },
+    {
+        id: "pay-customs", fit: "contain", name: "Pay Customs(5$)", hours: 1, section: "grants", note: "Extras", limit: 4, newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b6f-1c55-73fe-88ba-eba3294e6106/customs.png",
+        description: "ts to help pay your customs taxes! you're not alone in this vro"
     },
     {
         id: "sata-ssd-2tb", local: true, fit: "contain", name: "SATA SSD 2TB", hours: 33, section: "tech", newUntil: NEW_UNTIL,
@@ -171,9 +178,134 @@ export const SHOP_ITEMS = [
         description: "Another High-End Gen 4 NVME for all of your needs! this one's 1TB! so much space :O"
     },
     {
-        id: "storage-grant", name: "Storage Grant (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        id: "storage-grant", name: "Storage and Ram Grant (50$)", hours: 11, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
         image: "https://cdn.hackclub.com/01a04d2b-1a86-7aba-ba27-5c66b34b7642/storage.png",
-        description: "10$ grant to buy a storage device of your choice!"
+        description: "Buy any sort of storage device or RAM!"
+    },
+    {
+        id: "8bitdo-ultimate-2c", local: true, fit: "contain", name: "8BitDo Ultimate 2C", hours: 8, section: "tech", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-e7cc-7e44-9a75-30a49ae3b4ed/8BitDo%20Ultimate%202C%20Wireless.png",
+        description: "A budget wireless controller for your gaming needs!"
+    },
+    {
+        id: "8bitdo-ultimate-3-mode", local: true, fit: "contain", name: "8BitDo Ultimate 3-mode Controller", hours: 15, section: "tech", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-e6ed-71c4-b7e7-389c39915204/8BitDo%20Ultimate%203-mode.png",
+        description: "A full fledged premium controller. works for most devices, has a charging port too. Goated controller"
+    },
+    {
+        id: "sony-wireless-headset", local: true, fit: "contain", name: "Sony Wireless Headset", hours: 30, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["global", "us", "india", "uae", "canada"],
+        rates: { us: 25, india: 25, uae: 20, canada: 45 },
+        image: "https://cdn.hackclub.com/01a09b03-e5d2-762c-90e7-76cc1e8498dd/headphonesony.png",
+        description: "A comfy headset that you can use to listen to peak linkin park songs. I TRIED SO HARD AND GOT SO FAR-"
+    },
+    {
+        id: "nothing-cmf-pro-2", local: true, fit: "contain", name: "Nothing CMF Pro 2", hours: 15, section: "tech", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-f812-7d96-ac0a-706127a80f27/cmfbuds.png",
+        description: "one of the most used buds in town. you'll hear nothing from the outside but everything on the inside. rock n roll"
+    },
+    {
+        id: "bambu-a1-mini", local: true, fit: "contain", name: "Bambu A1 mini", hours: 55, section: "tech", note: "Base Model", newUntil: NEW_UNTIL,
+        rates: { us: 50, india: 50, eu: 50, canada: 45, uk: 45, australia: 50, uae: 60 },
+        image: "https://cdn.hackclub.com/01a09b03-f514-7bdd-9705-eecde4a4ce7e/a1mini3d.png",
+        description: "The best 3D printer to get you started with 3D printing! mini version. smol but powerful!"
+    },
+    {
+        id: "bambu-a1-mini-combo", local: true, fit: "contain", name: "Bambu A1 mini (Combo Model)", hours: 85, section: "tech", note: "Multi-Colour Printing support", newUntil: NEW_UNTIL,
+        rates: { us: 70, india: 85, eu: 75, canada: 65, uk: 75, australia: 85, uae: 97 },
+        image: "https://cdn.hackclub.com/01a09b03-f2ce-71ab-ba39-e63a640e9632/a1mini3dcombo.png",
+        description: "The best 3D printer to get you started with 3D printing! mini version. smol but powerful. Includes multi-colour printing - AMS Lite!"
+    },
+    {
+        id: "bambu-lab-a1", local: true, fit: "contain", name: "Bambu Lab A1", hours: 68, section: "tech", note: "Base Model", newUntil: NEW_UNTIL,
+        regions: ["global", "india", "us", "eu", "australia", "uk", "canada"],
+        rates: { india: 70, us: 65, eu: 65, australia: 65, uk: 65, canada: 60 },
+        image: "https://cdn.hackclub.com/01a09b03-f6d2-7513-acc8-ade37f21f255/3dprinter.png",
+        description: "To print things that aren't mini... big brother of the A1 mini"
+    },
+    {
+        id: "bambu-lab-a1-combo", local: true, fit: "contain", name: "Bambu Lab A1 (Combo Model)", hours: 100, section: "tech", note: "Multi-Colour Printing support", newUntil: NEW_UNTIL,
+        rates: { india: 105, us: 90, eu: 93, australia: 100, uk: 93, canada: 85, uae: 130 },
+        image: "https://cdn.hackclub.com/01a09b03-f38e-739b-99e3-927ba326ab8f/a13Dcombo.png",
+        description: "To print things that aren't mini... big brother of the A1 mini. Includes multi-colour printing: AMS Lite!"
+    },
+    {
+        id: "3d-printing-credits", fit: "contain", name: "3D Printing Credits (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-f20f-79ab-95a7-7afbb4bc5d1a/3d%20printing%20creds.png",
+        description: "To keep printing! You can spend this at any of the following places: Bambu Lab, Prusa, Trianglelab, Wol3D, Numakers, Ideal3D, Setterox, Polymaker, DIY3D, Creality, South African 3D Printing Store, Flashforge"
+    },
+    {
+        id: "headphones-iems-grant", fit: "contain", name: "Headphones and IEMs grant (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-f5e2-7460-9418-4d590c7eca57/iemsandhead.webp",
+        description: "Get yourself a headphone or even better, an IEM!"
+    },
+    {
+        id: "monitor-grant", fit: "contain", name: "Monitor Grant (50$)", hours: 11, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b1f-335a-7d22-b15d-47a0d43fac1d/monitorgrant.png",
+        description: "Get yourself a viewing device or monitor of any sort!"
+    },
+    {
+        id: "motherboard-cpu-grant", fit: "contain", name: "Motherboard/CPU Grant (50$)", hours: 11, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b20-c573-734f-ad98-8a64fb8b7d98/motherboardcpu.png",
+        description: "Buy the heart and brain of your PC setup! Motherboard, CPU or both!"
+    },
+    {
+        id: "asus-tuf-vg27aq3a", local: true, fit: "contain", name: "ASUS TUF Gaming VG27AQ3A Display", hours: 45, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["us"],
+        image: "https://cdn.hackclub.com/01a09b03-eea5-758e-8cb6-e5d2c46e1936/ASUS%20TUF%20Gaming%20VG27AQ3A.png",
+        description: "A very good gaming monitor! 27'', 1440p and 180Hz, height adjustment and what not."
+    },
+    {
+        id: "lenovo-legion-r27qe-india", local: true, fit: "contain", name: "Lenovo Legion R27qe Gen 2 Display (India)", hours: 45, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["india"],
+        image: "https://cdn.hackclub.com/01a09b03-efbd-79cb-ab12-61642816936e/LenovoLegionR27qe.png",
+        description: "A very good gaming monitor! 27'', 1440p and 200Hz, height adjustment and what not."
+    },
+    {
+        id: "lenovo-legion-r27qe-eu", local: true, fit: "contain", name: "Lenovo Legion R27qe Gen 2 Display (EU)", hours: 45, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["eu"],
+        image: "https://cdn.hackclub.com/01a09b03-efbd-79cb-ab12-61642816936e/LenovoLegionR27qe.png",
+        description: "A very good gaming monitor! 27'', 1440p and 200Hz, height adjustment and what not."
+    },
+    {
+        id: "aoc-q27g4xf", local: true, fit: "contain", name: "AOC Q27G4XF Display", hours: 45, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["uk"],
+        image: "https://cdn.hackclub.com/01a09b03-ed89-78cb-9ca2-a9ceb075ee87/AOC%20Q27G4XF.png",
+        description: "A very good gaming monitor! 27'', 1440p and 180Hz, height adjustment and what not."
+    },
+    {
+        id: "asus-tuf-vg27aq5a-j", local: true, fit: "contain", name: "ASUS TUF Gaming VG27AQ5A-J Display", hours: 47, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["uae"],
+        image: "https://cdn.hackclub.com/01a09b03-eb43-7d6a-9bc9-80ed410bfe8f/ASUS%20TUF%20Gaming%20VG27AQ5A-J.png",
+        description: "A very good gaming monitor! 27'', 1440p and 210Hz, height adjustment and what not."
+    },
+    {
+        id: "aoc-27g4zr", local: true, fit: "contain", name: "AOC 27G4ZR Display", hours: 45, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["australia"],
+        image: "https://cdn.hackclub.com/01a09b03-ea8e-7bf9-971f-349c8226caa8/AOC%2027G4ZR.png",
+        description: "A very good gaming monitor! 27'', 1080p and 260Hz, height adjustment and what not."
+    },
+    {
+        id: "ktc-h27t6", local: true, fit: "contain", name: "KTC H27T6 Display", hours: 47, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["canada"],
+        image: "https://cdn.hackclub.com/01a09b03-e9be-7029-8a2e-01c27a676f25/KTC%20H27T6.png",
+        description: "A very good gaming monitor! 27'', 1440p and 200Hz, height adjustment and what not."
+    },
+    {
+        id: "samsung-odyssey-g50d", local: true, fit: "contain", name: "SAMSUNG 27-Inch Odyssey G50D", hours: 50, section: "tech", newUntil: NEW_UNTIL,
+        regions: ["global"],
+        image: "https://cdn.hackclub.com/01a09b03-e8c5-708e-843c-a8cb125da589/SAMSUNG%20Odyssey%20G50D.png",
+        description: "A very good gaming monitor! 27'', 1440p and 180Hz, height adjustment and what not."
+    },
+    {
+        id: "innioasis-y1", local: true, fit: "contain", name: "Innioasis Y1 MP3 Player", hours: 18, section: "tech", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b6b-030e-7400-b2ed-814f88152bd5/inoasisv1.png",
+        description: "A handy MP3 player! 64GB version."
+    },
+    {
+        id: "innioasis-y2", local: true, fit: "contain", name: "Innioasis Y2 MP3 Player", hours: 20, section: "tech", note: "Better version of the Y1", newUntil: NEW_UNTIL,
+        image: "https://cdn.hackclub.com/01a09b03-f0e8-750c-b526-a17d150fcb24/innoasisv2.png",
+        description: "The better MP3 player. 72GB and more cool features."
     }
 ];
 
@@ -221,6 +353,12 @@ export function itemHours(item, regionId) {
     return item.hours;
 }
 
+// per-user order caps
+export function itemLimit(item) {
+    if (!item || !Number.isInteger(item.limit) || item.limit < 1) return null;
+    return item.limit;
+}
+
 // restricted items
 export function itemUnlocked(item, grants) {
     if (!item || !item.access) return true;
@@ -237,3 +375,7 @@ export function findItem(itemId) {
 
 // hackatime
 export const HACKATIME_SINCE = "2026-08-21";
+
+// entity breakout event
+export const EVENT_SINCE = "2026-09-10";
+export const EVENT_HOUR_GOAL = 280;

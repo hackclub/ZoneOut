@@ -1,6 +1,5 @@
 import { requireUser } from "../../lib/guard.mjs";
-import { createSuggestion } from "../../lib/shop.mjs";
-import { ValidationError } from "../../lib/users.mjs";
+import { cancelOrder, OrderRejected } from "../../lib/shop.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 
@@ -18,7 +17,7 @@ export default async function handler(req, res) {
     if (!user) return;
 
     // rate limit
-    if (await limited(res, "shop-suggest", user.user_id, 5, 3600)) return;
+    if (await limited(res, "shop-cancel", user.user_id, 20, 60)) return;
 
     // request body
     let body;
@@ -31,14 +30,28 @@ export default async function handler(req, res) {
         throw err;
     }
 
+    const orderId = Number(body.orderId);
+    if (!Number.isSafeInteger(orderId) || orderId < 1) {
+        return res.status(400).json({ ok: false, error: "that order could not be found" });
+    }
+
     try {
-        const suggestion = await createSuggestion(user.user_id, body.itemName, body.reason);
-        return res.status(200).json({ ok: true, suggestionId: suggestion.suggestionId });
+        // the owner and the state are predicates, so a forged id refunds nothing
+        const cancelled = await cancelOrder(user.user_id, orderId);
+
+        return res.status(200).json({
+            ok: true,
+            orderId: cancelled.order_id,
+            balanceHours: cancelled.balance_hours,
+            refunded: cancelled.hours_spent,
+            itemName: cancelled.item_name,
+            quantity: cancelled.quantity
+        });
     } catch (err) {
-        if (err instanceof ValidationError) {
+        if (err instanceof OrderRejected) {
             return res.status(400).json({ ok: false, error: err.message });
         }
-        console.error("suggestion failed:", err.message);
+        console.error("order cancel failed:", err.message);
         return res.status(503).json({ ok: false, error: "the shop could not reach ZoneOut" });
     }
 }

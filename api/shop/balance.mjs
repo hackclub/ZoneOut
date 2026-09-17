@@ -1,5 +1,6 @@
 import { readSession } from "../../lib/session.mjs";
 import { getBalanceHours, grantsFor } from "../../lib/shop.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -15,6 +16,9 @@ export default async function handler(req, res) {
     if (!session) {
         return res.status(401).json({ ok: false, error: "not authenticated" });
     }
+
+    // rate limit
+    if (await limited(res, "shop-balance", session.userId, 60, 60)) return;
 
     try {
         // balance and ban state

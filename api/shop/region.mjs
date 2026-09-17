@@ -2,6 +2,7 @@ import { requireUser } from "../../lib/guard.mjs";
 import { setUserRegion } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { isRegion } from "../../catalog.js";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -15,6 +16,9 @@ export default async function handler(req, res) {
     // session
     const user = await requireUser(req, res);
     if (!user) return;
+
+    // rate limit
+    if (await limited(res, "shop-region", user.user_id, 15, 60)) return;
 
     // request body
     let body;

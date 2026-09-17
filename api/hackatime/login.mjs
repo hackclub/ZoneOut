@@ -1,6 +1,7 @@
 import { buildAuthorizeUrl, mintState, resolveRedirectUri, STATE_COOKIE, STATE_MAX_AGE_SECONDS } from "../../lib/hackatime.mjs";
 import { serializeCookie, appendCookie, isSecureRequest, cookieName } from "../../lib/cookies.mjs";
 import { readSession } from "../../lib/session.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -17,6 +18,9 @@ export default async function handler(req, res) {
         res.setHeader("Allow", "GET, HEAD");
         return res.status(405).json({ ok: false, error: "method not allowed" });
     }
+
+    // rate limit
+    if (await limited(res, "ht-login", session.userId, 10, 600)) return;
 
     // signed state, bound to this session, sent as a cookie and a query parameter
     const state = mintState(session.userId);

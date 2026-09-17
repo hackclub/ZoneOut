@@ -2,6 +2,7 @@ import { requireUser } from "../../lib/guard.mjs";
 import { createProject, listProjectsForUser, ValidationError } from "../../lib/users.mjs";
 import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 // response shape
 function present(project) {
@@ -14,6 +15,11 @@ function present(project) {
         demoUrl: project.demo_url,
         hackatimeProject: project.hackatime_project ?? null,
         hackatimeHours: project.hackatime_hours ?? 0,
+        reviewStatus: project.review_status ?? "draft",
+        reviewRemarks: project.review_remarks ?? null,
+        reviewedAt: project.reviewed_at ?? null,
+        submittedAt: project.submitted_at ?? null,
+        submittedHours: project.submitted_hours ?? 0,
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };
@@ -34,6 +40,8 @@ export default async function handler(req, res) {
 
     // list
     if (req.method !== "POST") {
+        if (await limited(res, "project-list", user.user_id, 60, 60)) return;
+
         try {
             const projects = await listProjectsForUser(user.user_id);
             return res.status(200).json({ ok: true, projects: projects.map(present) });
@@ -44,6 +52,8 @@ export default async function handler(req, res) {
     }
 
     // create
+    if (await limited(res, "project-create", user.user_id, 12, 3600)) return;
+
     let body;
     try {
         body = await readJsonBody(req);

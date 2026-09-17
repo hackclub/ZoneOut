@@ -3,6 +3,7 @@ import { readSubmitProfile, clearSubmitProfile } from "../../lib/users.mjs";
 import { openProfile, sealRef } from "../../lib/secretbox.mjs";
 import { hasEnv } from "../../lib/env.mjs";
 import { CAPTURED_FIELDS } from "../../submitFields.js";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -17,12 +18,24 @@ export default async function handler(req, res) {
     const user = await requireUser(req, res);
     if (!user) return;
 
+    // rate limit
+    if (await limited(res, "submit-prefill", user.user_id, 30, 60)) return;
+
     if (req.method === "DELETE") return forget(user, res);
-    return prefill(user, res);
+    return prefill(user, res, readProjectId(req.query?.project));
+}
+
+// the project this submission belongs to, if the form was opened from one
+function readProjectId(raw) {
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (!/^\d+$/.test(value ?? "")) return null;
+
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id >= 1 ? id : null;
 }
 
 // what we hold for this session's own user, and nobody else's
-async function prefill(user, res) {
+async function prefill(user, res, projectId) {
     const params = {};
     const put = (key, value) => {
         const text = typeof value === "string" ? value.trim() : "";
@@ -62,7 +75,10 @@ async function prefill(user, res) {
             }
         }
 
-        ref = sealRef(`${user.user_id}.${Date.now()}`);
+        const parts = [user.user_id, Date.now()];
+        if (projectId) parts.push(projectId);
+
+        ref = sealRef(parts.join("."));
     }
 
     return res.status(200).json({ ok: true, params, ref });

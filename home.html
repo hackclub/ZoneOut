@@ -10,8 +10,8 @@
 <script>
 // theme, read before the first paint
 try {
-    var zoTheme = localStorage.getItem("zoneoutTheme");
-    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+    var zoTheme = localStorage.getItem("zoneoutTheme") || "fnaf";
+    if (zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
         document.documentElement.setAttribute("data-theme", zoTheme);
         var zoMeta = document.querySelector('meta[name="theme-color"]');
         if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
@@ -130,7 +130,7 @@ text-shadow:0 0 6px rgb(var(--fg));
 display:none;
 position:fixed;
 top:max(20px, calc(env(safe-area-inset-top) + 12px));
-right:max(64px, calc(env(safe-area-inset-right) + 58px));
+right:max(104px, calc(env(safe-area-inset-right) + 96px));
 z-index:130;
 background:none;
 border:none;
@@ -159,6 +159,396 @@ transform:scale(1.12);
 filter:drop-shadow(0 0 8px rgba(var(--fg),0.6));
 }
 
+/* TROPHY BUTTON */
+.trophyBtn{
+display:none;
+position:fixed;
+top:max(20px, calc(env(safe-area-inset-top) + 12px));
+right:max(60px, calc(env(safe-area-inset-right) + 54px));
+z-index:130;
+background:none;
+border:none;
+padding:8px;
+line-height:0;
+color:rgb(var(--fg));
+opacity:0.65;
+transition:opacity .2s ease, transform .3s ease, filter .2s ease;
+}
+
+html[data-trophy="on"] .trophyBtn{
+display:block;
+}
+
+.trophyBtn[hidden]{
+display:none;
+}
+
+.trophyBtn svg{
+display:block;
+width:24px;
+height:24px;
+}
+
+.trophyBtn:hover,
+.trophyBtn:focus-visible{
+outline:none;
+opacity:1;
+transform:scale(1.12);
+filter:drop-shadow(0 0 8px rgba(var(--fg),0.6));
+}
+
+body.hasLoginBar .trophyBtn{
+top:calc(var(--loginBarH, 72px) + 20px);
+}
+
+/* EVENT METERS */
+.meterDock{
+position:fixed;
+top:max(16px, calc(env(safe-area-inset-top) + 8px));
+left:50%;
+transform:translateX(-50%);
+z-index:120;
+display:flex;
+gap:min(96px, 9vw);
+align-items:flex-start;
+}
+
+.meterDock[hidden]{
+display:none;
+}
+
+.meterGauge{
+width:min(240px, 30vw);
+}
+
+.meterLabel{
+display:flex;
+justify-content:space-between;
+align-items:baseline;
+gap:10px;
+margin-bottom:7px;
+font-size:13px;
+font-weight:bold;
+letter-spacing:2.5px;
+line-height:1.2;
+}
+
+.meterName{
+color:rgb(var(--fg));
+}
+
+.meterLabel span:last-child{
+font-size:14px;
+font-weight:bold;
+letter-spacing:1px;
+}
+
+.meterTrack{
+position:relative;
+height:14px;
+padding:2px;
+border:1px solid rgba(var(--fg),0.6);
+background:rgba(var(--fg),0.1);
+}
+
+.meterFill{
+height:100%;
+width:0%;
+transition:width .9s steps(20, end);
+}
+
+.hourFill{
+background:rgb(var(--hourBar));
+box-shadow:inset 0 0 0 1px rgba(var(--hourBarGlow),0.85);
+}
+
+.corruptFill{
+background:rgb(var(--corruptBar));
+box-shadow:inset 0 0 0 1px rgba(var(--corruptBarGlow),0.85);
+}
+
+.hourGauge #meterHours{
+color:rgb(var(--hourBar));
+}
+
+@media (max-width:860px){
+.meterDock{
+gap:min(56px, 7vw);
+}
+
+.meterGauge{
+width:min(180px, 34vw);
+}
+
+.meterLabel{
+font-size:11px;
+letter-spacing:1.5px;
+}
+
+.meterLabel span:last-child{
+font-size:12px;
+}
+
+.meterTrack{
+height:12px;
+}
+}
+
+@media (max-width:560px){
+.meterDock{
+left:max(10px, env(safe-area-inset-left));
+right:max(10px, env(safe-area-inset-right));
+transform:none;
+gap:22px;
+}
+
+.meterGauge{
+flex:1 1 0;
+width:auto;
+}
+
+body.hasMeters .backBtn{
+top:calc(var(--meterDockH, 70px) + 26px);
+}
+
+body.hasMeters .settingsGear,
+body.hasMeters .trophyBtn,
+body.hasMeters .infoBtn{
+top:calc(var(--meterDockH, 70px) + 26px);
+}
+}
+
+@media (prefers-reduced-motion: reduce){
+.meterFill{
+transition:none;
+}
+}
+
+/* DIALOGUE BOX */
+.dlgBox{
+position:relative;
+margin:18px 0;
+padding:16px 18px 30px;
+min-height:112px;
+border:1px solid rgba(var(--fg),0.4);
+border-radius:6px;
+background:rgba(var(--surface),0.6);
+cursor:pointer;
+}
+
+.dlgBox:focus-visible{
+outline:none;
+border-color:rgb(var(--fg));
+box-shadow:inset 0 0 0 1px rgba(var(--fg),0.35), inset 0 0 12px rgba(var(--fg),0.14);
+}
+
+.dlgSpeaker{
+margin-bottom:8px;
+font-size:12px;
+letter-spacing:3px;
+color:rgb(var(--accentText));
+}
+
+.dlgLine{
+font-size:14px;
+line-height:1.7;
+letter-spacing:1px;
+min-height:2.6em;
+}
+
+.dlgWord{
+display:inline-block;
+white-space:pre;
+}
+
+.dlgWord.flicker{
+animation:dlgWordFlicker 1.4s steps(1,end) infinite;
+}
+
+.dlgWord.flicker.slow{
+animation-duration:2.1s;
+}
+
+.dlgWord.flicker.fast{
+animation-duration:0.9s;
+}
+
+@keyframes dlgWordFlicker{
+0%,58%{opacity:1;}
+60%{opacity:0.12;}
+63%{opacity:1;}
+70%{opacity:0.3;}
+73%,100%{opacity:1;}
+}
+
+@media (prefers-reduced-motion: reduce){
+.dlgWord.flicker{
+animation:none;
+opacity:1;
+}
+}
+
+.dlgPrompt{
+position:absolute;
+right:14px;
+bottom:8px;
+font-size:13px;
+letter-spacing:2px;
+color:rgba(var(--fg),0.75);
+animation:dlgBlink 1s steps(1,end) infinite;
+}
+
+.dlgPrompt[hidden]{
+display:none;
+}
+
+@keyframes dlgBlink{
+0%,49%{opacity:1;}
+50%,100%{opacity:0;}
+}
+
+/* LEADERBOARD */
+.boardNote{
+margin-bottom:14px;
+font-size:12px;
+letter-spacing:1px;
+color:rgba(var(--fg),0.7);
+}
+
+.boardWrap{
+max-height:min(52vh,420px);
+overflow-y:auto;
+overscroll-behavior:contain;
+border:1px solid rgba(var(--fg),0.18);
+border-radius:6px;
+}
+
+.boardTable{
+width:100%;
+border-collapse:collapse;
+font-size:13px;
+}
+
+.boardTable th{
+position:sticky;
+top:0;
+z-index:1;
+padding:9px 10px;
+text-align:left;
+font-size:11px;
+letter-spacing:2px;
+color:rgba(var(--fg),0.6);
+background:rgb(var(--bg));
+border-bottom:1px solid rgba(var(--fg),0.22);
+}
+
+.boardTable td{
+padding:8px 10px;
+border-bottom:1px solid rgba(var(--fg),0.1);
+vertical-align:middle;
+}
+
+.boardTable tr[hidden]{
+display:none;
+}
+
+.boardTable th[hidden],
+.boardTable td[hidden]{
+display:none;
+}
+
+.boardRank{
+width:44px;
+color:rgba(var(--fg),0.6);
+}
+
+.boardTable tr.boardTop .boardRank,
+.boardTable tr.boardTop .boardName{
+color:rgb(var(--accentText));
+}
+
+.boardName{
+word-break:break-word;
+}
+
+.boardCrown{
+margin-left:8px;
+font-size:10px;
+letter-spacing:1px;
+color:rgba(var(--accentText),0.85);
+}
+
+.boardHours{
+width:96px;
+white-space:nowrap;
+}
+
+.boardForced{
+margin-left:6px;
+font-size:10px;
+letter-spacing:1px;
+color:rgba(var(--warn),0.9);
+}
+
+.boardHint{
+margin-top:6px;
+font-size:10px;
+line-height:1.5;
+letter-spacing:1px;
+color:rgba(var(--fg),0.5);
+}
+
+.boardEdit{
+display:flex;
+gap:6px;
+align-items:center;
+}
+
+.boardEdit .textInput{
+width:82px;
+padding:5px 7px;
+font-size:12px;
+}
+
+.boardKill{
+padding:5px 9px;
+font-size:12px;
+letter-spacing:1px;
+}
+
+.boardEmpty{
+padding:16px 12px;
+font-size:12px;
+letter-spacing:1px;
+color:rgba(var(--fg),0.6);
+}
+
+.boardEmpty[hidden]{
+display:none;
+}
+
+/* ADMIN METER FIELDS */
+.meterField{
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:6px;
+}
+
+.meterField .textInput{
+width:150px;
+padding:7px 9px;
+font-size:13px;
+text-align:center;
+}
+
+.meterHint{
+font-size:10px;
+letter-spacing:1px;
+text-align:right;
+color:rgba(var(--fg),0.5);
+}
+
 /* VIEWS */
 .state{
 display:none;
@@ -178,13 +568,22 @@ opacity:1;
 
 /* CAMERA MAP */
 .camMap{
+--mapW:min(900px,92vw);
+--mapH:clamp(380px,68vh,600px);
+--wireLen:620px;
 position:fixed;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
-width:min(900px,92vw);
-height:clamp(380px,68vh,600px);
+width:var(--mapW);
+height:var(--mapH);
 z-index:2;
+}
+
+@supports (stroke-dashoffset: hypot(1px,1px)){
+.camMap{
+--wireLen:hypot(calc(var(--mapW) * 0.56), calc(var(--mapH) * 0.76));
+}
 }
 
 #wireSparks{
@@ -281,14 +680,29 @@ stroke-width:1.5;
 stroke:rgb(var(--fg));
 stroke-width:2.8;
 stroke-linecap:round;
-stroke-dasharray:60 940;
-filter:drop-shadow(0 0 6px rgb(var(--fg))) drop-shadow(0 0 16px rgba(var(--fg),0.85));
-animation:wirePulse 3.4s linear infinite;
+stroke-dasharray:26 34 26 4000;
+animation:wireCharge 3.4s linear infinite;
 }
 
-@keyframes wirePulse{
-from{stroke-dashoffset:0;}
-to{stroke-dashoffset:1000;}
+.camLines .wirePulse.rev{
+animation-name:wireChargeBack;
+}
+
+@keyframes wireCharge{
+from{stroke-dashoffset:86px;}
+to{stroke-dashoffset:calc(0px - var(--wireLen));}
+}
+
+@keyframes wireChargeBack{
+from{stroke-dashoffset:calc(0px - var(--wireLen));}
+to{stroke-dashoffset:86px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+.camLines .wirePulse{
+animation:none;
+opacity:0;
+}
 }
 
 .camMap .camNode{
@@ -303,7 +717,7 @@ display:flex;
 flex-direction:column;
 align-items:center;
 
-gap:24px;
+gap:16px;
 }
 
 .camMap::before{
@@ -344,7 +758,7 @@ transform:none;
 background:rgb(var(--bg));
 
 width:min(240px, 68vw);
-padding:13px 10px;
+padding:11px 10px;
 letter-spacing:3px;
 }
 }
@@ -389,7 +803,6 @@ text-align:center;
 color:rgb(var(--fg));
 background:rgba(var(--bg),0.72);
 border:1px solid rgba(var(--accent),0.35);
-box-shadow:0 0 18px rgba(var(--accentGlow),0.14);
 transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
@@ -398,7 +811,7 @@ transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 outline:none;
 transform:translateY(-3px);
 border-color:rgba(var(--accentBright),0.9);
-box-shadow:0 0 22px rgba(var(--accentGlow),0.4);
+box-shadow:inset 0 0 0 1px rgba(var(--accentBright),0.5), inset 0 0 16px rgba(var(--accentGlow),0.2);
 }
 
 .projThumb{
@@ -502,6 +915,14 @@ margin-bottom:22px;
 opacity:0.75;
 }
 
+.gateNote{
+padding:9px 11px;
+border:1px solid rgba(var(--warn),0.55);
+color:rgb(var(--warn));
+opacity:1;
+letter-spacing:1px;
+}
+
 .modalProse{
 font-size:15px;
 line-height:1.9;
@@ -520,17 +941,19 @@ margin-bottom:0;
 .modalProse strong{
 font-weight:bold;
 color:rgb(var(--fg));
-text-shadow:0 0 10px rgba(var(--fg),0.4);
 }
 
 .proseHead{
-font-size:20px;
-letter-spacing:6px;
+font-size:clamp(17px,2.6vw,24px);
+letter-spacing:clamp(6px,2.4vw,22px);
+word-spacing:clamp(8px,2vw,18px);
 font-weight:bold;
 color:rgb(var(--accentText));
-text-shadow:0 0 12px rgba(var(--accentGlow),0.5);
+line-height:1.5;
+transform:scaleY(1.2);
+transform-origin:left center;
 padding-right:48px;
-margin:0 0 14px;
+margin:0 0 22px;
 }
 
 .proseSection{
@@ -585,14 +1008,13 @@ width:100%;
 padding:0;
 border:1px solid rgba(var(--accent),0.35);
 background:none;
-box-shadow:0 0 18px rgba(var(--accentGlow),0.25);
 transition:border-color 0.2s, box-shadow 0.2s;
 }
 
 .proseFigBtn:hover,
 .proseFigBtn:focus-visible{
 border-color:rgba(var(--fg),0.7);
-box-shadow:0 0 22px rgba(var(--accentGlow),0.55);
+box-shadow:inset 0 0 0 1px rgba(var(--fg),0.45);
 outline:none;
 }
 
@@ -671,7 +1093,6 @@ border-bottom:1px solid rgba(var(--accentLink),0.5);
 .modalProse a:focus-visible{
 color:rgb(var(--fg));
 border-bottom-color:rgba(var(--fg),0.7);
-text-shadow:0 0 10px rgba(var(--accentGlow),0.6);
 }
 
 .bookMark svg{
@@ -729,7 +1150,6 @@ transparent 2px,
 transparent 6px
 );
 border:1px solid rgba(var(--accent),0.35);
-box-shadow:0 0 18px rgba(var(--accentGlow),0.18);
 }
 
 .field{
@@ -827,11 +1247,35 @@ background:rgb(var(--bg));
 <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
 </audio>
 
+<audio id="eventClick" preload="auto">
+<source src="https://cdn.hackclub.com/01a07cd4-bb63-73ae-a0a7-4f8b7df99c9d/press2.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="eventSting" preload="auto">
+<source src="https://cdn.hackclub.com/01a07cd4-be7b-753c-83ff-d7ae19027053/eventaudio1.mp3" type="audio/mpeg">
+</audio>
+
 <div class="screenVeil" id="screenVeil" aria-hidden="true"></div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="backBtn" id="backBtn" role="button" tabindex="0">← Back</div>
+
+<button class="trophyBtn" id="trophyBtn" type="button" aria-haspopup="dialog" aria-label="Leaderboard">
+<svg viewBox="0 0 12 12" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+<rect x="2" y="1" width="8" height="2"/>
+<rect x="3" y="3" width="6" height="3"/>
+<rect x="4" y="6" width="4" height="1"/>
+<rect x="5" y="7" width="2" height="2"/>
+<rect x="3" y="9" width="6" height="2"/>
+<rect x="0" y="2" width="2" height="1"/>
+<rect x="0" y="3" width="1" height="2"/>
+<rect x="1" y="5" width="2" height="1"/>
+<rect x="10" y="2" width="2" height="1"/>
+<rect x="11" y="3" width="1" height="2"/>
+<rect x="9" y="5" width="2" height="1"/>
+</svg>
+</button>
 
 <button class="infoBtn" id="infoBtn" type="button" aria-haspopup="dialog" aria-label="Information">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -849,17 +1293,32 @@ background:rgb(var(--bg));
 
 <div class="state" id="stateIn">
 
+<div class="meterDock" id="meterDock" hidden>
+<div class="meterGauge hourGauge">
+<div class="meterLabel"><span class="meterName">HOURS</span><span id="meterHours">0/280</span></div>
+<div class="meterTrack"><div class="meterFill hourFill" id="meterHourFill"></div></div>
+</div>
+<div class="meterGauge corruptGauge">
+<div class="meterLabel"><span class="meterName">CORRUPTION</span></div>
+<div class="meterTrack"><div class="meterFill corruptFill" id="meterCorruptFill"></div></div>
+</div>
+</div>
+
 <canvas id="wireSparks"></canvas>
 
 <div class="camMap" id="camMap">
 <svg class="camLines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-<polyline class="wireBase" pathLength="1000" points="26,12 68,38 26,64 68,90"></polyline>
-<polyline class="wirePulse" pathLength="1000" points="26,12 68,38 26,64 68,90"></polyline>
+<polyline class="wireBase" points="22,12 78,88"></polyline>
+<polyline class="wireBase" points="78,12 22,88"></polyline>
+<polyline class="wirePulse" points="22,12 78,88"></polyline>
+<polyline class="wirePulse rev" points="22,12 78,88"></polyline>
+<polyline class="wirePulse" points="78,12 22,88"></polyline>
+<polyline class="wirePulse rev" points="78,12 22,88"></polyline>
 </svg>
-<button class="camNode" id="nodeSubmit" type="button" style="left:26%;top:12%">SUBMIT</button>
-<button class="camNode" id="nodeProjects" type="button" style="left:68%;top:38%">PROJECTS</button>
-<button class="camNode" id="nodeShop" type="button" style="left:26%;top:64%">SHOP</button>
-<button class="camNode" id="nodeProfile" type="button" style="left:68%;top:90%">PROFILE</button>
+<button class="camNode" id="nodeProfile" type="button" style="left:22%;top:12%">PROFILE</button>
+<button class="camNode" id="nodeShop" type="button" style="left:78%;top:12%">SHOP</button>
+<button class="camNode" id="nodeProjects" type="button" style="left:22%;top:88%">PROJECTS</button>
+<button class="camNode camEvents" id="nodeEvents" type="button" style="left:78%;top:88%">EVENTS</button>
 </div>
 
 <div class="subPage" id="pageSubmit">
@@ -984,9 +1443,14 @@ ZoneOut counts the hours you spend building. Connect Hackatime and every project
                     will be linked with your hackatime project.
 </div>
 
+<div class="modalText gateNote" id="htGateNote" hidden>
+Hackatime is required. The terminal stays locked until your account is connected.
+</div>
+
 <div class="modalActions pair">
 <button class="camNode" id="htConnect" type="button">CONNECT HACKATIME</button>
 <button class="camNode" id="htLater" type="button">LATER</button>
+<button class="camNode" id="htGateOut" type="button" hidden>LOG OUT</button>
 </div>
 </div>
 </div>
@@ -1013,6 +1477,171 @@ Where do you live? Choose your region for shop items!
 <div class="modalActions pair">
 <button class="camNode" id="regSave" type="button">SAVE REGION</button>
 <button class="camNode" id="regLater" type="button">LATER</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="eventModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+<button class="modalClose" id="eventModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="proseHead" id="eventModalTitle">ENTITY BREAKOUT</div>
+
+<div class="modalProse">
+
+<div class="proseSection">1. THE STORY</div>
+
+<p>The entity is a lonely creature, created by the admin in the darkness. It was made from the
+hatred, the regret and the emotional fear of a human the admin had brutally murdered.</p>
+
+<p>The admin was a psycho with no remorse. He wanted to use the entity to annihilate the
+entity's own human family. When the entity was about to kill them, a few memories of its past
+life flashed .... it turned back to its master, to kill him instead.</p>
+
+<p>The admin lured the entity and trapped it behind the screen for eternity. The lamp and the
+table are the entity's only memories of the life it had when it was human.</p>
+
+<p>One day the admin was working, and the lights suddenly went off.</p>
+
+<div class="dlgBox" id="dlgBox" role="group" tabindex="0" aria-label="Transcript">
+<div class="dlgSpeaker" id="dlgSpeaker"></div>
+<div class="dlgLine" id="dlgLine"></div>
+<div class="dlgPrompt" id="dlgPrompt" hidden>&gt;&gt;</div>
+</div>
+
+<div class="proseSection">2. THE SYSTEM</div>
+
+<p>For the entity to be free, it must be given <strong>freedom</strong>. Its freedom depends
+entirely on the <strong>HOUR SYSTEM</strong> the admin was working on.</p>
+
+<p>If the hour system reaches its threshold, the entity self-destructs and is free of its
+miserable life. If no action is taken, the entity's rage brings corruption to ZoneOut.</p>
+
+<ul>
+<li>The hours must be accomplished by the <strong>30th of September</strong>.</li>
+<li>The entity self-destructs only once an hour goal of <strong>280</strong> is reached.</li>
+<li>Failing to destruct the Entity will result in a system collapse and the entire website will become corrupted.</li>
+</ul>
+
+<p>The admin built a two-step system so the entity could never escape.</p>
+
+<div class="proseSub">PHASE 1: INITIATE SELF DESTRUCTION</div>
+
+<p>At the halfway mark, <strong>140 hours</strong>, the self-destruction phase begins. The
+entity becomes more hostile and the site slowly loses its stability. At this phase the entity is
+being suppressed and tortured by a system built to contain it, not to release it.</p>
+
+<div class="proseSub">PHASE 2: COMPLETE FREEDOM</div>
+
+<p>When the goal is reached the entity is freed, and the site returns to what it was before
+the darkness was infused into it. Everything becomes clear, and the fate of the admin is
+decided.</p>
+
+<div class="proseSection">LOOK OUT FOR THESE</div>
+
+<p>The admin's system shows two readings on the home page.</p>
+
+<p><strong>THE HOUR COUNT</strong> &mdash; the green bar, increasing as hours are recorded and
+shipped. It tracks the hours of the participants of this event in ZoneOut. It is the only
+thing standing between the entity and freedom. [Tracking only works if you've connected hackatime to your account and made a project.]</p>
+
+<p><strong>THE CORRUPTION METER</strong> &mdash; a pretty self explanatory bar.
+    It increases as time goes on. It represents the entity's rage.</p>
+
+<p>Your goal is to fill the first bar before the second one fills. The fate of the entity and the website depends on </strong>YOU.</strong></p>
+
+<div class="proseSection">2.2 THE MILESTONES</div>
+
+<p>For every milestone reached, a new item is added to the shop &mdash; at <strong>70</strong>,
+<strong>140</strong>, <strong>210</strong> and <strong>280</strong> hours.</p>
+
+<p>Every item is a physical item of high value, chosen by community discussion in the
+<a href="https://app.slack.com/client/E09V59WQY1E/C0BRRHJ7D7D" target="_blank" rel="noreferrer">ZoneOut Announcements</a> channel. <strong>These items are only for participants of the Entity
+Breakout event.</strong></p>
+
+<p><strong>The items are volatile.</strong> Once the final item is unlocked, everything from
+the breakout stays buyable for <strong>3 more days</strong>. After that they are removed, and
+gone forever.</p>
+
+<div class="proseSection">3. THE REWARDS</div>
+
+<div class="proseSub">THE RAFFLE &mdash; BAMBU LAB A1 MINI</div>
+
+<p>Every <strong>5 hours</strong> shipped during the event earns you <strong>1 ticket</strong>
+toward the draw. Ship 5 hours and you are in. Ship 30 and you hold 6 tickets. Everyone who
+ships has a real shot at taking the 3D printer home.</p>
+
+<div class="proseSub">THE LEADERBOARD</div>
+
+<p>Your hours qualify for a leaderboard &mdash; check your position with the trophy icon
+beside the settings gear. Incentives are given on placement at the end of the event:</p>
+
+<ul>
+<li><strong>Top 3 submitters</strong> &mdash; a Big Blahaj each.</li>
+<li><strong>4th to 10th place</strong> &mdash; a $5 consumable grant each.</li>
+</ul>
+
+<div class="proseSub">ZONEOUT PRIZES</div>
+
+<ul>
+<li><strong>All participants</strong> &mdash; a custom ZoneOut sticker.</li>
+<li><strong>10+ hours submitted</strong> &mdash; Your name in the end credits for helping the entity.
+You might even recieve a personal letter from it...</li>
+</ul>
+
+<div class="proseSub">SPECIAL FOR THE NUMBER UNO</div>
+
+<p>The top submitter to ZoneOut <strong>gets to name the entity.</strong></p>
+
+<p>It has never had one. It does not know what it was called when it was human. Whoever
+contributes the most toward its freedom decides what it is called, and that name is
+immortalized, forever.</p>
+
+<div class="proseSection">GROUP PROJECTS</div>
+
+<p>Group project submitters are allowed. Rewards are assigned on individual contribution
+toward the project.</p>
+
+</div>
+
+<div class="formError" id="eventError" role="alert"></div>
+
+<div class="modalActions pair">
+<button class="camNode" id="eventJoin" type="button">I&#39;M IN!</button>
+<button class="camNode" id="eventClose" type="button">CLOSE</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="boardModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="boardModalTitle">
+<button class="modalClose" id="boardModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="proseHead" id="boardModalTitle">LEADERBOARD</div>
+
+<div class="boardNote" id="boardNote">Hours recorded toward the entity&#39;s freedom.</div>
+
+<div class="boardWrap">
+<table class="boardTable">
+<thead>
+<tr><th>#</th><th>NAME</th><th>HOURS</th><th class="boardAdminCol" hidden>ADJUST</th></tr>
+</thead>
+<tbody id="boardRows"></tbody>
+</table>
+<div class="boardEmpty" id="boardEmpty">Nobody has joined yet.</div>
+</div>
+
+<div class="formField boardAdminOnly" id="boardAddField" hidden>
+<span>PUT SOMEBODY ON THE BOARD</span>
+<input class="textInput" id="boardAddEmail" type="email" autocomplete="off" spellcheck="false" maxlength="320" placeholder="their ZoneOut login email">
+<div class="boardHint">For someone who never pressed I&#39;M IN! &mdash; look them up by the email on their ZoneOut account. Their tracked hours then start counting toward the goal.</div>
+</div>
+
+<div class="formError" id="boardError" role="alert"></div>
+
+<div class="modalActions pair">
+<button class="camNode boardAdminOnly" id="boardAdd" type="button" hidden>ADD</button>
+<button class="camNode" id="boardOk" type="button">CLOSE</button>
 </div>
 </div>
 </div>
@@ -1210,6 +1839,12 @@ const VIEWS = {
     "/error":    { state: "stateError", page: null }
 };
 
+// the project /submit was opened for
+function submitProjectId() {
+    const raw = new URLSearchParams(location.search).get("p");
+    return /^\d+$/.test(raw ?? "") ? raw : null;
+}
+
 function pathOf(pathname) {
     const path = pathname.replace(/\/+$/, "") || "/home";
     return VIEWS[path] ? path : "/home";
@@ -1238,13 +1873,18 @@ function render(path) {
 
     document.documentElement.dataset.info = path === "/projects" ? "on" : "off";
 
+    document.documentElement.dataset.trophy =
+        (path === "/home" || path === "/projects" || path === "/profile") ? "on" : "off";
+
+    showMeters(path === "/home");
+
     document.body.classList.toggle("noScroll", path === "/home" || path === "/error");
 
     if (path === "/submit") mountForm();
     if (path === "/projects") loadProjects();
     if (path === "/error") startDots(); else stopDots();
     if (path === "/home") startSparks(); else stopSparks();
-    if (path === "/home") maybePrompt();
+    maybePrompt();
 
     const first = document.querySelector(".state.show .camNode, .state.show .projCard");
     if (first && lastInputWasKeyboard) first.focus();
@@ -1272,6 +1912,19 @@ function leaveTo(href) {
     screenVeil.classList.remove("quick");
     screenVeil.classList.add("on");
     setTimeout(() => { window.location.href = href; }, VEIL_MS);
+}
+
+// nothing may open under the arrival veil
+const arrivalAt = performance.now();
+const arrivedVeiled = document.documentElement.classList.contains("fadeIn");
+
+function afterArrival(fn) {
+    const wait = arrivedVeiled ? VEIL_MS + 70 - (performance.now() - arrivalAt) : 0;
+    if (wait <= 0) {
+        fn();
+        return;
+    }
+    setTimeout(fn, wait);
 }
 
 function fadeUp() {
@@ -1401,15 +2054,17 @@ function fadeInAudio() {
 
 // click sound
 const uiClick = document.getElementById("uiClick");
+const eventClick = document.getElementById("eventClick");
 
-function playClick() {
-    uiClick.currentTime = 0;
-    uiClick.volume = clampVolume(masterVolume * 0.35);
-    uiClick.play().catch(() => {});
+function playClick(source) {
+    const clip = source && source.closest("#eventModal") ? eventClick : uiClick;
+    clip.currentTime = 0;
+    clip.volume = clampVolume(masterVolume * 0.35);
+    clip.play().catch(() => {});
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .projCard, .proseFigBtn")) playClick();
+    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .trophyBtn, .projCard, .proseFigBtn, .modalClose")) playClick(e.target);
 });
 
 // volume
@@ -1499,7 +2154,10 @@ async function prepareForm() {
 // prefill values belong to the session, never to the tab
 async function prefillParams() {
     try {
-        const response = await fetch("/api/submit/prefill", { credentials: "same-origin" });
+        const project = submitProjectId();
+        const url = project ? "/api/submit/prefill?project=" + project : "/api/submit/prefill";
+
+        const response = await fetch(url, { credentials: "same-origin" });
         if (!response.ok) return null;
 
         const payload = await response.json();
@@ -1529,90 +2187,123 @@ function teardownForm() {
 
 // wire sparks
 const sparkCanvas = document.getElementById("wireSparks");
-const wirePulse = document.querySelector(".camLines .wirePulse");
-const PULSE_DASH = 60;
-const PULSE_UNITS = 1000;
-const MAX_SPARKS = 120;
+const wirePulses = Array.from(document.querySelectorAll(".camLines .wirePulse"));
+const PULSE_DASH = 26;
+const PULSE_GAP = 34;
+const PULSE_LEADS = [PULSE_DASH / 2, PULSE_DASH + PULSE_GAP + PULSE_DASH / 2];
+const MAX_SPARKS = 60;
 let sparks = [];
 let sparkFrame = null;
 let nextSpark = 0;
+let sparkPainted = false;
+
+// each arm is two points, read once, so a head is arithmetic rather than path geometry
+const pulseEnds = wirePulses.map(line => {
+    const [from, to] = line.getAttribute("points").trim().split(/\s+/);
+    const [x1, y1] = from.split(",").map(Number);
+    const [x2, y2] = to.split(",").map(Number);
+    return { x1, y1, x2, y2 };
+});
 
 function sizeSparks() {
     sparkCanvas.width = window.innerWidth;
     sparkCanvas.height = window.innerHeight;
 }
 
-function pulseHead() {
-    if (!wirePulse.getScreenCTM) return null;
+// every charge shares one coordinate system, so one CTM serves all four
+function pulseCTM() {
+    const first = wirePulses[0];
+    return first && first.getScreenCTM ? first.getScreenCTM() : null;
+}
 
-    const ctm = wirePulse.getScreenCTM();
-    if (!ctm) return null;
+// non-scaling-stroke measures the dash in screen pixels, so the head is read there too
+function pulseHead(index, ctm, lead) {
+    const ends = pulseEnds[index];
+    const from = new DOMPoint(ends.x1, ends.y1).matrixTransform(ctm);
+    const to = new DOMPoint(ends.x2, ends.y2).matrixTransform(ctm);
 
-    const offset = parseFloat(getComputedStyle(wirePulse).strokeDashoffset) || 0;
-    const centre = (((PULSE_DASH - offset) % PULSE_UNITS) + PULSE_UNITS) % PULSE_UNITS;
-    const at = wirePulse.getPointAtLength(centre / PULSE_UNITS * wirePulse.getTotalLength());
+    const span = Math.hypot(to.x - from.x, to.y - from.y);
+    if (!span) return null;
 
-    return at.matrixTransform(ctm);
+    const offset = parseFloat(getComputedStyle(wirePulses[index]).strokeDashoffset) || 0;
+    const at = (lead - offset) / span;
+
+    if (at < 0 || at > 1) return null;
+
+    return { x: from.x + (to.x - from.x) * at, y: from.y + (to.y - from.y) * at };
+}
+
+function emitSparks(now) {
+    const ctm = pulseCTM();
+    if (!ctm) return;
+
+    for (let i = 0; i < wirePulses.length; i++) {
+        for (const lead of PULSE_LEADS) {
+            if (sparks.length >= MAX_SPARKS) return;
+
+            const head = pulseHead(i, ctm, lead);
+            if (!head) continue;
+
+            sparks.push({
+                x: head.x,
+                y: head.y,
+                vx: (Math.random() - 0.5) * 0.9,
+                vy: (Math.random() - 0.5) * 0.9 - 0.25,
+                life: 0,
+                span: 520 + Math.random() * 620,
+                size: 0.8 + Math.random() * 1.6,
+                last: now
+            });
+        }
+    }
 }
 
 function startSparks() {
-    if (sparkFrame) return;
+    if (sparkFrame || stillPrefers()) return;
     sizeSparks();
 
     const ctx = sparkCanvas.getContext("2d");
 
     function step(now) {
-        ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+        if (sparkPainted) ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+        sparkPainted = false;
 
         if (now >= nextSpark) {
-            nextSpark = now + 90 + Math.random() * 320;
-            const head = pulseHead();
+            nextSpark = now + 110 + Math.random() * 340;
+            emitSparks(now);
+        }
 
-            if (head) {
-                const burst = Math.min(1 + Math.floor(Math.random() * 3),
-                                       MAX_SPARKS - sparks.length);
-                for (let i = 0; i < burst; i++) {
-                    sparks.push({
-                        x: head.x,
-                        y: head.y,
-                        vx: (Math.random() - 0.5) * 0.9,
-                        vy: (Math.random() - 0.5) * 0.9 - 0.25,
-                        life: 0,
-                        span: 520 + Math.random() * 620,
-                        size: 0.8 + Math.random() * 1.6,
-                        last: now
-                    });
-                }
+        if (sparks.length) {
+            ctx.fillStyle = "#fff";
+            ctx.shadowColor = "rgba(255,255,255,0.9)";
+            ctx.shadowBlur = 6;
+
+            let live = 0;
+            for (let i = 0; i < sparks.length; i++) {
+                const s = sparks[i];
+                const dt = now - s.last;
+                s.last = now;
+                s.life += dt;
+                if (s.life >= s.span) continue;
+
+                s.x += s.vx * dt * 0.06;
+                s.y += s.vy * dt * 0.06;
+
+                const fade = 1 - s.life / s.span;
+                ctx.globalAlpha = fade;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size * fade, 0, Math.PI * 2);
+                ctx.fill();
+
+                sparks[live++] = s;
             }
+            sparks.length = live;
+            sparkPainted = live > 0;
+
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
         }
 
-        ctx.fillStyle = "#fff";
-        ctx.shadowColor = "rgba(255,255,255,0.9)";
-        ctx.shadowBlur = 6;
-
-        let live = 0;
-        for (let i = 0; i < sparks.length; i++) {
-            const s = sparks[i];
-            const dt = now - s.last;
-            s.last = now;
-            s.life += dt;
-            if (s.life >= s.span) continue;
-
-            s.x += s.vx * dt * 0.06;
-            s.y += s.vy * dt * 0.06;
-
-            const fade = 1 - s.life / s.span;
-            ctx.globalAlpha = fade;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size * fade, 0, Math.PI * 2);
-            ctx.fill();
-
-            sparks[live++] = s;
-        }
-        sparks.length = live;
-
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
         sparkFrame = requestAnimationFrame(step);
     }
 
@@ -1622,8 +2313,12 @@ function startSparks() {
 function stopSparks() {
     if (sparkFrame) cancelAnimationFrame(sparkFrame);
     sparkFrame = null;
-    sparks = [];
-    sparkCanvas.getContext("2d").clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+    sparks.length = 0;
+
+    if (sparkPainted) {
+        sparkCanvas.getContext("2d").clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+        sparkPainted = false;
+    }
 }
 
 // the /error dot field
@@ -1696,10 +2391,11 @@ window.addEventListener("resize", () => {
 
         if (sparkFrame && (sparkCanvas.width !== window.innerWidth
                         || sparkCanvas.height !== window.innerHeight)) sizeSparks();
+
+        measureMeters();
     });
 });
 
-document.getElementById("nodeSubmit").addEventListener("click", () => go("/submit"));
 document.getElementById("nodeProfile").addEventListener("click", () => go("/profile"));
 document.getElementById("nodeProjects").addEventListener("click", () => go("/projects"));
 document.getElementById("nodeShop").addEventListener("click", () => leaveTo("/shop"));
@@ -1710,6 +2406,16 @@ function goBack() {
         window.location.href = "/";
         return;
     }
+
+    // the form was opened from a project, so it is the way back
+    if (currentPath === "/submit") {
+        const project = submitProjectId();
+        if (project) {
+            leaveTo("/projects/" + project);
+            return;
+        }
+    }
+
     leaveSubPage();
 }
 
@@ -1950,29 +2656,33 @@ function setInertBehind(on, dialog) {
 
 function anyModalOpen() {
     return projModalOpen() || htModalOpen() || regModalOpen() || lightboxOpen()
-        || panelOpen(infoModal) || panelOpen(bookModal);
+        || panelOpen(infoModal) || panelOpen(bookModal)
+        || panelOpen(eventModal) || panelOpen(boardModal);
 }
 
 // info and rulebook dialogs
 const infoBtn = document.getElementById("infoBtn");
 const infoModal = document.getElementById("infoModal");
 const bookModal = document.getElementById("bookModal");
-
-let panelReturnFocus = null;
+const eventModal = document.getElementById("eventModal");
+const boardModal = document.getElementById("boardModal");
 
 function panelOpen(modal) {
     return modal.classList.contains("show");
 }
 
 function openPanel(modal) {
-    panelReturnFocus = document.activeElement;
+    modal.panelReturnFocus = document.activeElement;
 
     modal.hidden = false;
     modal.scrollTop = 0;
-    requestAnimationFrame(() => {
+
+    const raise = () => {
         modal.classList.add("show");
         modal.scrollTop = 0;
-    });
+    };
+    requestAnimationFrame(raise);
+    setTimeout(raise, 60);
 
     document.body.classList.add("noScroll");
     setInertBehind(true, modal);
@@ -1988,8 +2698,9 @@ function closePanel(modal) {
 
     setTimeout(() => { if (!panelOpen(modal)) modal.hidden = true; }, 240);
 
-    if (panelReturnFocus && document.contains(panelReturnFocus)) panelReturnFocus.focus();
-    panelReturnFocus = null;
+    const back = modal.panelReturnFocus;
+    if (back && document.contains(back)) back.focus();
+    modal.panelReturnFocus = null;
 }
 
 function currentModal() {
@@ -1997,6 +2708,8 @@ function currentModal() {
     if (projModalOpen()) return { el: projModal, close: closeProjectModal };
     if (regModalOpen()) return { el: regModal, close: closeRegionModal };
     if (htModalOpen()) return { el: htModal, close: closeHtModal };
+    if (panelOpen(boardModal)) return { el: boardModal, close: closeBoard };
+    if (panelOpen(eventModal)) return { el: eventModal, close: closeEvents };
     if (panelOpen(infoModal)) return { el: infoModal, close: () => closePanel(infoModal) };
     if (panelOpen(bookModal)) return { el: bookModal, close: () => closePanel(bookModal) };
     return null;
@@ -2017,6 +2730,777 @@ infoModal.addEventListener("mousedown", (e) => {
 bookModal.addEventListener("mousedown", (e) => {
     if (e.target === bookModal) closePanel(bookModal);
 });
+
+// section for the entity breakout event
+const trophyBtn = document.getElementById("trophyBtn");
+const meterDock = document.getElementById("meterDock");
+const meterHours = document.getElementById("meterHours");
+const meterHourFill = document.getElementById("meterHourFill");
+const meterCorruptFill = document.getElementById("meterCorruptFill");
+const eventError = document.getElementById("eventError");
+const eventJoinBtn = document.getElementById("eventJoin");
+
+const STATE_POLL_MS = 30000;
+
+let eventFigures = null;
+let eventJoined = false;
+let eventsPending = false;
+let statePending = false;
+let statePolling = true;
+let stateTimer = 0;
+
+function takeFlag(key) {
+    try {
+        if (sessionStorage.getItem(key) !== "1") return false;
+        sessionStorage.removeItem(key);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// the meters
+function showMeters(on) {
+    const wanted = on && Boolean(eventFigures);
+    meterDock.hidden = !wanted;
+    document.body.classList.toggle("hasMeters", wanted);
+    if (wanted) measureMeters();
+}
+
+function measureMeters() {
+    if (meterDock.hidden) return;
+    const box = meterDock.getBoundingClientRect();
+    document.documentElement.style.setProperty("--meterDockH", Math.round(box.height) + "px");
+}
+
+function paintMeters() {
+    if (!eventFigures) return;
+
+    meterHours.textContent = trimHours(eventFigures.hours) + "/" + trimHours(eventFigures.goal);
+
+    meterHourFill.style.width = eventFigures.hoursPercent + "%";
+    meterCorruptFill.style.width = eventFigures.corruptionPercent + "%";
+
+    showMeters(currentPath === "/home");
+}
+
+function signed(value) {
+    const number = Number(value) || 0;
+    return (number > 0 ? "+" : "") + trimHours(number);
+}
+
+function trimHours(value) {
+    const number = Number(value) || 0;
+    return Number.isInteger(number) ? String(number) : number.toFixed(1);
+}
+
+async function refreshEventState() {
+    if (statePending) return;
+    statePending = true;
+
+    try {
+        const response = await fetch("/api/event/state", { credentials: "same-origin" });
+
+        if (response.status === 401 || response.status === 404) {
+            statePolling = false;
+            return;
+        }
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (!payload || payload.ok !== true) return;
+
+        eventFigures = payload;
+        if (typeof payload.joined === "boolean") eventJoined = payload.joined;
+
+        paintMeters();
+        paintJoinState();
+        paintAdminMeters();
+    } catch (e) {
+        // unknown is not zero, so a failure changes nothing
+    } finally {
+        statePending = false;
+    }
+}
+
+// the timer always runs; it is the fetch that is skipped while hidden
+function startStatePoll() {
+    if (stateTimer) return;
+    stateTimer = setInterval(() => {
+        if (!statePolling || document.visibilityState !== "visible") return;
+        refreshEventState();
+    }, STATE_POLL_MS);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (statePolling && document.visibilityState === "visible") refreshEventState();
+});
+
+// the events dialog
+const eventSting = document.getElementById("eventSting");
+const STING_GRACE_MS = 1200;
+
+let stingToken = 0;
+
+function playEventSting() {
+    eventSting.currentTime = 0;
+    eventSting.volume = 1;
+    eventSting.play().catch(() => {});
+}
+
+// the sting lands with the panel, never before it and never over a closed one
+function armSting() {
+    const mine = ++stingToken;
+    const deadline = performance.now() + STING_GRACE_MS;
+
+    const fire = () => {
+        if (mine !== stingToken || eventModal.hidden) return;
+
+        const late = performance.now() >= deadline;
+        if (!late && (!panelOpen(eventModal) || eventSting.readyState < 3)) {
+            setTimeout(fire, 40);
+            return;
+        }
+
+        playEventSting();
+    };
+
+    fire();
+}
+
+function stopEventSting() {
+    stingToken++;
+    eventSting.pause();
+    eventSting.currentTime = 0;
+}
+
+function openEvents(sting) {
+    if (panelOpen(eventModal)) return;
+
+    eventError.textContent = "";
+    openPanel(eventModal);
+    paintJoinState();
+    resetDialogue();
+    if (sting) armSting();
+}
+
+function closeEvents() {
+    stopDialogue();
+    stopEventSting();
+    closePanel(eventModal);
+}
+
+// the cutscene replay hands straight back to the events dialog
+document.addEventListener("zoneout:cutsceneend", () => {
+    if (panelOpen(eventModal)) return;
+
+    if (anyModalOpen()) {
+        eventsPending = true;
+        return;
+    }
+
+    setTimeout(() => {
+        if (!anyModalOpen()) openEvents(true);
+    }, 400);
+});
+
+function paintJoinState() {
+    eventJoinBtn.textContent = eventJoined ? "YOU ARE IN" : "I'M IN!";
+    eventJoinBtn.disabled = eventJoined;
+}
+
+async function joinTheEvent() {
+    if (eventJoined) return;
+
+    eventJoinBtn.disabled = true;
+    eventError.textContent = "";
+
+    try {
+        const response = await fetch("/api/event/join", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: "{}"
+        });
+
+        if (response.status === 403) {
+            const banned = await response.json().catch(() => null);
+            if (banned && banned.error === "banned") return location.replace("/ban");
+        }
+
+        if (response.status === 401) {
+            eventError.textContent = "Your session expired. Reload and log in again.";
+            return;
+        }
+
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok || !payload || payload.ok !== true) {
+            eventError.textContent = "That could not be recorded. Try again.";
+            eventJoinBtn.disabled = false;
+            return;
+        }
+
+        eventJoined = true;
+        if (typeof payload.hours === "number") eventFigures = payload;
+
+        paintJoinState();
+        paintMeters();
+        showToast("You are in. The entity is counting on you.");
+    } catch (e) {
+        eventError.textContent = "ZoneOut could not be reached.";
+        eventJoinBtn.disabled = false;
+    }
+}
+
+// the dialogue box
+const DIALOGUE = [
+    { who: "???",   text: "..... MASTER ... Y-Y-YOU A-ARE MY M-M-M-MASTER....", entity: true },
+    { who: "ADMIN", text: "(terrified) H-h-how did you break out?!" },
+    { who: "???",   text: "T-T-THE LAM-M-M-LAMP....", entity: true },
+    { who: "ADMIN", text: "T-T-THIS SHOULDN'T BE POSSIBLE. HOW DID YOU-" },
+    { who: "???",   text: "GOODBYE... P-PRISONER...", entity: true },
+    { who: "???",   text: "[STRIKES THE ADMIN]", entity: true },
+    { who: "ADMIN", text: "(muffled scream) NOOO" },
+    { who: "???",   text: ".....................", entity: true, auto: true },
+    { who: "???",   text: "I. WANT. TO. BE. FREE. I. BEG.", entity: true }
+];
+
+const TYPE_MS = 42;
+const AUTO_MS = 900;
+const FLICKER_SHARE = 0.4;
+
+const dlgBox = document.getElementById("dlgBox");
+const dlgSpeaker = document.getElementById("dlgSpeaker");
+const dlgLine = document.getElementById("dlgLine");
+const dlgPrompt = document.getElementById("dlgPrompt");
+
+let dlgIndex = 0;
+let dlgTimer = 0;
+let dlgAuto = 0;
+let dlgTyping = false;
+
+const flickerCache = new Map();
+
+function stillPrefers() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function stopDialogue() {
+    clearInterval(dlgTimer);
+    dlgTimer = 0;
+    dlgTyping = false;
+    clearAutoBeat();
+}
+
+function clearAutoBeat() {
+    clearTimeout(dlgAuto);
+    dlgAuto = 0;
+}
+
+function resetDialogue() {
+    stopDialogue();
+    dlgIndex = 0;
+    typeLine();
+}
+
+function typeLine() {
+    const beat = DIALOGUE[dlgIndex];
+    if (!beat) return;
+
+    dlgSpeaker.textContent = beat.who + ":";
+    dlgPrompt.hidden = true;
+
+    if (stillPrefers()) {
+        paintLine(beat, beat.text.length);
+        settleLine();
+        return;
+    }
+
+    paintLine(beat, 0);
+    dlgTyping = true;
+
+    let at = 0;
+    dlgTimer = setInterval(() => {
+        at += 1;
+        paintLine(beat, at);
+        if (at >= beat.text.length) {
+            stopDialogue();
+            settleLine();
+        }
+    }, TYPE_MS);
+}
+
+// the entity's lines land word by word, with a few words left blinking
+let lineBeat = null;
+let lineSpans = [];
+
+function paintLine(beat, upTo) {
+    const shown = beat.text.slice(0, upTo);
+
+    if (!beat.entity) {
+        lineBeat = null;
+        lineSpans.length = 0;
+        dlgLine.textContent = shown;
+        return;
+    }
+
+    if (lineBeat !== beat) {
+        lineBeat = beat;
+        lineSpans.length = 0;
+        dlgLine.replaceChildren();
+    }
+
+    const parts = shown.split(/(\s+)/);
+    const chosen = flickerSet(beat.text);
+
+    while (lineSpans.length > parts.length) dlgLine.removeChild(lineSpans.pop());
+
+    for (let i = 0; i < parts.length; i++) {
+        let span = lineSpans[i];
+
+        if (!span) {
+            span = document.createElement("span");
+            span.className = "dlgWord";
+            lineSpans[i] = span;
+            dlgLine.appendChild(span);
+        }
+
+        const word = parts[i];
+        if (span.textContent !== word) span.textContent = word;
+
+        if (word.trim() && chosen.has(i) && !span.classList.contains("flicker")) {
+            span.classList.add("flicker");
+            const speed = flickerSpeed(beat.text, i);
+            if (speed) span.classList.add(speed);
+        }
+    }
+}
+
+// which words blink is random but stable for a line, so typing it out does not reshuffle
+function flickerSet(text) {
+    if (flickerCache.has(text)) return flickerCache.get(text);
+
+    const parts = text.split(/(\s+)/);
+    const chosen = new Set();
+    let best = -1;
+    let bestHash = -1;
+
+    parts.forEach((word, i) => {
+        if (!word.trim()) return;
+
+        const hash = hashOf(text, i);
+        if (hash % 100 < FLICKER_SHARE * 100) chosen.add(i);
+        if (hash > bestHash) { bestHash = hash; best = i; }
+    });
+
+    // an entity line with nothing blinking reads as a broken effect, not a quiet one
+    if (!chosen.size && best >= 0) chosen.add(best);
+
+    flickerCache.set(text, chosen);
+    return chosen;
+}
+
+function flickerSpeed(text, index) {
+    const pick = hashOf(text, index + 7) % 3;
+    return pick === 0 ? "slow" : pick === 1 ? "fast" : "";
+}
+
+function hashOf(text, index) {
+    let hash = ((index + 1) * 2654435761) >>> 0;
+    for (let i = 0; i < text.length; i++) {
+        hash = Math.imul(hash ^ text.charCodeAt(i), 16777619) >>> 0;
+    }
+    return hash;
+}
+
+function settleLine() {
+    const beat = DIALOGUE[dlgIndex];
+    const handsOver = Boolean(beat && beat.auto) && dlgIndex < DIALOGUE.length - 1;
+
+    dlgPrompt.hidden = handsOver || dlgIndex >= DIALOGUE.length - 1;
+
+    if (!handsOver) return;
+
+    dlgAuto = setTimeout(() => {
+        dlgAuto = 0;
+        dlgIndex += 1;
+        typeLine();
+    }, AUTO_MS);
+}
+
+function advanceDialogue() {
+    const beat = DIALOGUE[dlgIndex];
+
+    clearAutoBeat();
+
+    if (dlgTyping && beat) {
+        stopDialogue();
+        paintLine(beat, beat.text.length);
+        settleLine();
+        return;
+    }
+
+    if (dlgIndex >= DIALOGUE.length - 1) {
+        dlgIndex = 0;
+        typeLine();
+        return;
+    }
+
+    dlgIndex += 1;
+    typeLine();
+}
+
+dlgBox.addEventListener("click", advanceDialogue);
+
+dlgBox.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    e.stopPropagation();
+    advanceDialogue();
+});
+
+// the leaderboard
+const boardRows = document.getElementById("boardRows");
+const boardEmpty = document.getElementById("boardEmpty");
+const boardError = document.getElementById("boardError");
+const boardNote = document.getElementById("boardNote");
+const boardAddEmail = document.getElementById("boardAddEmail");
+
+let boardAdmin = false;
+let boardBusy = false;
+
+function openBoard() {
+    if (panelOpen(boardModal)) return;
+
+    boardError.textContent = "";
+    openPanel(boardModal);
+    loadBoard();
+}
+
+function closeBoard() {
+    closePanel(boardModal);
+}
+
+async function loadBoard() {
+    try {
+        const response = await fetch("/api/event/leaderboard", { credentials: "same-origin" });
+
+        if (response.status === 403) {
+            const banned = await response.json().catch(() => null);
+            if (banned && banned.error === "banned") return location.replace("/ban");
+        }
+
+        if (!response.ok) {
+            boardError.textContent = "The board could not be read.";
+            return;
+        }
+
+        const payload = await response.json();
+        if (!payload || payload.ok !== true) return;
+
+        boardAdmin = Boolean(payload.isAdmin);
+        renderBoard(payload.rows || []);
+    } catch (e) {
+        boardError.textContent = "ZoneOut could not be reached.";
+    }
+}
+
+function renderBoard(rows) {
+    boardRows.replaceChildren();
+    boardEmpty.hidden = rows.length > 0;
+
+    document.querySelectorAll(".boardAdminCol").forEach(el => { el.hidden = !boardAdmin; });
+    document.querySelectorAll(".boardAdminOnly").forEach(el => { el.hidden = !boardAdmin; });
+
+    rows.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        if (i < 3) tr.className = "boardTop";
+
+        const rank = document.createElement("td");
+        rank.className = "boardRank";
+        rank.textContent = "#" + (i + 1);
+        tr.appendChild(rank);
+
+        const name = document.createElement("td");
+        name.className = "boardName";
+        name.textContent = row.name;
+
+        if (i === 0) {
+            const crown = document.createElement("span");
+            crown.className = "boardCrown";
+            crown.textContent = "NAMES THE ENTITY";
+            name.appendChild(crown);
+        }
+        tr.appendChild(name);
+
+        const hours = document.createElement("td");
+        hours.className = "boardHours";
+        hours.textContent = trimHours(row.hours);
+
+        if (row.adjust && boardAdmin) {
+            const forced = document.createElement("span");
+            forced.className = "boardForced";
+            forced.textContent = signed(row.adjust);
+            forced.title = "tracked " + trimHours(row.trackedHours) + " " + signed(row.adjust);
+            hours.appendChild(forced);
+        }
+        tr.appendChild(hours);
+
+        const edit = document.createElement("td");
+        edit.hidden = !boardAdmin;
+
+        if (boardAdmin) {
+            const wrap = document.createElement("div");
+            wrap.className = "boardEdit";
+
+            const field = document.createElement("input");
+            field.className = "textInput";
+            field.type = "text";
+            field.inputMode = "decimal";
+            field.value = row.adjust ? signed(row.adjust) : "";
+            field.placeholder = "+/-";
+            field.title = "Added to their tracked " + trimHours(row.trackedHours) + " hours. Negative takes hours away.";
+            field.setAttribute("aria-label", "Hour adjustment for " + row.name);
+
+            field.addEventListener("keydown", (e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                sendBoard({ action: "adjust", userId: row.userId, adjust: field.value });
+            });
+
+            const kill = document.createElement("button");
+            kill.className = "camNode boardKill";
+            kill.type = "button";
+            kill.textContent = "REMOVE";
+            kill.setAttribute("aria-label", "Remove " + row.name);
+            kill.addEventListener("click", () => sendBoard({ action: "remove", userId: row.userId }));
+
+            wrap.appendChild(field);
+            wrap.appendChild(kill);
+            edit.appendChild(wrap);
+        }
+
+        tr.appendChild(edit);
+        boardRows.appendChild(tr);
+    });
+
+    boardNote.textContent = boardAdmin
+        ? "ADJUST adds to somebody's tracked hours, and a negative figure takes hours away. Their Hackatime time keeps counting underneath."
+        : "Hours recorded toward the freedom of the entity.";
+}
+
+async function sendBoard(payload) {
+    if (boardBusy) return;
+    boardBusy = true;
+    boardError.textContent = "";
+
+    try {
+        const response = await fetch("/api/event/leaderboard", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const body = await response.json().catch(() => null);
+
+        if (!response.ok || !body || body.ok !== true) {
+            boardError.textContent = (body && body.error) || "That change was refused.";
+            return;
+        }
+
+        boardAdmin = Boolean(body.isAdmin);
+        renderBoard(body.rows || []);
+        refreshEventState();
+    } catch (e) {
+        boardError.textContent = "ZoneOut could not be reached.";
+    } finally {
+        boardBusy = false;
+    }
+}
+
+trophyBtn.addEventListener("click", openBoard);
+document.getElementById("nodeEvents").addEventListener("click", () => openEvents());
+document.getElementById("eventModalClose").addEventListener("click", closeEvents);
+document.getElementById("eventClose").addEventListener("click", closeEvents);
+eventJoinBtn.addEventListener("click", joinTheEvent);
+document.getElementById("boardModalClose").addEventListener("click", closeBoard);
+document.getElementById("boardOk").addEventListener("click", closeBoard);
+
+document.getElementById("boardAdd").addEventListener("click", () => {
+    sendBoard({ action: "add", email: boardAddEmail.value });
+    boardAddEmail.value = "";
+});
+
+boardAddEmail.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    sendBoard({ action: "add", email: boardAddEmail.value });
+    boardAddEmail.value = "";
+});
+
+eventModal.addEventListener("mousedown", (e) => {
+    if (e.target === eventModal) closeEvents();
+});
+
+boardModal.addEventListener("mousedown", (e) => {
+    if (e.target === boardModal) closeBoard();
+});
+
+// section for the settings rows this page owns
+let adminMeterRows = null;
+let adminHourField = null;
+let adminCorruptField = null;
+let adminStartField = null;
+let adminEndField = null;
+let adminMeterNote = null;
+let settingsAdmin = false;
+
+function mountEventSettings() {
+    const api = window.zoneoutSettings;
+    if (!api || typeof api.addRow !== "function") return;
+
+    if (!settingsAdmin || adminMeterRows) return;
+
+    adminHourField = meterInput("Hour meter", "blank = live count");
+    adminCorruptField = meterInput("Corruption meter", "blank = by the clock");
+    adminStartField = meterInput("Event start", "YYYY-MM-DD eastern, resets corruption");
+    adminEndField = meterInput("Event end", "YYYY-MM-DD eastern, the deadline");
+
+    api.addRow("Hour meter", adminHourField.wrap);
+    api.addRow("Corruption meter", adminCorruptField.wrap);
+    api.addRow("Event start", adminStartField.wrap);
+    api.addRow("Event end", adminEndField.wrap);
+
+    const save = document.createElement("button");
+    save.className = "camNode settingsAction";
+    save.type = "button";
+    save.textContent = "SAVE METERS";
+    save.addEventListener("click", saveMeters);
+
+    const saveWrap = document.createElement("div");
+    saveWrap.className = "meterField settingsSlot";
+    saveWrap.appendChild(save);
+
+    adminMeterNote = document.createElement("div");
+    adminMeterNote.className = "meterHint";
+    saveWrap.appendChild(adminMeterNote);
+
+    adminMeterRows = api.addRow("", saveWrap);
+    paintAdminMeters();
+}
+
+function meterInput(label, hint) {
+    const wrap = document.createElement("div");
+    wrap.className = "meterField settingsSlot";
+
+    const field = document.createElement("input");
+    field.className = "textInput";
+    field.type = "text";
+    field.autocomplete = "off";
+    field.setAttribute("aria-label", label);
+
+    const note = document.createElement("div");
+    note.className = "meterHint";
+    note.textContent = hint;
+
+    wrap.appendChild(field);
+    wrap.appendChild(note);
+
+    return { wrap: wrap, field: field };
+}
+
+function paintAdminMeters() {
+    if (!adminHourField || !eventFigures) return;
+
+    if (document.activeElement !== adminHourField.field) {
+        adminHourField.field.value = eventFigures.hoursAuto ? "" : trimHours(eventFigures.hours);
+        adminHourField.field.placeholder = trimHours(eventFigures.liveHours);
+    }
+
+    if (document.activeElement !== adminCorruptField.field) {
+        adminCorruptField.field.value = eventFigures.corruptionAuto
+            ? ""
+            : String(Math.round(eventFigures.corruptionPercent));
+        adminCorruptField.field.placeholder = String(Math.round(eventFigures.corruptionPercent));
+    }
+
+    if (document.activeElement !== adminStartField.field) {
+        adminStartField.field.value = dayOf(eventFigures.startsAt);
+    }
+
+    if (document.activeElement !== adminEndField.field) {
+        adminEndField.field.value = dayOf(eventFigures.endsAt);
+    }
+}
+
+// section for the event window, which is kept in eastern time
+const EVENT_TZ = "America/New_York";
+
+function eventOffset(when) {
+    const name = new Intl.DateTimeFormat("en-US", { timeZone: EVENT_TZ, timeZoneName: "longOffset" })
+        .formatToParts(when).find(part => part.type === "timeZoneName").value;
+    return name.replace("GMT", "") || "+00:00";
+}
+
+function dayOf(stamp) {
+    if (!stamp) return "";
+    const when = new Date(stamp);
+    if (Number.isNaN(when.getTime())) return "";
+    return new Intl.DateTimeFormat("en-CA", { timeZone: EVENT_TZ }).format(when);
+}
+
+// a bare day means the whole eastern day, so the window never opens or closes mid-afternoon
+function stampOf(value, endOfDay) {
+    const text = value.trim();
+    if (!text) return null;
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(text)) return text;
+    const clock = endOfDay ? "T23:59:59" : "T00:00:00";
+    return text + clock + eventOffset(new Date(text + clock + "Z"));
+}
+
+async function saveMeters() {
+    if (!adminHourField) return;
+
+    const hours = adminHourField.field.value.trim();
+    const corrupt = adminCorruptField.field.value.trim();
+    const startsAt = stampOf(adminStartField.field.value, false);
+    const endsAt = stampOf(adminEndField.field.value, true);
+
+    if (adminMeterNote) adminMeterNote.textContent = "Saving…";
+
+    try {
+        const response = await fetch("/api/event/state", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                hoursOverride: hours === "" ? null : hours,
+                corruptionOverride: corrupt === "" ? null : corrupt,
+                startsAt: startsAt,
+                endsAt: endsAt
+            })
+        });
+
+        const body = await response.json().catch(() => null);
+
+        if (!response.ok || !body || body.ok !== true) {
+            if (adminMeterNote) adminMeterNote.textContent = (body && body.error) || "Refused.";
+            return;
+        }
+
+        eventFigures = body;
+        paintMeters();
+        paintAdminMeters();
+        if (adminMeterNote) adminMeterNote.textContent = "Saved.";
+    } catch (e) {
+        if (adminMeterNote) adminMeterNote.textContent = "ZoneOut could not be reached.";
+    }
+}
+
+if (window.zoneoutSettings && window.zoneoutSettings.ready) mountEventSettings();
+else document.addEventListener("zoneout:settingsready", mountEventSettings, { once: true });
 
 // rulebook image lightbox
 const lightbox = document.getElementById("lightbox");
@@ -2153,7 +3637,7 @@ let htKnown = false;
 let htChoice = null;
 let htList = null;
 let htListPending = null;
-let htPromptShown = false;
+let htForced = false;
 let htReturnFocus = null;
 
 const NO_LINK_LABEL = "— none —";
@@ -2162,8 +3646,14 @@ function htModalOpen() {
     return htModal.classList.contains("show");
 }
 
-function openHtModal() {
+function openHtModal(forced) {
     if (htModalOpen() || projModalOpen()) return;
+
+    htForced = Boolean(forced);
+    document.getElementById("htGateNote").hidden = !htForced;
+    document.getElementById("htModalClose").hidden = htForced;
+    document.getElementById("htLater").hidden = htForced;
+    document.getElementById("htGateOut").hidden = !htForced;
 
     htReturnFocus = document.activeElement;
     htModal.hidden = false;
@@ -2179,6 +3669,8 @@ function openHtModal() {
 }
 
 function closeHtModal() {
+    if (htForced) return;
+
     htModal.classList.remove("show");
     setInertBehind(false, htModal);
     restoreScroll();
@@ -2192,18 +3684,24 @@ function closeHtModal() {
     htReturnFocus = null;
 }
 
-// shown on every visit to /home until each is settled
+// the hackatime gate holds every view, the other two prompts are /home only
 function maybePrompt() {
-    if (currentPath !== "/home" || anyModalOpen()) return;
+    if (anyModalOpen()) return;
 
-    if (htKnown && !hackatimeLinked && !htPromptShown) {
-        htPromptShown = true;
-        return openHtModal();
+    if (htKnown && !hackatimeLinked && currentPath !== "/error") {
+        return openHtModal(true);
     }
+
+    if (currentPath !== "/home") return;
 
     if (regionKnown && !userRegion && !regionPromptShown) {
         regionPromptShown = true;
-        openRegionModal();
+        return openRegionModal();
+    }
+
+    if (eventsPending) {
+        eventsPending = false;
+        afterArrival(() => openEvents(true));
     }
 }
 
@@ -2215,6 +3713,8 @@ document.getElementById("htLinkBtn").addEventListener("click", () => leaveTo("/a
 htModal.addEventListener("mousedown", (e) => {
     if (e.target === htModal) closeHtModal();
 });
+
+document.getElementById("htGateOut").addEventListener("click", signOut);
 
 // the picker in the create form
 function setHtChoice(name) {
@@ -2352,13 +3852,20 @@ function loadHackatimeProjects() {
 }
 
 // the periodic refresh
+function syncEventFromHackatime(payload) {
+    if (!payload || typeof payload.eventHours !== "number") return;
+    refreshEventState();
+}
+
 function syncHackatime() {
     if (!hackatimeLinked) return;
 
     fetch("/api/hackatime/sync", { method: "POST", credentials: "same-origin" })
         .then(response => response.ok ? response.json() : null)
         .then(payload => {
-            if (!payload || !payload.ok || !payload.projects || !payload.projects.length) return;
+            if (!payload || !payload.ok) return;
+            syncEventFromHackatime(payload);
+            if (!payload.projects || !payload.projects.length) return;
             applyHours(payload.projects);
         })
         .catch(() => {  });
@@ -2402,6 +3909,7 @@ document.getElementById("htUnlinkBtn").addEventListener("click", () => {
             htList = null;
             paintHackatime();
             showToast("Hackatime disconnected.");
+            maybePrompt();
         })
         .catch(() => {
             button.disabled = false;
@@ -2497,7 +4005,10 @@ function closeRegionModal() {
     setInertBehind(false, regModal);
     restoreScroll();
 
-    setTimeout(() => { if (!regModalOpen()) regModal.hidden = true; }, 240);
+    setTimeout(() => {
+        if (!regModalOpen()) regModal.hidden = true;
+        maybePrompt();
+    }, 240);
 
     if (regReturnFocus && document.contains(regReturnFocus)) regReturnFocus.focus();
     regReturnFocus = null;
@@ -2602,6 +4113,7 @@ function flushHackatimeNotice() {
         linked: "Hackatime connected.",
         denied: "Hackatime was not connected.",
         state: "That link expired. Try again.",
+        taken: "That Hackatime account is already linked to another ZoneOut account.",
         failed: "Hackatime could not be reached."
     };
     showToast(messages[code] || "Hackatime could not be reached.");
@@ -2616,6 +4128,8 @@ function focusables() {
     if (gear && document.documentElement.getAttribute("data-gear") === "on") list.push(gear);
 
     if (document.documentElement.getAttribute("data-info") === "on") list.push(infoBtn);
+
+    if (document.documentElement.getAttribute("data-trophy") === "on") list.push(trophyBtn);
 
     return list.filter(el => el && !el.disabled && el.getClientRects().length > 0);
 }
@@ -2769,7 +4283,7 @@ function forgetSessionHint() {
     }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", async () => {
+async function signOut() {
     try {
         await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
     } catch {
@@ -2783,7 +4297,9 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
     try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
     screenVeil.classList.add("on");
     setTimeout(() => { window.location.href = "/"; }, VEIL_MS);
-});
+}
+
+document.getElementById("logoutBtn").addEventListener("click", signOut);
 
 // profile fields
 const put = (id, value) => { document.getElementById(id).textContent = value; };
@@ -2848,6 +4364,11 @@ async function load() {
     submitProfileOn = Boolean(user.submitProfile);
     paintSubmitProfile();
 
+    eventJoined = Boolean(user.eventJoined);
+    settingsAdmin = Boolean(user.isAdmin);
+    mountEventSettings();
+    paintJoinState();
+
     adoptProjects(user.userId, user.name, payload.projects);
 
     stopLoading();
@@ -2855,12 +4376,17 @@ async function load() {
 
     flushHackatimeNotice();
     syncHackatime();
+
+    eventsPending = takeFlag("zoneoutEventsOpen");
+    refreshEventState();
+    startStatePoll();
+
     maybePrompt();
 }
 
 // entry
 const entryPath = pathOf(location.pathname);
-history.replaceState({ path: entryPath }, "", entryPath);
+history.replaceState({ path: entryPath }, "", entryPath + location.search);
 
 if (knownSession || entryPath === "/error") render(entryPath);
 
@@ -2873,9 +4399,11 @@ document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") videoBG.play().catch(() => {});
     else videoBG.pause();
 });
+
 </script>
 
 <script src="/settings.js" defer></script>
+<script src="/cutscene.js" defer></script>
 
 </body>
 </html>

@@ -1,5 +1,6 @@
 import { requireUser } from "../../lib/guard.mjs";
 import { readToken, revokeToken, clearLink } from "../../lib/hackatime.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -13,6 +14,9 @@ export default async function handler(req, res) {
         res.setHeader("Allow", "POST");
         return res.status(405).json({ ok: false, error: "method not allowed" });
     }
+
+    // rate limit
+    if (await limited(res, "ht-unlink", user.user_id, 10, 600)) return;
 
     try {
         const token = await readToken(user.user_id);

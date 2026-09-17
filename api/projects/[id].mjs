@@ -1,9 +1,10 @@
 import { readSession } from "../../lib/session.mjs";
-import { requireUser, resolveAdmin } from "../../lib/guard.mjs";
-import { getProjectById, updateProjectForUser, deleteProjectForUser, updateProjectAsAdmin, deleteProjectAsAdmin, ValidationError } from "../../lib/users.mjs";
+import { requireUser } from "../../lib/guard.mjs";
+import { getProjectWithViewer, updateProjectForUser, deleteProjectForUser, updateProjectAsAdmin, deleteProjectAsAdmin, ValidationError } from "../../lib/users.mjs";
 import { isAdminEmail } from "../../lib/admin.mjs";
 import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
+import { limited } from "../../lib/ratelimit.mjs";
 
 // response shape, the hackatime name is for the owner and administrators only
 function present(project, ownerName, showLink = true) {
@@ -17,6 +18,11 @@ function present(project, ownerName, showLink = true) {
         hackatimeLinked: Boolean(project.hackatime_project),
         hackatimeProject: showLink ? (project.hackatime_project ?? null) : null,
         hackatimeHours: project.hackatime_hours ?? 0,
+        reviewStatus: project.review_status ?? "draft",
+        reviewRemarks: project.review_remarks ?? null,
+        reviewedAt: project.reviewed_at ?? null,
+        submittedAt: project.submitted_at ?? null,
+        submittedHours: project.submitted_hours ?? 0,
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };
@@ -48,21 +54,23 @@ export default async function handler(req, res) {
     if (req.method === "DELETE") return remove(req, res, projectId);
 
     try {
-        // public read
-        const project = await getProjectById(projectId);
+        // public read, the viewer resolved in the same statement
+        const session = readSession(req);
+        const project = await getProjectWithViewer(projectId, session?.userId ?? null);
+
         if (!project) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
-        const session = readSession(req);
         const owns = Boolean(session) && session.userId === project.user_id;
-        const isAdmin = Boolean(session) && !owns && Boolean(await resolveAdmin(req));
+        const admin = Boolean(session) && !project.viewer_banned && isAdminEmail(project.viewer_email);
 
         return res.status(200).json({
             ok: true,
-            project: present(project, null, owns || isAdmin),
-            canEdit: owns || isAdmin,
-            isAdmin,
+            project: present(project, null, owns || admin),
+            canEdit: owns || admin,
+            canReview: admin,
+            adminOverride: admin && !owns,
             signedIn: Boolean(session)
         });
     } catch (err) {
@@ -75,6 +83,9 @@ export default async function handler(req, res) {
 async function edit(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
+
+    // rate limit
+    if (await limited(res, "project-write", user.user_id, 40, 60)) return;
 
     let body;
     try {
@@ -127,6 +138,9 @@ async function edit(req, res, projectId) {
 async function remove(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
+
+    // rate limit
+    if (await limited(res, "project-write", user.user_id, 40, 60)) return;
 
     try {
         let deleted = await deleteProjectForUser(user.user_id, projectId);

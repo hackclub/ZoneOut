@@ -1,5 +1,6 @@
 import { readSession, clearSessionCookie, refreshSessionHint } from "../../lib/session.mjs";
 import { getUserWithProjects } from "../../lib/users.mjs";
+import { isAdminEmail } from "../../lib/admin.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -51,7 +52,9 @@ export default async function handler(req, res) {
                 balanceHours: user.balance_hours,
                 region: user.region ?? null,
                 hackatimeLinked: Boolean(user.hackatime_user_id),
-                submitProfile: Boolean(user.submit_profile_on)
+                submitProfile: Boolean(user.submit_profile_on),
+                eventJoined: Boolean(user.event_joined),
+                isAdmin: isAdminEmail(user.email)
             },
             projects: user.projects.map(p => ({
                 projectId: p.project_id,
@@ -61,6 +64,11 @@ export default async function handler(req, res) {
                 demoUrl: p.demo_url,
                 hackatimeProject: p.hackatime_project ?? null,
                 hackatimeHours: p.hackatime_hours ?? 0,
+                reviewStatus: p.review_status ?? "draft",
+                reviewRemarks: p.review_remarks ?? null,
+                reviewedAt: p.reviewed_at ?? null,
+                submittedAt: p.submitted_at ?? null,
+                submittedHours: p.submitted_hours ?? 0,
                 createdAt: p.created_at,
                 updatedAt: p.updated_at
             }))

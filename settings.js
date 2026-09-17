@@ -27,7 +27,7 @@ function currentTheme() {
     for (var i = 0; i < THEMES.length; i++) {
         if (THEMES[i].id === id) return id;
     }
-    return "default";
+    return "fnaf";
 }
 
 function labelFor(id) {
@@ -365,11 +365,36 @@ document.addEventListener("keydown", function (e) {
     e.stopPropagation();
 }, true);
 
+// section for page-supplied rows
+function addRow(labelText, control) {
+    var extra = document.createElement("div");
+    extra.className = "settingsRow";
+
+    var name = document.createElement("span");
+    name.className = "settingsLabel";
+    name.textContent = labelText;
+
+    var gap = document.createElement("span");
+    gap.className = "settingsArrow";
+    gap.textContent = "";
+
+    extra.appendChild(name);
+    extra.appendChild(gap);
+    if (control) extra.appendChild(control);
+    card.appendChild(extra);
+
+    return extra;
+}
+
 window.zoneoutSettings = {
     isOpen: isOpen,
     open: open,
     close: close,
     theme: currentTheme,
-    apply: applyTheme
+    apply: applyTheme,
+    addRow: addRow,
+    ready: true
 };
+
+document.dispatchEvent(new CustomEvent("zoneout:settingsready"));
 })();

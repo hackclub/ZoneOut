@@ -11,8 +11,8 @@
 <script>
 // theme, read before the first paint
 try {
-    var zoTheme = localStorage.getItem("zoneoutTheme");
-    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+    var zoTheme = localStorage.getItem("zoneoutTheme") || "fnaf";
+    if (zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
         document.documentElement.setAttribute("data-theme", zoTheme);
         var zoMeta = document.querySelector('meta[name="theme-color"]');
         if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
@@ -310,9 +310,9 @@ position:relative;
 }
 
 .regionBtn{
-padding:7px 12px;
-font-size:13px;
-letter-spacing:2px;
+padding:5px 9px;
+font-size:11.5px;
+letter-spacing:1.5px;
 }
 
 .regionMenu{
@@ -364,13 +364,147 @@ content:">> ";
 
 /* SUGGESTIONS */
 .suggestBtn{
-padding:7px 12px;
-font-size:13px;
-letter-spacing:2px;
+padding:5px 9px;
+font-size:11.5px;
+letter-spacing:1.5px;
 }
 
 .suggestBtn[hidden]{
 display:none;
+}
+
+/* ORDER HISTORY */
+.ordersBtn{
+padding:5px 9px;
+font-size:11.5px;
+letter-spacing:1.5px;
+}
+
+.ordersBtn[hidden]{
+display:none;
+}
+
+.ordersCard{
+width:min(980px,100%);
+max-height:86dvh;
+overflow-y:auto;
+overscroll-behavior:contain;
+}
+
+.ordersTitle{
+font-size:clamp(17px,3vw,22px);
+letter-spacing:4px;
+text-transform:uppercase;
+margin-bottom:6px;
+}
+
+.ordersHint{
+font-size:12.5px;
+line-height:1.7;
+opacity:0.55;
+margin-bottom:18px;
+}
+
+.ordersGrid{
+display:grid;
+grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+gap:16px;
+}
+
+.ordersEmpty{
+padding:26px 8px;
+text-align:center;
+font-size:14px;
+opacity:0.55;
+}
+
+.ordersEmpty[hidden]{
+display:none;
+}
+
+.orderCount{
+margin-top:4px;
+font-size:13px;
+letter-spacing:1px;
+color:rgba(var(--fg),0.6);
+}
+
+.orderTag{
+margin-top:8px;
+padding:2px 8px;
+font-size:11px;
+letter-spacing:2px;
+border-radius:4px;
+border:1px solid currentColor;
+}
+
+.itemCard.statePending .orderTag{
+color:rgb(var(--reviewWait));
+}
+
+.itemCard.stateRejected .orderTag{
+color:rgb(var(--warn));
+}
+
+.itemCard.stateApproved{
+background:rgba(var(--reviewOk),0.16);
+border-color:rgba(var(--reviewOk),0.75);
+color:rgb(var(--reviewOk));
+}
+
+.itemCard.stateApproved:hover,
+.itemCard.stateApproved:focus-visible{
+border-color:rgb(var(--reviewOk));
+box-shadow:inset 0 0 0 1px rgba(var(--reviewOk),0.6), inset 0 0 18px rgba(var(--reviewOk),0.18);
+}
+
+.itemCard.stateRejected{
+background:rgba(var(--reviewBad),0.16);
+border-color:rgba(var(--reviewBad),0.75);
+color:rgb(var(--reviewBad));
+}
+
+.itemCard.stateRejected:hover,
+.itemCard.stateRejected:focus-visible{
+border-color:rgb(var(--reviewBad));
+box-shadow:inset 0 0 0 1px rgba(var(--reviewBad),0.6), inset 0 0 18px rgba(var(--reviewBad),0.18);
+}
+
+.itemCard.stateApproved .itemHours,
+.itemCard.stateRejected .itemHours,
+.itemCard.stateApproved .orderCount,
+.itemCard.stateRejected .orderCount{
+color:inherit;
+}
+
+.viewState{
+margin-top:10px;
+font-size:13px;
+letter-spacing:2px;
+text-transform:uppercase;
+}
+
+.viewState.statePending{
+color:rgb(var(--reviewWait));
+}
+
+.viewState.stateApproved{
+color:rgb(var(--reviewOk));
+}
+
+.viewState.stateRejected{
+color:rgb(var(--reviewBad));
+}
+
+#cancelBtn{
+border-color:rgba(var(--danger),0.6);
+color:rgb(var(--dangerBright));
+}
+
+#cancelBtn:hover:not(:disabled),
+#cancelBtn:focus-visible:not(:disabled){
+border-color:rgb(var(--danger));
+box-shadow:inset 0 0 0 1px rgba(var(--danger),0.5), inset 0 0 14px rgba(var(--danger),0.18);
 }
 
 .glassCard{
@@ -386,7 +520,7 @@ linear-gradient(135deg, rgba(var(--glassTint),0.22), rgba(var(--fg),0.06));
 backdrop-filter:blur(18px) saturate(150%);
 -webkit-backdrop-filter:blur(18px) saturate(150%);
 border:1px solid rgba(var(--fg),0.22);
-box-shadow:0 0 24px rgba(var(--accentGlow),0.25), 0 24px 60px rgba(var(--bg),0.6);
+box-shadow:0 24px 60px rgba(var(--bg),0.6);
 width:min(560px,100%);
 }
 
@@ -397,7 +531,7 @@ border-color:rgba(var(--fg),0.24);
 
 .glassCard .textInput:focus{
 border-color:rgba(var(--fg),0.7);
-box-shadow:0 0 14px rgba(var(--accent),0.35);
+box-shadow:inset 0 0 0 1px rgba(var(--fg),0.35), inset 0 0 12px rgba(var(--accent),0.16);
 }
 
 .suggestTitle{
@@ -532,7 +666,7 @@ transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 outline:none;
 transform:translateY(-3px);
 border-color:rgba(var(--accent),0.6);
-box-shadow:0 0 22px rgba(var(--accentGlow),0.35);
+box-shadow:inset 0 0 0 1px rgba(var(--accent),0.5), inset 0 0 18px rgba(var(--accentGlow),0.16);
 }
 
 .itemCard.glitch{
@@ -579,19 +713,19 @@ animation:glitchBlue 4s infinite;
 /* HALLOWEEN CARDS */
 .itemCard.hallowCard{
 border-color:rgba(var(--pumpkinBorder),0.34);
-box-shadow:0 0 12px rgba(var(--pumpkinEmberDeep),0.14), inset 0 0 20px rgba(var(--pumpkinEmberDeep),0.05);
+box-shadow:inset 0 0 0 1px rgba(var(--pumpkinEmberDeep),0.22), inset 0 0 20px rgba(var(--pumpkinEmberDeep),0.08);
 }
 
 .itemCard.hallowCard:hover,
 .itemCard.hallowCard:focus-visible{
 border-color:rgba(var(--pumpkinHot),0.6);
-box-shadow:0 0 20px rgba(var(--pumpkinEmber),0.26), inset 0 0 22px rgba(var(--pumpkinEmber),0.08);
+box-shadow:inset 0 0 0 1px rgba(var(--pumpkinEmber),0.45), inset 0 0 22px rgba(var(--pumpkinEmber),0.12);
 }
 
 /* HALLOWEEN ORDER DIALOG */
 .modalCard.hallowModal{
 border-color:rgba(var(--pumpkinBorder),0.55);
-box-shadow:0 0 26px rgba(var(--pumpkinEmber),0.24), inset 0 0 34px rgba(var(--pumpkinEmberDeep),0.09);
+box-shadow:inset 0 0 0 1px rgba(var(--pumpkinEmber),0.3), inset 0 0 34px rgba(var(--pumpkinEmberDeep),0.09);
 }
 
 .modalCard.hallowModal .orderName{
@@ -616,7 +750,7 @@ border-color:rgba(var(--pumpkinHot),0.6);
 .modalCard.hallowModal #orderBtn:hover:not(:disabled),
 .modalCard.hallowModal #orderBtn:focus-visible:not(:disabled){
 border-color:rgb(var(--pumpkinHot));
-box-shadow:0 0 18px rgba(var(--pumpkinEmber),0.3);
+box-shadow:inset 0 0 0 1px rgba(var(--pumpkinEmber),0.5), inset 0 0 14px rgba(var(--pumpkinEmber),0.18);
 }
 
 /* new item flag */
@@ -926,6 +1060,8 @@ text-align:center;
 @media (max-width:620px){
 .dockButtons{
 flex-direction:row-reverse;
+flex-wrap:wrap;
+justify-content:flex-end;
 align-items:center;
 gap:10px;
 }
@@ -941,9 +1077,11 @@ padding:8px 12px;
 font-size:15px;
 }
 
-.suggestBtn{
-padding:6px 9px;
-font-size:12px;
+.suggestBtn,
+.ordersBtn,
+.regionBtn{
+padding:5px 8px;
+font-size:11px;
 letter-spacing:1px;
 }
 
@@ -1019,6 +1157,11 @@ animation:none !important;
 transition:border-color .18s ease;
 }
 
+.ordersGrid .itemCard:hover,
+.ordersGrid .itemCard:focus-visible{
+transform:none;
+}
+
 .itemCard:hover,
 .itemCard:focus-visible{
 transform:none;
@@ -1082,6 +1225,8 @@ display:none;
 </div>
 
 <div class="dockButtons">
+<button class="camNode ordersBtn" id="ordersBtn" type="button" hidden>Shop Orders</button>
+
 <button class="camNode suggestBtn" id="suggestBtn" type="button" hidden>Suggest items!</button>
 
 <div class="regionWrap">
@@ -1149,7 +1294,7 @@ display:none;
 
 <div class="suggestTitle" id="noticeTitle">Before You Shop</div>
 
-<p class="noticeText">Fullfillment of all items will be done after the event ends. Reviews will be done earlier but fullfillment after 30th of September.</p>
+<p class="noticeText">Fullfillment of items will be happening shortly! </p>
 
 <div class="orderActions noticeActions">
 <button class="camNode" id="noticeOk" type="button">Close</button>
@@ -1166,7 +1311,7 @@ display:none;
 
 <div class="infoSection">
 <h3>Fullfillment</h3>
-<p>Fullfillment will be starting shortly. An announcement will be made when fullfillment beings. Submissions will close by September 30th.</p>
+<p>Fullfillment is beginning. Submissions will close by September 30th.</p>
 </div>
 
 <div class="infoSection">
@@ -1207,12 +1352,47 @@ display:none;
 </div>
 </div>
 
+<div class="modalScrim" id="ordersModal" hidden>
+<div class="modalCard ordersCard" role="dialog" aria-modal="true" aria-labelledby="ordersTitle">
+<button class="modalClose" id="ordersClose" type="button" aria-label="Close">&times;</button>
+
+<div class="ordersTitle" id="ordersTitle">Your Shop Orders</div>
+<p class="ordersHint">Your card's colour changes: <br>Green means approved and red means rejected. Open an order to cancel it and get a refund of your hours before its fulfilled!</p>
+
+<div class="ordersGrid" id="ordersGrid"></div>
+<div class="ordersEmpty" id="ordersEmpty">You have not ordered anything yet.</div>
+</div>
+</div>
+
+<div class="modalScrim" id="orderViewModal" hidden>
+<div class="modalCard" id="viewCard" role="dialog" aria-modal="true" aria-labelledby="viewName">
+<button class="modalClose" id="viewClose" type="button" aria-label="Close">&times;</button>
+
+<div class="orderBody">
+<div class="orderInfo">
+<div class="orderName" id="viewName"></div>
+<div class="orderCost" id="viewCost"></div>
+<div class="viewState" id="viewState"></div>
+<p class="orderDesc" id="viewDesc"></p>
+</div>
+
+<div class="orderArt" id="viewArt"></div>
+</div>
+
+<div class="formError" id="viewError" role="alert"></div>
+
+<div class="orderActions">
+<button class="camNode" id="cancelBtn" type="button">Cancel Order</button>
+</div>
+</div>
+</div>
+
 <div class="screenVeil" id="screenVeil" aria-hidden="true"></div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
+import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemLimit, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
 
 // elements
 const sectionsHost = document.getElementById("shopSections");
@@ -1234,6 +1414,19 @@ const qtyInput = document.getElementById("orderQtyInput");
 qtyInput.max = String(MAX_QUANTITY);
 const toast = document.getElementById("toast");
 const suggestBtn = document.getElementById("suggestBtn");
+const ordersBtn = document.getElementById("ordersBtn");
+const ordersModal = document.getElementById("ordersModal");
+const ordersGrid = document.getElementById("ordersGrid");
+const ordersEmpty = document.getElementById("ordersEmpty");
+const viewModal = document.getElementById("orderViewModal");
+const viewCard = document.getElementById("viewCard");
+const viewName = document.getElementById("viewName");
+const viewCost = document.getElementById("viewCost");
+const viewState = document.getElementById("viewState");
+const viewDesc = document.getElementById("viewDesc");
+const viewArt = document.getElementById("viewArt");
+const viewError = document.getElementById("viewError");
+const cancelBtn = document.getElementById("cancelBtn");
 const regionBtn = document.getElementById("regionBtn");
 const regionMenu = document.getElementById("regionMenu");
 const suggestModal = document.getElementById("suggestModal");
@@ -1252,6 +1445,9 @@ let balanceHours = 0;
 let signedIn = false;
 let openItem = null;
 let returnFocus = null;
+let myOrders = [];
+let ordersKnown = false;
+let openOrderRow = null;
 
 // artwork
 function initials(name) {
@@ -1600,7 +1796,7 @@ renderSections();
 
 // keyboard
 function columnCount(card) {
-    const grid = card ? card.closest(".shopGrid") : sectionsHost.querySelector(".shopGrid");
+    const grid = card ? card.closest(".shopGrid, .ordersGrid") : sectionsHost.querySelector(".shopGrid");
     if (!grid) return 1;
 
     const tracks = getComputedStyle(grid).gridTemplateColumns;
@@ -1696,6 +1892,9 @@ async function refreshBalance() {
     if (response.status === 401 || response.status === 404) {
         signedIn = false;
         suggestBtn.hidden = true;
+        ordersBtn.hidden = true;
+        myOrders = [];
+        ordersKnown = false;
         homeRegion = null;
         grants = [];
         renderSections();
@@ -1706,6 +1905,9 @@ async function refreshBalance() {
         stopPolling();
         return;
     }
+
+    // throttled is unknown, and unknown is not signed out
+    if (response.status === 429) return;
 
     if (!response.ok) {
         signedIn = false;
@@ -1718,6 +1920,7 @@ async function refreshBalance() {
         const payload = await response.json();
         signedIn = true;
         suggestBtn.hidden = false;
+        ordersBtn.hidden = false;
         hideLoginBar();
         balanceHours = Number(payload.balanceHours) || 0;
         paintBalance();
@@ -1736,10 +1939,14 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // quantity
+function orderCap() {
+    return itemLimit(openItem) || MAX_QUANTITY;
+}
+
 function readQuantity() {
     const value = Number(qtyInput.value);
     if (!Number.isFinite(value)) return 1;
-    return Math.min(Math.max(Math.floor(value), 1), MAX_QUANTITY);
+    return Math.min(Math.max(Math.floor(value), 1), orderCap());
 }
 
 function updateOrderButton() {
@@ -1810,8 +2017,16 @@ function openOrder(itemId) {
     orderName.textContent = item.name + (item.note ? " (" + item.note + ")" : "");
 
     paintRich(orderDesc, item.description || "");
-    paintRich(orderNote, item.modalNote || "");
-    orderNote.hidden = !item.modalNote;
+
+    const cap = itemLimit(item);
+    const note = [
+        item.modalNote || "",
+        cap ? "Limited to **" + cap + "** per person in total." : ""
+    ].filter(Boolean).join(" ");
+
+    qtyInput.max = String(cap || MAX_QUANTITY);
+    paintRich(orderNote, note);
+    orderNote.hidden = !note;
     orderWarning.hidden = !item.local;
 
     orderArt.textContent = "";
@@ -1902,7 +2117,7 @@ function setInertBehind(on, dialog) {
     });
 }
 
-const DIALOGS = [modal, suggestModal, noticeModal, infoModal];
+const DIALOGS = [modal, suggestModal, noticeModal, infoModal, ordersModal, viewModal];
 
 function openDialog() {
     return DIALOGS.find(dialog => dialog.classList.contains("show")) || null;
@@ -1980,6 +2195,7 @@ orderBtn.addEventListener("click", async () => {
     balanceHours = Number(payload.balanceHours) || 0;
     paintBalance();
     closeOrder();
+    ordersKnown = false;
     showToast("Ordered " + quantity + " × " + item.name + ".");
 });
 
@@ -2001,6 +2217,12 @@ document.addEventListener("keydown", (e) => {
     } else if (modal.classList.contains("show")) {
         e.preventDefault();
         closeOrder();
+    } else if (viewModal.classList.contains("show")) {
+        e.preventDefault();
+        closeOrderView();
+    } else if (ordersModal.classList.contains("show")) {
+        e.preventDefault();
+        closeOrders();
     } else if (suggestModal.classList.contains("show")) {
         e.preventDefault();
         closeSuggest();
@@ -2011,6 +2233,277 @@ document.addEventListener("keydown", (e) => {
         e.preventDefault();
         closeInfo();
     }
+});
+
+// section for the order history
+const ORDER_STATES = {
+    pending: { label: "Awaiting a decision", css: "statePending" },
+    approved: { label: "Approved", css: "stateApproved" },
+    rejected: { label: "Rejected", css: "stateRejected" }
+};
+
+function orderState(status) {
+    return ORDER_STATES[status] || ORDER_STATES.pending;
+}
+
+async function loadOrders() {
+    if (!signedIn) return false;
+
+    let response;
+    try {
+        response = await fetch("/api/shop/orders", { credentials: "same-origin" });
+    } catch {
+        return false;
+    }
+
+    if (response.status === 403) {
+        window.location.replace("/ban");
+        return false;
+    }
+
+    if (!response.ok) return false;
+
+    try {
+        const payload = await response.json();
+        myOrders = Array.isArray(payload.orders) ? payload.orders : [];
+        ordersKnown = true;
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+const ordersCards = [];
+
+// each row is the item's own card, tinted by its verdict
+function renderOrders() {
+    ordersGrid.replaceChildren();
+    ordersCards.length = 0;
+
+    myOrders.forEach(row => {
+        const item = findItem(row.itemId);
+        const state = orderState(row.status);
+
+        const card = document.createElement("button");
+        card.className = "itemCard " + state.css;
+        card.type = "button";
+        card.dataset.orderId = String(row.orderId);
+
+        card.appendChild(item ? artwork(item, "itemImage") : placeholder(row.itemName));
+
+        const name = document.createElement("div");
+        name.className = "itemName";
+        name.textContent = row.itemName;
+        card.appendChild(name);
+
+        const price = document.createElement("div");
+        price.className = "itemHours";
+        price.appendChild(hourGlyph());
+        price.appendChild(document.createTextNode(hoursLabel(row.hoursSpent)));
+        card.appendChild(price);
+
+        const count = document.createElement("div");
+        count.className = "orderCount";
+        count.textContent = "× " + row.quantity + " ordered";
+        card.appendChild(count);
+
+        if (row.status === "pending" || row.refunded) {
+            const tag = document.createElement("div");
+            tag.className = "orderTag";
+            tag.textContent = row.refunded ? "REFUNDED" : "PENDING";
+            card.appendChild(tag);
+        }
+
+        card.addEventListener("click", () => openOrderView(row.orderId));
+        ordersCards.push(card);
+        ordersGrid.appendChild(card);
+    });
+
+    ordersEmpty.hidden = myOrders.length > 0;
+    ordersEmpty.textContent = ordersKnown
+        ? "You have not ordered anything yet."
+        : "Loading\u2026";
+}
+
+function placeholder(name) {
+    const box = document.createElement("div");
+    box.className = "itemPlaceholder";
+    box.textContent = initials(name || "??");
+    return box;
+}
+
+function openOrders() {
+    if (!signedIn) return;
+
+    returnFocus = document.activeElement;
+
+    renderOrders();
+    ordersModal.hidden = false;
+
+    requestAnimationFrame(() => ordersModal.classList.add("show"));
+    setTimeout(() => ordersModal.classList.add("show"), 60);
+
+    setInertBehind(true, ordersModal);
+    document.body.style.overflow = "hidden";
+    document.getElementById("ordersClose").focus();
+
+    // the stash is only a first frame; the server is authoritative
+    loadOrders().then(fresh => {
+        if (!ordersModal.classList.contains("show")) return;
+        if (fresh) renderOrders();
+        else if (!ordersKnown) ordersEmpty.textContent = "Could not load your orders.";
+    });
+}
+
+function closeOrders() {
+    ordersModal.classList.remove("show");
+    setInertBehind(false, ordersModal);
+    document.body.style.overflow = "";
+
+    setTimeout(() => {
+        if (!ordersModal.classList.contains("show")) ordersModal.hidden = true;
+    }, 240);
+
+    if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    returnFocus = null;
+}
+
+// one order, with Cancel Order in place of Place Order
+let viewReturn = null;
+
+function openOrderView(orderId) {
+    const row = myOrders.find(entry => entry.orderId === orderId);
+    if (!row) return;
+
+    openOrderRow = row;
+    viewReturn = document.activeElement;
+
+    const item = findItem(row.itemId);
+    const state = orderState(row.status);
+
+    viewCard.classList.toggle("hallowModal", Boolean(item) && item.section === "halloween");
+
+    viewName.textContent = row.itemName;
+    viewCost.textContent = hoursLabel(row.hoursSpent) + " total · × " + row.quantity;
+
+    viewState.className = "viewState " + state.css;
+    viewState.textContent = state.label
+        + (row.refunded ? " · hours refunded" : "");
+
+    paintRich(viewDesc, item ? (item.description || "") : "");
+
+    viewArt.replaceChildren();
+    viewArt.appendChild(item ? artwork(item, "orderImage") : placeholder(row.itemName));
+
+    viewError.textContent = "";
+
+    cancelBtn.hidden = row.status !== "pending";
+    cancelBtn.disabled = row.status !== "pending";
+    cancelBtn.textContent = "Cancel Order";
+
+    viewModal.hidden = false;
+    requestAnimationFrame(() => viewModal.classList.add("show"));
+    setTimeout(() => viewModal.classList.add("show"), 60);
+
+    setInertBehind(true, viewModal);
+    (row.status === "pending" ? cancelBtn : document.getElementById("viewClose")).focus();
+}
+
+function closeOrderView() {
+    viewModal.classList.remove("show");
+
+    setTimeout(() => {
+        if (!viewModal.classList.contains("show")) viewModal.hidden = true;
+    }, 240);
+
+    // the orders dialog is still standing behind this one
+    setInertBehind(true, ordersModal);
+    document.body.style.overflow = "hidden";
+
+    if (viewReturn && document.contains(viewReturn)) viewReturn.focus();
+    viewReturn = null;
+    openOrderRow = null;
+}
+
+cancelBtn.addEventListener("click", async () => {
+    if (!openOrderRow) return;
+
+    const row = openOrderRow;
+    cancelBtn.disabled = true;
+    cancelBtn.textContent = "Cancelling…";
+    viewError.textContent = "";
+
+    let response;
+    try {
+        response = await fetch("/api/shop/cancel", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: row.orderId })
+        });
+    } catch {
+        viewError.textContent = "Could not reach ZoneOut.";
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = "Cancel Order";
+        return;
+    }
+
+    if (response.status === 403) {
+        window.location.replace("/ban");
+        return;
+    }
+
+    let payload = {};
+    try { payload = await response.json(); } catch {  }
+
+    if (!response.ok) {
+        viewError.textContent = payload.error || "That order could not be cancelled.";
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = "Cancel Order";
+        await loadOrders();
+        renderOrders();
+        return;
+    }
+
+    balanceHours = Number(payload.balanceHours) || 0;
+    paintBalance();
+
+    myOrders = myOrders.filter(entry => entry.orderId !== row.orderId);
+    renderOrders();
+    closeOrderView();
+    showToast("Cancelled. " + hoursLabel(payload.refunded) + " returned.");
+});
+
+ordersBtn.addEventListener("click", openOrders);
+document.getElementById("ordersClose").addEventListener("click", closeOrders);
+document.getElementById("viewClose").addEventListener("click", closeOrderView);
+
+ordersModal.addEventListener("mousedown", (e) => {
+    if (e.target === ordersModal) closeOrders();
+});
+
+viewModal.addEventListener("mousedown", (e) => {
+    if (e.target === viewModal) closeOrderView();
+});
+
+// the order grid answers the arrows, like the shop grid behind it
+ordersModal.addEventListener("keydown", (e) => {
+    if (!(e.key in ARROWS) && e.key !== "Home" && e.key !== "End") return;
+    if (viewModal.classList.contains("show")) return;
+
+    const at = ordersCards.indexOf(document.activeElement);
+    if (!ordersCards.length) return;
+
+    e.preventDefault();
+
+    if (e.key === "Home") { ordersCards[0].focus(); return; }
+    if (e.key === "End") { ordersCards[ordersCards.length - 1].focus(); return; }
+    if (at === -1) { ordersCards[0].focus(); return; }
+
+    const columns = columnCount(ordersCards[at]);
+    const step = ARROWS[e.key] || (e.key === "ArrowDown" ? columns : -columns);
+    const target = ordersCards[Math.min(Math.max(at + step, 0), ordersCards.length - 1)];
+    if (target) target.focus();
 });
 
 // suggestions

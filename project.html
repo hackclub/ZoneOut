@@ -10,8 +10,8 @@
 <script>
 // theme, read before the first paint
 try {
-    var zoTheme = localStorage.getItem("zoneoutTheme");
-    if (zoTheme && zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
+    var zoTheme = localStorage.getItem("zoneoutTheme") || "fnaf";
+    if (zoTheme !== "default" && /^[a-z0-9-]{1,24}$/.test(zoTheme)) {
         document.documentElement.setAttribute("data-theme", zoTheme);
         var zoMeta = document.querySelector('meta[name="theme-color"]');
         if (zoMeta) zoMeta.content = { bw: "#0a0a0a", fnaf: "#000000", halloween: "#080402" }[zoTheme] || "#000000";
@@ -200,6 +200,101 @@ opacity:0.55;
 display:none;
 }
 
+/* REVIEW STATE */
+.reviewLine{
+display:inline-flex;
+align-items:center;
+gap:8px;
+margin-top:8px;
+padding:4px 10px;
+font-size:13px;
+letter-spacing:3px;
+border:1px solid currentColor;
+background:none;
+transition:box-shadow 0.2s, background 0.2s;
+}
+
+.reviewLine:hover,
+.reviewLine:focus-visible{
+outline:none;
+background:rgba(var(--camHover),0.92);
+box-shadow:inset 0 0 0 1px currentColor;
+}
+
+.reviewLine:disabled{
+opacity:1;
+}
+
+.reviewLine[hidden]{
+display:none;
+}
+
+.reviewLine::before{
+content:"";
+width:7px;
+height:7px;
+background:currentColor;
+box-shadow:0 0 8px currentColor;
+}
+
+.reviewLine::after{
+content:"";
+width:0;
+height:0;
+border-left:4px solid transparent;
+border-right:4px solid transparent;
+border-top:5px solid currentColor;
+transition:transform 0.2s;
+}
+
+.reviewLine[aria-expanded="true"]::after{
+transform:rotate(180deg);
+}
+
+.reviewLine:disabled::after{
+content:none;
+}
+
+.reviewLine[data-status="approved"]{
+color:rgb(var(--reviewOk));
+}
+
+.reviewLine[data-status="rejected"]{
+color:rgb(var(--reviewBad));
+}
+
+.reviewLine[data-status="under_review"]{
+color:rgb(var(--reviewWait));
+}
+
+.reviewDrop{
+max-width:520px;
+margin-top:10px;
+padding:10px 12px;
+border-left:2px solid currentColor;
+font-size:14px;
+line-height:1.7;
+white-space:pre-wrap;
+word-break:break-word;
+opacity:0.75;
+}
+
+.reviewDrop[hidden]{
+display:none;
+}
+
+.reviewDrop[data-status="approved"]{
+border-color:rgb(var(--reviewOk));
+}
+
+.reviewDrop[data-status="rejected"]{
+border-color:rgb(var(--reviewBad));
+}
+
+.reviewDrop[data-status="under_review"]{
+border-color:rgb(var(--reviewWait));
+}
+
 /* PANEL */
 .panel{
 padding:22px;
@@ -213,7 +308,10 @@ transparent 2px,
 transparent 6px
 );
 border:1px solid rgba(var(--accent),0.35);
-box-shadow:0 0 18px rgba(var(--accentGlow),0.18);
+}
+
+.sectionKey[hidden]{
+display:none;
 }
 
 .sectionKey{
@@ -256,7 +354,7 @@ word-break:break-all;
 outline:none;
 color:rgb(var(--fg));
 border-color:rgba(var(--accentBright),0.9);
-box-shadow:0 0 14px rgba(var(--accentGlow),0.35);
+box-shadow:inset 0 0 0 1px rgba(var(--accentBright),0.45), inset 0 0 12px rgba(var(--accentGlow),0.18);
 }
 
 .noLinks{
@@ -343,8 +441,48 @@ color:rgb(var(--dangerPale));
 .dangerNode:hover,
 .dangerNode:focus-visible{
 background:rgba(var(--dangerDeep),0.92);
-text-shadow:0 0 8px rgb(var(--dangerBright));
-box-shadow:0 0 14px rgba(var(--dangerSoft),0.45);
+box-shadow:inset 0 0 0 1px rgba(var(--dangerBright),0.6), inset 0 0 14px rgba(var(--dangerSoft),0.25);
+}
+
+/* REVIEW CONTROLS */
+.submitRow,
+.reviewActions{
+margin-top:14px;
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+align-items:center;
+}
+
+.submitRow[hidden],
+.reviewActions[hidden]{
+display:none;
+}
+
+.approveNode{
+border-color:rgba(var(--reviewOk),0.75);
+color:rgb(var(--reviewOk));
+}
+
+.approveNode:hover,
+.approveNode:focus-visible{
+background:rgba(var(--reviewOk),0.14);
+box-shadow:inset 0 0 0 1px rgba(var(--reviewOk),0.6), inset 0 0 14px rgba(var(--reviewOk),0.22);
+}
+
+.rejectNode{
+border-color:rgba(var(--reviewBad),0.75);
+color:rgb(var(--reviewBad));
+}
+
+.rejectNode:hover,
+.rejectNode:focus-visible{
+background:rgba(var(--reviewBad),0.14);
+box-shadow:inset 0 0 0 1px rgba(var(--reviewBad),0.6), inset 0 0 14px rgba(var(--reviewBad),0.22);
+}
+
+.reviewHours{
+color:rgb(var(--amber));
 }
 
 /* MODAL */
@@ -439,6 +577,8 @@ gap:16px;
 
 <div class="backBtn" id="backBtn" role="button" tabindex="0">&larr; Back</div>
 
+<div class="screenVeil" id="screenVeil"></div>
+
 <div class="loginBar" id="loginBar" hidden>You need to <a href="/">log in</a> to explore more!</div>
 
 <div class="volumeDock">
@@ -458,6 +598,8 @@ gap:16px;
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="viewHoursValue"></span>
 </div>
+<button class="reviewLine" id="viewReview" type="button" aria-expanded="false" hidden></button>
+<div class="reviewDrop" id="viewRemarks" hidden></div>
 <div class="htAdmin" id="viewHtAdmin" hidden></div>
 </div>
 </div>
@@ -473,6 +615,15 @@ gap:16px;
 <button class="camNode" id="editBtn" type="button">EDIT PROJECT</button>
 <button class="camNode dangerNode" id="deleteBtn" type="button">DELETE PROJECT</button>
 <span class="adminNote" id="adminNote" hidden>ADMIN OVERRIDE</span>
+</div>
+
+<div class="submitRow" id="submitRow" hidden>
+<button class="camNode" id="submitBtn" type="button">SUBMIT PROJECT</button>
+</div>
+
+<div class="reviewActions" id="reviewActions" hidden>
+<button class="camNode approveNode" id="approveBtn" type="button">APPROVE</button>
+<button class="camNode rejectNode" id="rejectBtn" type="button">REJECT</button>
 </div>
 </div>
 </div>
@@ -555,13 +706,51 @@ gap:16px;
 </div>
 </div>
 
+<div class="modalScrim" id="resubmitModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="resubmitTitle">
+<button class="modalClose" id="resubmitClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="resubmitTitle">RE-SUBMITTING</div>
+
+<div class="confirmText" id="resubmitText"></div>
+
+<div class="modalActions">
+<button class="camNode" id="resubmitGo" type="button">CONTINUE</button>
+<button class="camNode" id="resubmitCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="reviewModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+<button class="modalClose" id="reviewClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="reviewTitle">APPROVE PROJECT</div>
+
+<div class="confirmText" id="reviewText"></div>
+
+<label class="formField">
+<span>ATTACH ADDITIONAL REMARKS</span>
+<textarea class="textInput" id="reviewRemarks" maxlength="500" required></textarea>
+</label>
+
+<div class="formError" id="reviewError" role="alert"></div>
+
+<div class="modalActions">
+<button class="camNode" id="reviewConfirm" type="button">APPROVE</button>
+<button class="camNode" id="reviewCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
 <script>
 
 // state
 var projectId = window.__projectId;
 var project = null;
 var canEdit = false;
-var isAdmin = false;
+var adminOverride = false;
+var canReview = false;
 var signedIn = true;
 
 // views
@@ -629,10 +818,80 @@ function hoursLine() {
     document.getElementById("viewHoursValue").textContent = hours + " ACTIVE HOURS";
 }
 
+// review state
+var REVIEW_LABELS = {
+    under_review: "UNDER REVIEW",
+    approved: "APPROVED",
+    rejected: "REJECTED"
+};
+
+var SUBMIT_LABELS = {
+    draft: "SUBMIT PROJECT",
+    rejected: "RESUBMIT PROJECT",
+    under_review: "UNDER REVIEW",
+    approved: "RE-SUBMIT"
+};
+
+var paintedRemarks = null;
+
+function reviewStatus() {
+    return (project && project.reviewStatus) || "draft";
+}
+
+function newHours() {
+    if (!project) return 0;
+
+    var since = (Number(project.hackatimeHours) || 0) - (Number(project.submittedHours) || 0);
+    return Math.round(Math.max(since, 0) * 10) / 10;
+}
+
+function reviewLine() {
+    var line = document.getElementById("viewReview");
+    var drop = document.getElementById("viewRemarks");
+    var status = reviewStatus();
+    var label = REVIEW_LABELS[status];
+    var remarks = (project && project.reviewRemarks) || "";
+
+    line.hidden = !label;
+    line.textContent = label || "";
+    line.dataset.status = status;
+    line.disabled = !remarks;
+
+    drop.textContent = remarks;
+    drop.dataset.status = status;
+
+    if (remarks !== paintedRemarks) {
+        paintedRemarks = remarks;
+        drop.hidden = true;
+        line.setAttribute("aria-expanded", "false");
+    }
+}
+
+function toggleRemarks() {
+    var line = document.getElementById("viewReview");
+    var drop = document.getElementById("viewRemarks");
+    var open = drop.hidden;
+
+    drop.hidden = !open;
+    line.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function submitLine() {
+    var row = document.getElementById("submitRow");
+    var button = document.getElementById("submitBtn");
+    var status = reviewStatus();
+
+    row.hidden = !canEdit || adminOverride;
+    button.textContent = SUBMIT_LABELS[status] || SUBMIT_LABELS.draft;
+    button.disabled = status === "under_review";
+
+    document.getElementById("reviewActions").hidden = !canReview;
+}
+
 // the attached hackatime project, administrators only
 function hackatimeAdminLine() {
     var line = document.getElementById("viewHtAdmin");
-    var name = isAdmin && project ? project.hackatimeProject : null;
+    var name = adminOverride && project ? project.hackatimeProject : null;
 
     line.hidden = !name;
     line.textContent = name ? "HACKATIME PROJECT: " + name : "";
@@ -732,7 +991,7 @@ document.addEventListener("mousedown", function (e) {
 
 // an administrator editing somebody else has no list to offer, and must not reassign the link
 function loadHackatimeProjects() {
-    if (isAdmin) {
+    if (adminOverride) {
         editHtField.hidden = true;
         return;
     }
@@ -795,7 +1054,9 @@ function renderView() {
     }
 
     document.getElementById("ownerRow").hidden = !canEdit;
-    document.getElementById("adminNote").hidden = !isAdmin;
+    document.getElementById("adminNote").hidden = !adminOverride;
+    reviewLine();
+    submitLine();
     hackatimeAdminLine();
     show("stateView");
     focusFirstControl();
@@ -857,7 +1118,8 @@ function load() {
             if (!payload) { missing(); return; }
             project = payload.project;
             canEdit = Boolean(payload.canEdit);
-            isAdmin = Boolean(payload.isAdmin);
+            adminOverride = Boolean(payload.adminOverride);
+            canReview = Boolean(payload.canReview);
             if (payload.signedIn === false) showLoginBar();
             renderView();
         })
@@ -865,6 +1127,9 @@ function load() {
             missing("This terminal could not reach ZoneOut.");
         });
 }
+
+// review remarks drop
+document.getElementById("viewReview").addEventListener("click", toggleRemarks);
 
 // edit controls
 document.getElementById("editBtn").addEventListener("click", openEditor);
@@ -886,7 +1151,7 @@ document.getElementById("editForm").addEventListener("submit", function (e) {
         demoUrl: document.getElementById("editDemo").value
     };
 
-    if (!isAdmin) body.hackatimeProject = htChoice;
+    if (!adminOverride) body.hackatimeProject = htChoice;
 
     if (!body.name.trim() || !body.description.trim()) {
         errorEl.textContent = "A project needs a name and a description.";
@@ -1021,8 +1286,9 @@ function controls() {
 
     if (window.zoneoutSettings && window.zoneoutSettings.isOpen()) return list;
 
-    if (deleteModalOpen()) {
-        var inModal = deleteModal.querySelectorAll("button");
+    var dialog = currentModal();
+    if (dialog) {
+        var inModal = dialog.el.querySelectorAll("button");
         for (var i = 0; i < inModal.length; i++) {
             if (!inModal[i].disabled) list.push(inModal[i]);
         }
@@ -1127,8 +1393,9 @@ document.addEventListener("keydown", function (e) {
     }
 
     if (e.key === "Escape") {
-        if (deleteModalOpen()) {
-            closeDeleteModal();
+        var open = currentModal();
+        if (open) {
+            open.close();
             return;
         }
         if (isTyping()) return;
@@ -1165,17 +1432,28 @@ var deleteConfirm = document.getElementById("deleteConfirm");
 var deleteError = document.getElementById("deleteError");
 var deleteReturnFocus = null;
 
-function deleteModalOpen() {
-    return deleteModal.classList.contains("show");
-}
 
-function setInertBehind(on) {
+
+function setInertBehind(on, dialog) {
+    if (on) dialog.inert = false;
+
     var children = document.body.children;
     for (var i = 0; i < children.length; i++) {
-        if (children[i] !== deleteModal && children[i].tagName !== "SCRIPT") {
+        if (children[i] !== dialog && children[i].tagName !== "SCRIPT") {
             children[i].inert = on;
         }
     }
+}
+
+function modalOpen(modal) {
+    return Boolean(modal) && modal.classList.contains("show");
+}
+
+function currentModal() {
+    if (modalOpen(reviewModal)) return { el: reviewModal, close: closeReviewModal };
+    if (modalOpen(resubmitModal)) return { el: resubmitModal, close: closeResubmitModal };
+    if (modalOpen(deleteModal)) return { el: deleteModal, close: closeDeleteModal };
+    return null;
 }
 
 function openDeleteModal() {
@@ -1194,18 +1472,18 @@ function openDeleteModal() {
     requestAnimationFrame(function () { deleteModal.classList.add("show"); });
 
     document.body.classList.add("noScroll");
-    setInertBehind(true);
+    setInertBehind(true, deleteModal);
 
     document.getElementById("deleteCancel").focus();
 }
 
 function closeDeleteModal() {
     deleteModal.classList.remove("show");
-    setInertBehind(false);
+    setInertBehind(false, deleteModal);
     document.body.classList.remove("noScroll");
 
     setTimeout(function () {
-        if (!deleteModalOpen()) deleteModal.hidden = true;
+        if (!modalOpen(deleteModal)) deleteModal.hidden = true;
     }, 240);
 
     if (deleteReturnFocus && document.contains(deleteReturnFocus)) deleteReturnFocus.focus();
@@ -1260,6 +1538,185 @@ deleteConfirm.addEventListener("click", function () {
             deleteError.textContent = "Could not reach ZoneOut.";
             deleteConfirm.disabled = false;
             deleteConfirm.textContent = "DELETE FOREVER";
+        });
+});
+
+// review dialogs
+var resubmitModal = document.getElementById("resubmitModal");
+var reviewModal = document.getElementById("reviewModal");
+var reviewRemarksInput = document.getElementById("reviewRemarks");
+var reviewConfirm = document.getElementById("reviewConfirm");
+var reviewError = document.getElementById("reviewError");
+var reviewDecision = null;
+var modalReturnFocus = null;
+
+var VEIL_MS = 450;
+
+// bfcache restores the veil opaque and re-runs no script
+window.addEventListener("pageshow", function (e) {
+    if (e.persisted) document.getElementById("screenVeil").classList.remove("on");
+});
+
+function leaveTo(href) {
+    try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {  }
+    document.getElementById("screenVeil").classList.add("on");
+    setTimeout(function () { window.location.href = href; }, VEIL_MS);
+}
+
+function openModal(modal, focusOn) {
+    modalReturnFocus = document.activeElement;
+
+    modal.hidden = false;
+
+    var raise = function () { modal.classList.add("show"); };
+    requestAnimationFrame(raise);
+    setTimeout(raise, 60);
+
+    document.body.classList.add("noScroll");
+    setInertBehind(true, modal);
+
+    if (focusOn) focusOn.focus();
+}
+
+function closeModal(modal) {
+    modal.classList.remove("show");
+    setInertBehind(false, modal);
+    document.body.classList.remove("noScroll");
+
+    setTimeout(function () {
+        if (!modalOpen(modal)) modal.hidden = true;
+    }, 240);
+
+    if (modalReturnFocus && document.contains(modalReturnFocus)) modalReturnFocus.focus();
+    modalReturnFocus = null;
+}
+
+// the form, bound to this project
+function openForm() {
+    leaveTo("/submit?p=" + projectId);
+}
+
+function openResubmitModal() {
+    document.getElementById("resubmitText").textContent =
+        "You are re-submitting your project! You must include the total hours, and state that "
+        + newHours() + " hours of time was tracked since your last submission, in your project description.";
+
+    openModal(resubmitModal, document.getElementById("resubmitGo"));
+}
+
+function closeResubmitModal() {
+    closeModal(resubmitModal);
+}
+
+document.getElementById("submitBtn").addEventListener("click", function () {
+    if (!canEdit || adminOverride) return;
+    if (reviewStatus() === "under_review") return;
+
+    if (reviewStatus() === "approved") {
+        openResubmitModal();
+        return;
+    }
+    openForm();
+});
+
+document.getElementById("resubmitGo").addEventListener("click", function () {
+    closeResubmitModal();
+    openForm();
+});
+
+document.getElementById("resubmitCancel").addEventListener("click", closeResubmitModal);
+document.getElementById("resubmitClose").addEventListener("click", closeResubmitModal);
+
+resubmitModal.addEventListener("mousedown", function (e) {
+    if (e.target === resubmitModal) closeResubmitModal();
+});
+
+// the verdict, administrators only
+function openReviewModal(decision) {
+    if (!canReview || !project) return;
+
+    reviewDecision = decision;
+    var approving = decision === "approve";
+
+    document.getElementById("reviewTitle").textContent = approving ? "APPROVE PROJECT" : "REJECT PROJECT";
+    document.getElementById("reviewText").textContent =
+        "“" + project.name + "” will be marked " + (approving ? "approved" : "rejected")
+        + ". Your remarks are shown on the project page.";
+
+    reviewConfirm.textContent = approving ? "APPROVE" : "REJECT";
+    reviewConfirm.classList.toggle("approveNode", approving);
+    reviewConfirm.classList.toggle("rejectNode", !approving);
+    reviewConfirm.disabled = false;
+
+    var amending = project.reviewStatus === (approving ? "approved" : "rejected");
+    reviewRemarksInput.value = amending ? (project.reviewRemarks || "") : "";
+    reviewError.textContent = "";
+
+    openModal(reviewModal, reviewRemarksInput);
+}
+
+function closeReviewModal() {
+    closeModal(reviewModal);
+}
+
+document.getElementById("approveBtn").addEventListener("click", function () { openReviewModal("approve"); });
+document.getElementById("rejectBtn").addEventListener("click", function () { openReviewModal("reject"); });
+document.getElementById("reviewCancel").addEventListener("click", closeReviewModal);
+document.getElementById("reviewClose").addEventListener("click", closeReviewModal);
+
+reviewModal.addEventListener("mousedown", function (e) {
+    if (e.target === reviewModal) closeReviewModal();
+});
+
+reviewConfirm.addEventListener("click", function () {
+    var remarks = reviewRemarksInput.value.trim();
+
+    if (!remarks) {
+        reviewError.textContent = "Remarks are required.";
+        reviewRemarksInput.focus();
+        return;
+    }
+
+    var label = reviewConfirm.textContent;
+    reviewError.textContent = "";
+    reviewConfirm.disabled = true;
+    reviewConfirm.textContent = "SAVING…";
+
+    fetch("/api/projects/review", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: Number(projectId), decision: reviewDecision, remarks: remarks })
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json()
+                .catch(function () { return {}; })
+                .then(function (payload) {
+                    return { ok: response.ok, status: response.status, payload: payload };
+                });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            if (!result.ok) {
+                reviewError.textContent = result.status === 404
+                    ? "You cannot review this project."
+                    : (result.payload.error || "Could not save the review.");
+                reviewConfirm.disabled = false;
+                reviewConfirm.textContent = label;
+                return;
+            }
+
+            project = result.payload.project;
+            closeReviewModal();
+            renderView();
+            stashEdit(project);
+        })
+        .catch(function () {
+            reviewError.textContent = "Could not reach ZoneOut.";
+            reviewConfirm.disabled = false;
+            reviewConfirm.textContent = label;
         });
 });
 
@@ -1336,7 +1793,7 @@ function playClick() {
 }
 
 document.addEventListener("click", function (e) {
-    if (e.target.closest(".camNode, .backBtn, .modalClose, .projectLink")) playClick();
+    if (e.target.closest(".camNode, .backBtn, .modalClose, .projectLink, .reviewLine")) playClick();
 });
 
 backBtn.addEventListener("keydown", function (e) {
@@ -1383,6 +1840,7 @@ document.addEventListener("visibilitychange", function () {
 </script>
 
 <script src="/settings.js" defer></script>
+<script src="/cutscene.js" defer></script>
 
 </body>
 </html>

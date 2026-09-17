@@ -59,6 +59,12 @@ const faqAudio = document.getElementById("faqAudio");
 const faqContainer = document.querySelector(".faqContainer");
 const learnBgVideo = document.querySelector(".learnBgVideo");
 const heroVideo = document.getElementById("heroVideo");
+const cutscene = document.getElementById("cutscene");
+const cutsceneVideo = document.getElementById("cutsceneVideo");
+const cutsceneFill = document.getElementById("cutsceneFill");
+const cutscenePress = document.getElementById("cutscenePress");
+const eventSting = document.getElementById("eventSting");
+const eventPress = document.getElementById("eventPress");
 const faqNodes = Array.from(document.querySelectorAll(".faqNode"));
 const faqToggles = Array.from(document.querySelectorAll(".faqToggle"));
 let loadingTimer = null;
@@ -98,9 +104,38 @@ function applyMasterVolume() {
     syncVolumeDisplay();
 }
 
+// media priming
+function prime(mediaEl) {
+    if (!mediaEl || mediaEl.dataset.primed) return;
+
+    mediaEl.dataset.primed = "1";
+    mediaEl.preload = "auto";
+
+    if (mediaEl.readyState === 0) mediaEl.load();
+}
+
+function primeNoticeArt() {
+    document.querySelectorAll(".noticeFig[data-src]").forEach(img => {
+        img.src = img.dataset.src;
+        img.removeAttribute("data-src");
+    });
+}
+
+function primeMenuMedia() {
+    prime(heroVideo);
+    prime(menuAudio);
+
+    if (store.get(NOTICE_KEY) === "true") return;
+
+    prime(eventSting);
+    prime(eventPress);
+    primeNoticeArt();
+}
+
 // first-run keys
 const FIRST_RUN_KEYS = ["zoneoutWarningAccepted", "zoneoutLearnClicked",
-                        "zoneoutLoginClicked", "zoneoutEyeClicked"];
+                        "zoneoutLoginClicked", "zoneoutEyeClicked",
+                        "zoneoutNoticeDismissed", "zoneoutCutsceneWatched"];
 
 // auth notices
 const AUTH_MESSAGES = {
@@ -300,6 +335,8 @@ function startTrack(audioEl) {
 
 // tracks
 function playMenuMusic() {
+    prime(menuAudio);
+
     cancelFade(faqAudio);
     faqAudio.pause();
     faqAudio.currentTime = 0;
@@ -314,6 +351,8 @@ function playMenuMusic() {
 }
 
 function playFaqMusic() {
+    prime(faqAudio);
+
     faqAudio.currentTime = 0;
     faqAudio.volume = 0;
     startTrack(faqAudio);
@@ -329,6 +368,7 @@ function playFaqMusic() {
 // autoplay recovery
 function resumeAudio() {
     if (screen === "warning" || screen === "intro") return;
+    if (cutsceneOpen()) return;
 
     const active = currentTrack();
 
@@ -346,6 +386,17 @@ function resumeAudio() {
         cancelFade(active);
         active.volume = masterVolume;
     }
+}
+
+// hero clip
+let cutscenePlanned = false;
+
+function playHero() {
+    if (!heroVideo) return;
+    if (cutscenePlanned || cutsceneOpen()) return;
+
+    prime(heroVideo);
+    heroVideo.play().catch(() => {});
 }
 
 // screen changes
@@ -374,7 +425,7 @@ function goToMenu({ animate = true, music = true } = {}) {
     if (!animate) {
         learnPage.classList.remove("active", "fadeOut");
         if (learnBgVideo) learnBgVideo.pause();
-        if (heroVideo) heroVideo.play().catch(() => {});
+        playHero();
         if (music) playMenuMusic();
         return;
     }
@@ -386,7 +437,7 @@ function goToMenu({ animate = true, music = true } = {}) {
         learnPage.classList.remove("active", "fadeOut");
 
         if (learnBgVideo) learnBgVideo.pause();
-        if (heroVideo) heroVideo.play().catch(() => {});
+        playHero();
         if (music) playMenuMusic();
         requestAnimationFrame(() => screenVeil.classList.remove("on"));
     }, VEIL_MS);
@@ -424,16 +475,404 @@ function releaseDock() {
     setTimeout(drop, 60);
 }
 
-function routeToCurrentPath() {
-    document.documentElement.dataset.gear = "on";
+// main menu notice
+const NOTICE_KEY = "zoneoutNoticeDismissed";
+const NOTICE_DELAY_MS = 700;
+const NOTICE_SLIDE_MS = 600;
+const NOTICE_STING_MS = 180;
+const NOTICE_STING_GRACE_MS = 1200;
+
+let noticeReturnFocus = null;
+let inertSnapshot = null;
+let noticeScrollLock = "";
+
+function noticeOpen() {
+    return noticeScrim.classList.contains("show");
+}
+
+function setInertBehind(on, keep) {
+    const kids = Array.from(document.body.children);
+
+    if (on) {
+        inertSnapshot = kids.map(child => child.inert);
+        kids.forEach(child => {
+            if (child !== keep && child.tagName !== "SCRIPT") child.inert = true;
+        });
+        return;
+    }
+
+    if (!inertSnapshot) return;
+
+    kids.forEach((child, i) => {
+        if (child !== keep && child.tagName !== "SCRIPT" && i < inertSnapshot.length) {
+            child.inert = inertSnapshot[i];
+        }
+    });
+
+    inertSnapshot = null;
+}
+
+// event sounds
+function playEventSound(audioEl) {
+    audioEl.currentTime = 0;
+    audioEl.volume = 1;
+    audioEl.play().catch(() => {});
+}
+
+function playEventSoundAt(audioEl, delay, grace) {
+    prime(audioEl);
+
+    let due = false;
+    let fired = false;
+    let capTimer = 0;
+
+    const fire = () => {
+        if (fired) return;
+        fired = true;
+
+        clearTimeout(capTimer);
+        audioEl.removeEventListener("canplaythrough", attempt);
+        playEventSound(audioEl);
+    };
+
+    function attempt() {
+        if (due && audioEl.readyState >= 3) fire();
+    }
+
+    capTimer = setTimeout(fire, delay + grace);
+    setTimeout(() => { due = true; attempt(); }, delay);
+    audioEl.addEventListener("canplaythrough", attempt);
+}
+
+function openNotice(options) {
+    if (noticeOpen()) return;
+
+    noticeForced = Boolean(options && options.forced);
+
+    noticeReturnFocus = document.activeElement;
+    noticeScrim.hidden = false;
+    void noticeScrim.offsetHeight;
+    noticeScrim.classList.add("show");
+
+    noticeScrollLock = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    setInertBehind(true, noticeScrim);
+    noticeDismiss.focus({ preventScroll: true });
+
+    playEventSoundAt(eventSting, NOTICE_STING_MS, NOTICE_STING_GRACE_MS);
+}
+
+function closeNotice() {
+    if (!noticeOpen()) return;
+
+    noticeForced = false;
+    playEventSound(eventPress);
+    store.set(NOTICE_KEY, "true");
+
+    noticeScrim.classList.remove("show");
+    setInertBehind(false, noticeScrim);
+    document.body.style.overflow = noticeScrollLock;
+
+    setTimeout(() => {
+        if (!noticeOpen()) noticeScrim.hidden = true;
+    }, NOTICE_SLIDE_MS);
+
+    if (noticeReturnFocus && document.contains(noticeReturnFocus)) noticeReturnFocus.focus();
+    noticeReturnFocus = null;
+}
+
+let noticeForced = false;
+let noticeShown = false;
+
+function maybeShowNotice() {
+    if (noticeShown || store.get(NOTICE_KEY) === "true") return;
+
+    noticeShown = true;
+    setTimeout(() => {
+        if (screen === "menu") openNotice();
+    }, NOTICE_DELAY_MS);
+}
+
+noticeDismiss.addEventListener("click", leaveForEvents);
+
+function leaveForEvents() {
+    if (!noticeOpen()) return;
+
+    playEventSound(eventPress);
+    store.set(NOTICE_KEY, "true");
+
+    try {
+        sessionStorage.setItem("zoneoutEventsOpen", "1");
+        sessionStorage.setItem("zoneoutFadeIn", "1");
+    } catch (e) {}
+
+    noticeForced = false;
+    screenVeil.classList.add("on");
+
+    if (!sessionVerified) warmBackend();
+
+    setTimeout(() => {
+        window.location.href = sessionVerified ? "/home" : "/api/auth/login";
+    }, VEIL_MS);
+}
+
+noticeScrim.addEventListener("mousedown", (e) => {
+    if (noticeForced || e.target !== noticeScrim) return;
+    closeNotice();
+});
+
+document.addEventListener("keydown", (e) => {
+    if (!noticeOpen()) return;
+
+    if (e.key === "Escape" && !noticeForced) {
+        e.preventDefault();
+        closeNotice();
+    }
+
+    e.stopPropagation();
+}, true);
+
+// entity breakout cutscene
+const CUTSCENE_KEY = "zoneoutCutsceneWatched";
+const CUTSCENE_FADE_MS = 800;
+const CUTSCENE_RETRY_MS = 4000;
+const CUTSCENE_BAIL_MS = 20000;
+
+let cutsceneHeld = true;
+let cutsceneStarted = false;
+let cutsceneEnded = false;
+let cutsceneRetryTimer = 0;
+let cutsceneBailTimer = 0;
+let cutsceneScrollLock = "";
+
+function cutsceneOpen() {
+    return cutsceneStarted && !cutscene.hidden;
+}
+
+function cutsceneWatched() {
+    return store.get(CUTSCENE_KEY) === "true";
+}
+
+// press prompt
+function stillPreferred() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function movePress() {
+    if (stillPreferred()) return;
+
+    cutscenePress.style.left = `${12 + Math.random() * 76}%`;
+    cutscenePress.style.top = `${18 + Math.random() * 64}%`;
+}
+
+// blurred backdrop
+const fillCtx = cutsceneFill.getContext("2d", { alpha: false });
+const FILL_INTERVAL_MS = 66;
+
+let fillFrame = 0;
+let fillVideoFrame = 0;
+let fillLast = 0;
+
+function stopFill() {
+    if (fillFrame) cancelAnimationFrame(fillFrame);
+    if (fillVideoFrame && cutsceneVideo.cancelVideoFrameCallback) {
+        cutsceneVideo.cancelVideoFrameCallback(fillVideoFrame);
+    }
+
+    fillFrame = 0;
+    fillVideoFrame = 0;
+}
+
+function paintFill(now) {
+    if (cutsceneHeld || cutsceneEnded) return;
+
+    const stamp = now || performance.now();
+
+    if (stamp - fillLast >= FILL_INTERVAL_MS && cutsceneVideo.readyState >= 2) {
+        fillLast = stamp;
+        fillCtx.drawImage(cutsceneVideo, 0, 0, cutsceneFill.width, cutsceneFill.height);
+    }
+
+    if (cutsceneVideo.requestVideoFrameCallback) {
+        fillVideoFrame = cutsceneVideo.requestVideoFrameCallback(paintFill);
+    } else {
+        fillFrame = requestAnimationFrame(paintFill);
+    }
+}
+
+function kickCutsceneVideo() {
+    if (!cutsceneStarted || cutsceneEnded || cutsceneHeld) return;
+    if (cutsceneVideo.readyState >= 2) return;
+
+    if (cutsceneVideo.networkState === HTMLMediaElement.NETWORK_EMPTY) cutsceneVideo.load();
+
+    cutsceneVideo.play().catch(() => {});
+}
+
+function startCutscene({ instant = false } = {}) {
+    if (cutsceneStarted) return;
+    cutsceneStarted = true;
+
+    cutscene.hidden = false;
+
+    // with no black already standing, fading in would show the menu through it
+    if (instant) {
+        cutscene.classList.add("instant", "show");
+        void cutscene.offsetHeight;
+        cutscene.classList.remove("instant");
+    } else {
+        const raise = () => cutscene.classList.add("show");
+        requestAnimationFrame(raise);
+        setTimeout(raise, 60);
+    }
+
+    cutsceneScrollLock = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    setInertBehind(true, cutscene);
+
+    if (heroVideo) heroVideo.pause();
+    prime(cutsceneVideo);
+
+    movePress();
+    cutscenePress.focus({ preventScroll: true });
+}
+
+function releaseCutscene() {
+    if (!cutsceneStarted || cutsceneEnded || !cutsceneHeld) return;
+
+    cutsceneHeld = false;
+    cutscenePress.hidden = true;
+    userInteracted = true;
+
+    cutscene.classList.add("rolling");
+
+    cutsceneVideo.muted = false;
+    cutsceneVideo.volume = 1;
+    if (cutsceneVideo.currentTime > 0.05) cutsceneVideo.currentTime = 0;
+    cutsceneVideo.play().catch(() => {});
+    paintFill();
+
+    cutsceneRetryTimer = setTimeout(kickCutsceneVideo, CUTSCENE_RETRY_MS);
+    cutsceneBailTimer = setTimeout(() => {
+        if (cutsceneVideo.readyState < 2) endCutscene();
+    }, CUTSCENE_BAIL_MS);
+}
+
+function endCutscene() {
+    if (!cutsceneStarted || cutsceneEnded) return;
+    cutsceneEnded = true;
+
+    clearTimeout(cutsceneRetryTimer);
+    clearTimeout(cutsceneBailTimer);
+    stopFill();
+    store.set(CUTSCENE_KEY, "true");
+    primeMenuMedia();
+
+    cutscene.classList.remove("show");
+
+    setTimeout(() => {
+        cutsceneVideo.pause();
+        cutscene.hidden = true;
+        cutscene.classList.remove("rolling");
+        setInertBehind(false, cutscene);
+        document.body.style.overflow = cutsceneScrollLock;
+
+        cutscenePlanned = false;
+        releaseDock();
+        playHero();
+        playMenuMusic();
+        openNotice({ forced: true });
+    }, CUTSCENE_FADE_MS);
+}
+
+cutscenePress.addEventListener("animationiteration", movePress);
+
+cutsceneVideo.addEventListener("playing", () => {
+    clearTimeout(cutsceneRetryTimer);
+    clearTimeout(cutsceneBailTimer);
+    primeMenuMedia();
+});
+
+cutscenePress.addEventListener("click", releaseCutscene);
+
+cutscene.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    releaseCutscene();
+});
+
+cutsceneVideo.addEventListener("ended", endCutscene);
+
+cutsceneVideo.addEventListener("error", () => {
+    if (cutsceneStarted) {
+        endCutscene();
+        return;
+    }
+
+    cutsceneStarted = true;
+    cutsceneEnded = true;
+    cutscenePlanned = false;
+
+    primeMenuMedia();
     releaseDock();
+    playHero();
+    playMenuMusic();
+    maybeShowNotice();
+});
+
+document.addEventListener("keydown", (e) => {
+    if (!cutsceneOpen()) return;
+
+    if (cutsceneHeld && e.key !== "Tab") {
+        e.preventDefault();
+        releaseCutscene();
+    }
+
+    e.stopPropagation();
+}, true);
+
+// entry priming
+if (!isInfoPath()) {
+    if (cutsceneWatched()) primeMenuMedia();
+    else prime(cutsceneVideo);
+}
+
+// a hidden tab freezes the cutscene's fade but not this timer, so the veil waits on the opacity itself
+function dropIntroVeil() {
+    const drop = () => {
+        if (!cutsceneEnded && getComputedStyle(cutscene).opacity !== "1") {
+            setTimeout(drop, 200);
+            return;
+        }
+        introSequence.classList.remove("playing", "hold");
+    };
+
+    setTimeout(drop, CUTSCENE_FADE_MS + 120);
+}
+
+function routeToCurrentPath({ veiled = false } = {}) {
+    document.documentElement.dataset.gear = "on";
 
     if (isInfoPath()) {
+        releaseDock();
         pushedInfo = false;
         goToFaq();
-    } else {
-        goToMenu({ animate: false });
+        return;
     }
+
+    const cinematic = !cutsceneWatched();
+    cutscenePlanned = cinematic;
+
+    goToMenu({ animate: false, music: !cinematic });
+
+    if (cinematic) {
+        startCutscene({ instant: !veiled });
+        if (veiled) dropIntroVeil();
+        return;
+    }
+
+    releaseDock();
+    maybeShowNotice();
 }
 
 window.addEventListener("popstate", () => {
@@ -453,19 +892,36 @@ window.addEventListener("popstate", () => {
 // first-visit intro
 function playIntro() {
     screen = "intro";
+
+    const veiled = !cutsceneWatched() && !isInfoPath();
+    introSequence.classList.toggle("hold", veiled);
     introSequence.classList.add("playing");
 
     setTimeout(() => {
-        introSequence.classList.remove("playing");
-        routeToCurrentPath();
+        if (!veiled) introSequence.classList.remove("playing");
+        routeToCurrentPath({ veiled });
     }, INTRO_MS);
+}
+
+// section for the one-time intro and cutscene replay
+const REPLAY_KEY = "zoneoutReplaySeen";
+const REPLAY_EPOCH = "2";
+
+function claimReplay() {
+    if (store.get(REPLAY_KEY) === REPLAY_EPOCH) return false;
+
+    store.set(REPLAY_KEY, REPLAY_EPOCH);
+    store.remove(CUTSCENE_KEY);
+    store.remove(NOTICE_KEY);
+    return true;
 }
 
 if (store.get("zoneoutWarningAccepted") === "true") {
     warningScreen.classList.add("hidden");
     warningScreen.inert = true;
 
-    routeToCurrentPath();
+    if (claimReplay()) playIntro();
+    else routeToCurrentPath();
 }
 
 // volume slider
@@ -481,6 +937,7 @@ warningProceed.addEventListener("click", () => {
 
     playClick();
     store.set("zoneoutWarningAccepted", "true");
+    store.set(REPLAY_KEY, REPLAY_EPOCH);
     warningScreen.classList.add("hidden");
     userInteracted = true;
 
@@ -519,7 +976,7 @@ function gearFocused() {
 
 document.addEventListener("keydown", (e) => {
     if (screen !== "menu") return;
-    if (settingsOpen() || isTyping() || gearFocused()) return;
+    if (settingsOpen() || noticeOpen() || cutsceneOpen() || isTyping() || gearFocused()) return;
 
     if (e.key === "ArrowDown") {
         index = (index + 1) % options.length;
@@ -745,7 +1202,7 @@ faqNodes.forEach((node, i) => {
 
 document.addEventListener("keydown", (e) => {
     if (screen !== "faq") return;
-    if (settingsOpen() || isTyping() || gearFocused()) return;
+    if (settingsOpen() || noticeOpen() || cutsceneOpen() || isTyping() || gearFocused()) return;
 
     const cols = faqColumns();
     let handled = true;
@@ -794,13 +1251,19 @@ updateSelection();
 
 // nothing decodes for a hidden tab
 document.addEventListener("visibilitychange", () => {
-    const wanted = screen === "faq" ? learnBgVideo : heroVideo;
+    const wanted = cutsceneOpen() ? null : (screen === "faq" ? learnBgVideo : heroVideo);
     const visible = document.visibilityState === "visible";
+
+    if (visible && cutsceneOpen()) kickCutsceneVideo();
 
     [heroVideo, learnBgVideo].forEach(clip => {
         if (!clip) return;
         if (clip !== wanted || !visible) clip.pause();
     });
 
-    if (visible && wanted) wanted.play().catch(() => {});
+    if (!visible || !wanted) return;
+
+    if (wanted === heroVideo) playHero();
+    else wanted.play().catch(() => {});
 });
+
