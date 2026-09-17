@@ -701,13 +701,30 @@ function paintFill(now) {
     }
 }
 
+// a phone refuses sound until it trusts the gesture, so a silent roll beats none
+function playCutsceneVideo() {
+    cutsceneVideo.play().catch((err) => {
+        if (err && err.name !== "NotAllowedError") return;
+
+        cutsceneVideo.muted = true;
+        cutsceneVideo.play().catch(() => {});
+    });
+}
+
+function unmuteCutscene() {
+    if (!cutsceneVideo.muted || cutsceneEnded || cutsceneHeld) return;
+
+    cutsceneVideo.muted = false;
+    cutsceneVideo.volume = 1;
+}
+
 function kickCutsceneVideo() {
     if (!cutsceneStarted || cutsceneEnded || cutsceneHeld) return;
     if (cutsceneVideo.readyState >= 2) return;
 
     if (cutsceneVideo.networkState === HTMLMediaElement.NETWORK_EMPTY) cutsceneVideo.load();
 
-    cutsceneVideo.play().catch(() => {});
+    playCutsceneVideo();
 }
 
 function startCutscene({ instant = false } = {}) {
@@ -750,12 +767,12 @@ function releaseCutscene() {
     cutsceneVideo.muted = false;
     cutsceneVideo.volume = 1;
     if (cutsceneVideo.currentTime > 0.05) cutsceneVideo.currentTime = 0;
-    cutsceneVideo.play().catch(() => {});
+    playCutsceneVideo();
     paintFill();
 
     cutsceneRetryTimer = setTimeout(kickCutsceneVideo, CUTSCENE_RETRY_MS);
     cutsceneBailTimer = setTimeout(() => {
-        if (cutsceneVideo.readyState < 2) endCutscene();
+        if (cutsceneVideo.readyState < 2 || cutsceneVideo.paused) endCutscene();
     }, CUTSCENE_BAIL_MS);
 }
 
@@ -796,10 +813,19 @@ cutsceneVideo.addEventListener("playing", () => {
 
 cutscenePress.addEventListener("click", releaseCutscene);
 
+// a touch grants no activation until the tap completes, so a mouse releases on the press and a finger on the tap
 cutscene.addEventListener("pointerdown", (e) => {
+    if (e.pointerType && e.pointerType !== "mouse") return;
+
     e.preventDefault();
     releaseCutscene();
 });
+
+cutscene.addEventListener("pointerup", releaseCutscene);
+cutscene.addEventListener("click", releaseCutscene);
+
+document.addEventListener("pointerup", unmuteCutscene, true);
+document.addEventListener("touchend", unmuteCutscene, true);
 
 cutsceneVideo.addEventListener("ended", endCutscene);
 

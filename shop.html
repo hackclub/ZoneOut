@@ -1058,6 +1058,11 @@ text-align:center;
 }
 
 @media (max-width:620px){
+.balanceDock{
+left:auto;
+max-width:calc(100vw - 132px);
+}
+
 .dockButtons{
 flex-direction:row-reverse;
 flex-wrap:wrap;
@@ -1067,7 +1072,12 @@ gap:10px;
 }
 
 .shopTitle{
-margin-top:max(44px, calc(env(safe-area-inset-top) + 40px));
+margin-top:calc(var(--shopDockH, 104px) + 30px);
+}
+
+.shopSections{
+width:min(1100px, calc(100% - 28px));
+margin-top:32px;
 }
 }
 
@@ -1108,7 +1118,6 @@ line-height:1.6;
 
 @media (max-width:360px){
 .shopTitle{
-margin-top:max(96px, calc(env(safe-area-inset-top) + 92px));
 letter-spacing:3px;
 }
 
@@ -1126,7 +1135,7 @@ height:22px;
 
 @media (max-height:480px) and (orientation:landscape){
 .shopTitle{
-margin-top:max(64px, calc(env(safe-area-inset-top) + 60px));
+margin-top:calc(var(--shopDockH, 96px) + 24px);
 font-size:clamp(20px,4vh,30px);
 }
 
@@ -1893,6 +1902,7 @@ async function refreshBalance() {
         signedIn = false;
         suggestBtn.hidden = true;
         ordersBtn.hidden = true;
+        queueMeasure();
         myOrders = [];
         ordersKnown = false;
         homeRegion = null;
@@ -1921,6 +1931,7 @@ async function refreshBalance() {
         signedIn = true;
         suggestBtn.hidden = false;
         ordersBtn.hidden = false;
+        queueMeasure();
         hideLoginBar();
         balanceHours = Number(payload.balanceHours) || 0;
         paintBalance();
@@ -2848,19 +2859,35 @@ regionBarBack.addEventListener("click", () => {
     if (homeRegion) selectRegion(homeRegion);
 });
 
-// bar heights, measured once per frame
-let measureFrame = 0;
+// dock height, so the title clears it on a narrow screen
+const balanceDock = document.querySelector(".balanceDock");
 
-function measureBars() {
-    measureFrame = 0;
-    measureLoginBar();
-    measureRegionBar();
+function measureDock() {
+    document.body.style.setProperty("--shopDockH", Math.round(balanceDock.getBoundingClientRect().height) + "px");
 }
 
-window.addEventListener("resize", () => {
-    if (measureFrame) return;
+// bar heights, measured once per frame
+let measureFrame = 0;
+let measureTimer = 0;
+
+function measureBars() {
+    cancelAnimationFrame(measureFrame);
+    clearTimeout(measureTimer);
+    measureFrame = 0;
+    measureTimer = 0;
+    measureLoginBar();
+    measureRegionBar();
+    measureDock();
+}
+
+function queueMeasure() {
+    if (measureFrame || measureTimer) return;
     measureFrame = requestAnimationFrame(measureBars);
-});
+    measureTimer = setTimeout(measureBars, 120);
+}
+
+window.addEventListener("resize", queueMeasure);
+measureDock();
 
 // back control
 const backBtn = document.getElementById("backBtn");

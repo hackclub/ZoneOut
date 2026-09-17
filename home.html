@@ -527,6 +527,60 @@ color:rgba(var(--fg),0.6);
 display:none;
 }
 
+@media (max-width:560px){
+.boardWrap{
+max-height:min(56vh,440px);
+overflow-x:hidden;
+}
+
+.boardTable{
+table-layout:fixed;
+font-size:12px;
+}
+
+.boardTable th,
+.boardTable td{
+padding:7px 6px;
+}
+
+.boardRank{
+width:32px;
+}
+
+.boardHours{
+width:60px;
+white-space:normal;
+word-break:break-word;
+}
+
+.boardTable th.boardAdminCol{
+width:88px;
+}
+
+.boardCrown,
+.boardForced{
+display:block;
+margin-left:0;
+margin-top:3px;
+}
+
+.boardEdit{
+flex-direction:column;
+align-items:stretch;
+gap:5px;
+}
+
+.boardEdit .textInput{
+width:100%;
+}
+
+.boardKill{
+padding:4px 6px;
+font-size:11px;
+letter-spacing:0;
+}
+}
+
 /* ADMIN METER FIELDS */
 .meterField{
 display:flex;
