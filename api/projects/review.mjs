@@ -1,5 +1,5 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
-import { setProjectReview, ValidationError } from "../../lib/users.mjs";
+import { setProjectReview, queueProjectForReview, ValidationError } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape, the same fields the project page already reads
@@ -59,16 +59,20 @@ export default async function handler(req, res) {
         return res.status(404).json({ ok: false, error: "not found" });
     }
 
+    const queueing = body.decision === "queue";
+
     const status = body.decision === "approve" ? "approved"
                  : body.decision === "reject"  ? "rejected"
                  : null;
 
-    if (!status) {
+    if (!status && !queueing) {
         return res.status(400).json({ ok: false, error: "A review is either approved or rejected." });
     }
 
     try {
-        const project = await setProjectReview(projectId, status, body.remarks, admin.user_id);
+        const project = queueing
+            ? await queueProjectForReview(projectId, admin.user_id)
+            : await setProjectReview(projectId, status, body.remarks, admin.user_id);
 
         if (!project) {
             return res.status(404).json({ ok: false, error: "not found" });

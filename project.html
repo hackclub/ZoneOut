@@ -481,6 +481,28 @@ background:rgba(var(--reviewBad),0.14);
 box-shadow:inset 0 0 0 1px rgba(var(--reviewBad),0.6), inset 0 0 14px rgba(var(--reviewBad),0.22);
 }
 
+.queueNode{
+border-color:rgba(var(--reviewWait),0.75);
+color:rgb(var(--reviewWait));
+}
+
+.queueNode:hover,
+.queueNode:focus-visible{
+background:rgba(var(--reviewWait),0.14);
+box-shadow:inset 0 0 0 1px rgba(var(--reviewWait),0.6), inset 0 0 14px rgba(var(--reviewWait),0.22);
+}
+
+.reviewNote{
+margin-top:10px;
+font-size:14px;
+line-height:1.5;
+color:rgb(var(--danger));
+}
+
+.reviewNote:empty{
+display:none;
+}
+
 .reviewHours{
 color:rgb(var(--amber));
 }
@@ -624,7 +646,10 @@ gap:16px;
 <div class="reviewActions" id="reviewActions" hidden>
 <button class="camNode approveNode" id="approveBtn" type="button">APPROVE</button>
 <button class="camNode rejectNode" id="rejectBtn" type="button">REJECT</button>
+<button class="camNode queueNode" id="queueBtn" type="button">ADD TO QUEUE</button>
 </div>
+
+<div class="reviewNote" id="queueError" role="alert"></div>
 </div>
 </div>
 </div>
@@ -717,6 +742,20 @@ gap:16px;
 <div class="modalActions">
 <button class="camNode" id="resubmitGo" type="button">CONTINUE</button>
 <button class="camNode" id="resubmitCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="blockModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="blockTitle">
+<button class="modalClose" id="blockClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="blockTitle">SUBMISSION NOT ALLOWED!</div>
+
+<div class="confirmText">You must add a valid repository and demo link to your project!</div>
+
+<div class="modalActions">
+<button class="camNode" id="blockOk" type="button">OK</button>
 </div>
 </div>
 </div>
@@ -886,6 +925,8 @@ function submitLine() {
     button.disabled = status === "under_review";
 
     document.getElementById("reviewActions").hidden = !canReview;
+    document.getElementById("queueBtn").disabled = status === "under_review";
+    document.getElementById("queueError").textContent = "";
 }
 
 // the attached hackatime project, administrators only
@@ -1450,6 +1491,7 @@ function modalOpen(modal) {
 }
 
 function currentModal() {
+    if (modalOpen(blockModal)) return { el: blockModal, close: closeBlockModal };
     if (modalOpen(reviewModal)) return { el: reviewModal, close: closeReviewModal };
     if (modalOpen(resubmitModal)) return { el: resubmitModal, close: closeResubmitModal };
     if (modalOpen(deleteModal)) return { el: deleteModal, close: closeDeleteModal };
@@ -1543,6 +1585,7 @@ deleteConfirm.addEventListener("click", function () {
 
 // review dialogs
 var resubmitModal = document.getElementById("resubmitModal");
+var blockModal = document.getElementById("blockModal");
 var reviewModal = document.getElementById("reviewModal");
 var reviewRemarksInput = document.getElementById("reviewRemarks");
 var reviewConfirm = document.getElementById("reviewConfirm");
@@ -1608,9 +1651,40 @@ function closeResubmitModal() {
     closeModal(resubmitModal);
 }
 
+// a submission needs both links
+function usableLink(value) {
+    if (!value) return false;
+    try {
+        var url = new URL(String(value).trim());
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch (e) {
+        return false;
+    }
+}
+
+function openBlockModal() {
+    openModal(blockModal, document.getElementById("blockOk"));
+}
+
+function closeBlockModal() {
+    closeModal(blockModal);
+}
+
+document.getElementById("blockOk").addEventListener("click", closeBlockModal);
+document.getElementById("blockClose").addEventListener("click", closeBlockModal);
+
+blockModal.addEventListener("mousedown", function (e) {
+    if (e.target === blockModal) closeBlockModal();
+});
+
 document.getElementById("submitBtn").addEventListener("click", function () {
     if (!canEdit || adminOverride) return;
     if (reviewStatus() === "under_review") return;
+
+    if (!project || !usableLink(project.repoUrl) || !usableLink(project.demoUrl)) {
+        openBlockModal();
+        return;
+    }
 
     if (reviewStatus() === "approved") {
         openResubmitModal();
@@ -1661,6 +1735,55 @@ function closeReviewModal() {
 
 document.getElementById("approveBtn").addEventListener("click", function () { openReviewModal("approve"); });
 document.getElementById("rejectBtn").addEventListener("click", function () { openReviewModal("reject"); });
+
+// the queue, administrators only
+document.getElementById("queueBtn").addEventListener("click", function () {
+    if (!canReview || !project) return;
+
+    var button = document.getElementById("queueBtn");
+    var note = document.getElementById("queueError");
+
+    note.textContent = "";
+    button.disabled = true;
+    button.textContent = "QUEUEING…";
+
+    fetch("/api/projects/review", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: Number(projectId), decision: "queue" })
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json()
+                .catch(function () { return {}; })
+                .then(function (payload) {
+                    return { ok: response.ok, status: response.status, payload: payload };
+                });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            button.textContent = "ADD TO QUEUE";
+
+            if (!result.ok) {
+                note.textContent = result.status === 404
+                    ? "You cannot review this project."
+                    : (result.payload.error || "Could not add this project to the queue.");
+                button.disabled = false;
+                return;
+            }
+
+            project = result.payload.project;
+            renderView();
+            stashEdit(project);
+        })
+        .catch(function () {
+            button.textContent = "ADD TO QUEUE";
+            note.textContent = "Could not reach ZoneOut.";
+            button.disabled = false;
+        });
+});
 document.getElementById("reviewCancel").addEventListener("click", closeReviewModal);
 document.getElementById("reviewClose").addEventListener("click", closeReviewModal);
 

@@ -1856,6 +1856,12 @@ let lastInputWasKeyboard = false;
 
 // rendering
 function render(path) {
+    // the form is bound to one project, so a bare /submit has nothing to fill in
+    if (path === "/submit" && !submitProjectId()) {
+        history.replaceState({ path: "/projects" }, "", "/projects");
+        path = "/projects";
+    }
+
     currentPath = path;
     const view = VIEWS[path];
 
@@ -2401,6 +2407,16 @@ document.getElementById("nodeProjects").addEventListener("click", () => go("/pro
 document.getElementById("nodeShop").addEventListener("click", () => leaveTo("/shop"));
 
 // back control
+function cameFromProject(id) {
+    if (!document.referrer) return false;
+    try {
+        const ref = new URL(document.referrer);
+        return ref.origin === location.origin && ref.pathname.replace(/\/+$/, "") === "/projects/" + id;
+    } catch (e) {
+        return false;
+    }
+}
+
 function goBack() {
     if (currentPath === "/home" || currentPath === "/error") {
         window.location.href = "/";
@@ -2411,6 +2427,10 @@ function goBack() {
     if (currentPath === "/submit") {
         const project = submitProjectId();
         if (project) {
+            if (cameFromProject(project) && history.length > 1) {
+                history.back();
+                return;
+            }
             leaveTo("/projects/" + project);
             return;
         }
