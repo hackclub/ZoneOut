@@ -1,6 +1,6 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
 import { withTransaction } from "../../lib/db.mjs";
-import { setBalanceHours, listAllUsersForAdmin, setProjectReview, listProjectsForReview, normaliseRemarks, fraudRemarks, normaliseApprovedHours, normalisePayoutHours, MAX_BALANCE_HOURS, ValidationError } from "../../lib/users.mjs";
+import { setBalanceHours, listAllUsersForAdmin, setProjectReview, updateApprovedHours, listProjectsForReview, normaliseRemarks, fraudRemarks, normaliseApprovedHours, normalisePayoutHours, MAX_BALANCE_HOURS, ValidationError } from "../../lib/users.mjs";
 import { parseCommand, applyCommand, CommandError } from "../../lib/adminCommands.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { syncAllLinkedUsers, isConfigured } from "../../lib/hackatime.mjs";
@@ -112,6 +112,17 @@ export default async function handler(req, res) {
             }
 
             for (const review of staged.reviews) {
+                if (review.update) {
+                    const fixed = await updateApprovedHours(
+                        review.projectId, review.approvedHours, review.remarks, admin.user_id, client
+                    );
+                    if (!fixed) throw new CommandError(`project ${review.projectId} is not approved`);
+                    applied.push(
+                        `corrected project ${review.projectId} to ${Number(fixed.approved_hours) || 0} approved hours`
+                    );
+                    continue;
+                }
+
                 const row = await setProjectReview(
                     review.projectId, review.status, review.remarks, admin.user_id, client,
                     { approvedHours: review.approvedHours, payoutHours: review.payoutHours,
@@ -213,13 +224,24 @@ function readReviewEdit(entry) {
     }
 
     const fraud  = entry?.decision === "fraud";
+    const update = entry?.decision === "update";
     const status = entry?.decision === "approve" ? "approved"
                  : entry?.decision === "reject"  ? "rejected"
                  : fraud                         ? "rejected"
                  : null;
 
-    if (!status) {
+    if (!status && !update) {
         throw new RangeError(`project ${projectId} must be approved or rejected`);
+    }
+
+    // an hours correction carries no verdict: the figure and the remarks, nothing else
+    if (update) {
+        return {
+            projectId,
+            update: true,
+            remarks: normaliseRemarks(entry?.remarks),
+            approvedHours: normaliseApprovedHours(entry?.approvedHours)
+        };
     }
 
     // thrown here, before the transaction opens; the write re-runs the same validators

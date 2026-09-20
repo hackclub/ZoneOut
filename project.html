@@ -742,6 +742,7 @@ gap:16px;
 <button class="camNode rejectNode" id="rejectBtn" type="button">REJECT</button>
 <button class="camNode rejectNode" id="fraudBtn" type="button">FRAUD SQUAD REJECT</button>
 <button class="camNode" id="remarksBtn" type="button">EDIT REMARKS</button>
+<button class="camNode queueNode" id="updateBtn" type="button">UPDATE PROJECT</button>
 <button class="camNode queueNode" id="queueBtn" type="button">ADD TO QUEUE</button>
 </div>
 
@@ -917,6 +918,36 @@ gap:16px;
 <div class="modalActions">
 <button class="camNode" id="remarksSave" type="button">SAVE REMARKS</button>
 <button class="camNode" id="remarksCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="updateModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+<button class="modalClose" id="updateClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="updateTitle">UPDATE PROJECT</div>
+
+<div class="confirmText" id="updateText"></div>
+
+<label class="formField">
+<span>APPROVED HOURS</span>
+<input class="textInput" id="updateHours" type="number" min="0" max="99999" step="0.25" inputmode="decimal" autocomplete="off">
+<span class="fieldHint" id="updateHint"></span>
+</label>
+
+<div class="guidelineWarn">The hour balance is untouched. Correct it in the admin panel&rsquo;s USERS row if it needs to move.</div>
+
+<label class="formField">
+<span>REVIEW REMARKS</span>
+<textarea class="textInput" id="updateRemarks" maxlength="500" required></textarea>
+</label>
+
+<div class="formError" id="updateError" role="alert"></div>
+
+<div class="modalActions">
+<button class="camNode queueNode" id="updateGo" type="button">UPDATE PROJECT</button>
+<button class="camNode" id="updateCancel" type="button">CANCEL</button>
 </div>
 </div>
 </div>
@@ -1125,7 +1156,7 @@ function spanText(hours) {
     if (hours === null) return "—";
     var value = Math.round(hours * 100) / 100;
     if (value < 1) return Math.round(value * 60) + " mins";
-    return value + " hours";
+    return value + (value === 1 ? " hour" : " hours");
 }
 
 function submissionRow(label, text) {
@@ -1234,6 +1265,7 @@ function submitLine() {
         ? "This round has already been approved. Add it to the queue or wait for a re-submission."
         : "";
     document.getElementById("remarksBtn").disabled = status !== "approved" && status !== "rejected";
+    document.getElementById("updateBtn").disabled = status !== "approved";
     document.getElementById("queueError").textContent = "";
 }
 
@@ -1846,6 +1878,7 @@ function currentModal() {
     if (modalOpen(queueModal)) return { el: queueModal, close: closeQueueModal };
     if (modalOpen(reviewModal)) return { el: reviewModal, close: closeReviewModal };
     if (modalOpen(remarksModal)) return { el: remarksModal, close: closeRemarksModal };
+    if (modalOpen(updateModal)) return { el: updateModal, close: closeUpdateModal };
     if (modalOpen(resubmitModal)) return { el: resubmitModal, close: closeResubmitModal };
     if (modalOpen(deleteModal)) return { el: deleteModal, close: closeDeleteModal };
     return null;
@@ -1946,6 +1979,11 @@ var remarksModal = document.getElementById("remarksModal");
 var remarksInput = document.getElementById("remarksInput");
 var remarksError = document.getElementById("remarksError");
 var remarksSave = document.getElementById("remarksSave");
+var updateModal = document.getElementById("updateModal");
+var updateHours = document.getElementById("updateHours");
+var updateRemarks = document.getElementById("updateRemarks");
+var updateError = document.getElementById("updateError");
+var updateGo = document.getElementById("updateGo");
 var reviewRemarksInput = document.getElementById("reviewRemarks");
 var reviewApprovedInput = document.getElementById("reviewApproved");
 var reviewPayoutInput = document.getElementById("reviewPayout");
@@ -2500,6 +2538,154 @@ remarksSave.addEventListener("click", function () {
             remarksError.textContent = "Could not reach ZoneOut.";
             remarksSave.disabled = false;
             remarksSave.textContent = "SAVE REMARKS";
+        });
+});
+
+// section for correcting an approved round's hours, which moves no money
+function trackedCeiling() {
+    if (!project) return 0;
+    return round2(Math.max(
+        Number(project.hackatimeHours) || 0,
+        Number(project.submittedHours) || 0,
+        Number(project.approvedHours) || 0
+    ));
+}
+
+function updateValue() {
+    var raw = updateHours.value.trim();
+    var hours = Number(raw);
+    return raw && isFinite(hours) && hours > 0 ? round2(hours) : 0;
+}
+
+function updateOver() {
+    var raw = updateHours.value.trim();
+    if (!raw) return false;
+
+    var hours = Number(raw);
+    return isFinite(hours) && hours > trackedCeiling();
+}
+
+function updateHint() {
+    var hint = document.getElementById("updateHint");
+    var over = updateOver();
+    var delta = round2(updateValue() - approvedHours());
+
+    hint.classList.toggle("over", over);
+    hint.textContent = over
+        ? "Only " + trackedCeiling() + " hours are tracked. The approved hours cannot be higher."
+        : (delta === 0 ? "No change" : (delta > 0 ? "+ " : "− ") + spanText(Math.abs(delta)))
+          + " · " + trackedCeiling() + " tracked";
+}
+
+function openUpdateModal() {
+    if (!canReview || !project) return;
+    if (reviewStatus() !== "approved") return;
+
+    document.getElementById("updateText").textContent =
+        "“" + project.name + "” was approved for " + approvedHours()
+        + (approvedHours() === 1 ? " hour" : " hours") + ". Set what it should have been.";
+
+    updateHours.value = String(approvedHours());
+    updateHours.max = String(trackedCeiling());
+    updateRemarks.value = project.reviewRemarks || "";
+    updateError.textContent = "";
+    updateGo.disabled = false;
+    updateGo.textContent = "UPDATE PROJECT";
+    updateHint();
+
+    openModal(updateModal, updateHours);
+}
+
+function closeUpdateModal() {
+    closeModal(updateModal);
+}
+
+updateHours.addEventListener("input", updateHint);
+
+document.getElementById("updateBtn").addEventListener("click", openUpdateModal);
+document.getElementById("updateCancel").addEventListener("click", closeUpdateModal);
+document.getElementById("updateClose").addEventListener("click", closeUpdateModal);
+
+updateModal.addEventListener("mousedown", function (e) {
+    if (e.target === updateModal) closeUpdateModal();
+});
+
+updateGo.addEventListener("click", function () {
+    var remarks = updateRemarks.value.trim();
+    var raw = updateHours.value.trim();
+
+    if (!raw) {
+        updateError.textContent = "The approved hours are required.";
+        updateHours.focus();
+        return;
+    }
+
+    var hours = Number(raw);
+
+    if (!isFinite(hours) || hours < 0) {
+        updateError.textContent = "The approved hours must be zero or more.";
+        updateHours.focus();
+        return;
+    }
+
+    if (hours > trackedCeiling()) {
+        updateError.textContent = "The approved hours cannot be more than the "
+            + trackedCeiling() + " hours tracked.";
+        updateHours.focus();
+        return;
+    }
+
+    if (!remarks) {
+        updateError.textContent = "Remarks are required.";
+        updateRemarks.focus();
+        return;
+    }
+
+    updateError.textContent = "";
+    updateGo.disabled = true;
+    updateGo.textContent = "SAVING…";
+
+    fetch("/api/projects/review", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            projectId: Number(projectId),
+            decision: "update",
+            approvedHours: hours,
+            remarks: remarks
+        })
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json()
+                .catch(function () { return {}; })
+                .then(function (payload) {
+                    return { ok: response.ok, status: response.status, payload: payload };
+                });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            if (!result.ok) {
+                updateError.textContent = result.status === 404
+                    ? "You cannot update this project."
+                    : (result.payload.error || "Could not update the project.");
+                updateGo.disabled = false;
+                updateGo.textContent = "UPDATE PROJECT";
+                return;
+            }
+
+            adoptProject(result.payload.project);
+            closeUpdateModal();
+            renderView();
+            stashEdit(project);
+            refreshFigures();
+        })
+        .catch(function () {
+            updateError.textContent = "Could not reach ZoneOut.";
+            updateGo.disabled = false;
+            updateGo.textContent = "UPDATE PROJECT";
         });
 });
 

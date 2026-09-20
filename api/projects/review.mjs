@@ -1,5 +1,5 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
-import { setProjectReview, setReviewRemarks, queueProjectForReview, ValidationError } from "../../lib/users.mjs";
+import { setProjectReview, setReviewRemarks, queueProjectForReview, updateApprovedHours, ValidationError } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape, the same fields the project page already reads
@@ -67,6 +67,7 @@ export default async function handler(req, res) {
 
     const queueing = body.decision === "queue";
     const editing  = body.decision === "remarks";
+    const updating = body.decision === "update";
     const fraud    = body.decision === "fraud";
     const wipe     = fraud && body.wipe === true;
 
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
                  : fraud                       ? "rejected"
                  : null;
 
-    if (!status && !queueing && !editing) {
+    if (!status && !queueing && !editing && !updating) {
         return res.status(400).json({ ok: false, error: "A review is either approved or rejected." });
     }
 
@@ -84,6 +85,8 @@ export default async function handler(req, res) {
             ? await queueProjectForReview(projectId, admin.user_id)
             : editing
             ? await setReviewRemarks(projectId, body.remarks, admin.user_id)
+            : updating
+            ? await updateApprovedHours(projectId, body.approvedHours, body.remarks, admin.user_id)
             : await setProjectReview(projectId, status, body.remarks, admin.user_id, null, {
                   approvedHours: body.approvedHours,
                   payoutHours: body.payoutHours,
@@ -101,6 +104,8 @@ export default async function handler(req, res) {
             project: present(project),
             balanceHours: project.balance_hours ?? null,
             awardedHours: Number(project.awarded_hours) || 0,
+            priorApproved: project.prior_approved ?? null,
+            hoursDelta: project.hours_delta ?? null,
             seizedOrders: Number(project.seized_orders) || 0,
             canEdit: true,
             canReview: true
