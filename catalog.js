@@ -178,7 +178,7 @@ export const SHOP_ITEMS = [
         description: "Another High-End Gen 4 NVME for all of your needs! this one's 1TB! so much space :O"
     },
     {
-        id: "storage-grant", name: "Storage and Ram Grant (50$)", hours: 11, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
+        id: "storage-grant", name: "Storage and Ram Grant (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL,
         image: "https://cdn.hackclub.com/01a04d2b-1a86-7aba-ba27-5c66b34b7642/storage.png",
         description: "Buy any sort of storage device or RAM!"
     },
