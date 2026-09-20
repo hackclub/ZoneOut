@@ -1,5 +1,5 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
-import { setProjectReview, queueProjectForReview, ValidationError } from "../../lib/users.mjs";
+import { setProjectReview, setReviewRemarks, queueProjectForReview, ValidationError } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape, the same fields the project page already reads
@@ -14,7 +14,13 @@ function present(project) {
         hackatimeLinked: Boolean(project.hackatime_project),
         hackatimeProject: project.hackatime_project ?? null,
         hackatimeHours: project.hackatime_hours ?? 0,
+        approvedHours: project.approved_hours ?? 0,
+        creditedHours: project.credited_hours ?? 0,
+        judgedHours: project.judged_hours ?? 0,
+        roundSettled: Boolean(project.round_settled),
+        roundLocked: Boolean(project.round_locked),
         reviewStatus: project.review_status ?? "draft",
+        fraudRejected: Boolean(project.fraud_rejected),
         reviewRemarks: project.review_remarks ?? null,
         reviewedAt: project.reviewed_at ?? null,
         submittedAt: project.submitted_at ?? null,
@@ -60,19 +66,31 @@ export default async function handler(req, res) {
     }
 
     const queueing = body.decision === "queue";
+    const editing  = body.decision === "remarks";
+    const fraud    = body.decision === "fraud";
+    const wipe     = fraud && body.wipe === true;
 
     const status = body.decision === "approve" ? "approved"
                  : body.decision === "reject"  ? "rejected"
+                 : fraud                       ? "rejected"
                  : null;
 
-    if (!status && !queueing) {
+    if (!status && !queueing && !editing) {
         return res.status(400).json({ ok: false, error: "A review is either approved or rejected." });
     }
 
     try {
         const project = queueing
             ? await queueProjectForReview(projectId, admin.user_id)
-            : await setProjectReview(projectId, status, body.remarks, admin.user_id);
+            : editing
+            ? await setReviewRemarks(projectId, body.remarks, admin.user_id)
+            : await setProjectReview(projectId, status, body.remarks, admin.user_id, null, {
+                  approvedHours: body.approvedHours,
+                  payoutHours: body.payoutHours,
+                  fraud: fraud,
+                  wipe: wipe,
+                  extraRemarks: body.remarks
+              });
 
         if (!project) {
             return res.status(404).json({ ok: false, error: "not found" });
@@ -81,6 +99,9 @@ export default async function handler(req, res) {
         return res.status(200).json({
             ok: true,
             project: present(project),
+            balanceHours: project.balance_hours ?? null,
+            awardedHours: Number(project.awarded_hours) || 0,
+            seizedOrders: Number(project.seized_orders) || 0,
             canEdit: true,
             canReview: true
         });

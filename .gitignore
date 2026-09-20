@@ -13,6 +13,7 @@ filloutform.txt
 .neon
 skills-lock.json
 .claude/skills/
+.claude/docs/
 
 # dev-only notes and unused art
 ZONEoutstoryline.txt

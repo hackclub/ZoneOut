@@ -67,8 +67,8 @@ export const SHOP_ITEMS = [
         description: "get a 10$ grant to buy some ai creds :3 stackable!"
     },
     {
-        id: "games-grant", name: "Games Grant", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a05379-d126-716e-a62a-aa5a433c3b93/gamegrant.png",
-        description: "buy any sort of **game** using this grant from various sellers.",
+        id: "games-grant", name: "Games Grant (10$)", hours: 2, section: "grants", note: "Stackable", newUntil: NEW_UNTIL, image: "https://cdn.hackclub.com/01a05379-d126-716e-a62a-aa5a433c3b93/gamegrant.png",
+        description: "buy any sort of **game** using this 10$ grant from various sellers.",
         modalNote: "This grant allows you to buy games but prohibits spending on any in-app purchases or cosmetics."
     },
     {

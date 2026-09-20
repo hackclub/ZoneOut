@@ -1201,6 +1201,10 @@ display:none;
 <source src="https://cdn.hackclub.com/019d157e-42db-7c9d-a810-abcb9247cf07/faqmusic.mp3" type="audio/mpeg">
 </audio>
 
+<audio loop id="altAudio" preload="none">
+<source src="https://cdn.hackclub.com/01a08bd7-7896-72b9-b3c2-f05140549e0f/entity_escape_aftermath.mp3" type="audio/mpeg">
+</audio>
+
 <audio id="uiClick" preload="auto">
 <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
 </audio>
@@ -1903,6 +1907,7 @@ async function refreshBalance() {
         suggestBtn.hidden = true;
         ordersBtn.hidden = true;
         queueMeasure();
+        if (window.zoneoutCorruption) window.zoneoutCorruption.publishConfig(null);
         myOrders = [];
         ordersKnown = false;
         homeRegion = null;
@@ -1937,6 +1942,10 @@ async function refreshBalance() {
         paintBalance();
         adoptGrants(payload.grants);
         adoptHomeRegion(payload.region);
+
+        if (window.zoneoutCorruption) {
+            window.zoneoutCorruption.publishConfig(payload);
+        }
     } catch {
     }
 }
@@ -2694,6 +2703,7 @@ function showToast(message) {
 
 // audio
 const bgAudio = document.getElementById("bgAudio");
+const altAudio = document.getElementById("altAudio");
 const uiClick = document.getElementById("uiClick");
 const videoBG = document.getElementById("videoBG");
 const volumeSlider = document.getElementById("masterVolume");
@@ -2715,21 +2725,38 @@ const clampVolume = level => Math.min(Math.max(level, 0), 1);
 let fadeGeneration = 0;
 
 function fadeInAudio() {
+    const clip = activeTrack();
     const mine = ++fadeGeneration;
     const start = performance.now();
 
     function step(now) {
         if (mine !== fadeGeneration) return;
         const progress = Math.min((now - start) / FADE_IN_MS, 1);
-        bgAudio.volume = clampVolume(masterVolume * progress);
+        clip.volume = clampVolume(masterVolume * progress);
         if (progress < 1) requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
     setTimeout(() => {
-        if (mine === fadeGeneration) bgAudio.volume = clampVolume(masterVolume);
+        if (mine === fadeGeneration) clip.volume = clampVolume(masterVolume);
     }, FADE_IN_MS + 250);
 }
+
+// section for the corruption music swap
+let trackSwapped = false;
+
+function activeTrack() {
+    return trackSwapped ? altAudio : bgAudio;
+}
+
+window.zoneoutAudio = {
+    main: () => bgAudio,
+    alt: () => altAudio,
+    level: () => masterVolume,
+    retire: () => { fadeGeneration++; },
+    swapped: () => trackSwapped,
+    setSwapped: (on) => { trackSwapped = Boolean(on); }
+};
 
 // click sound
 function playClick() {
@@ -2743,9 +2770,10 @@ document.addEventListener("click", (e) => {
 });
 
 function resumeAudio() {
-    if (!bgAudio.paused || masterVolume === 0) return;
-    bgAudio.volume = 0;
-    bgAudio.play().then(fadeInAudio).catch(() => {});
+    const clip = activeTrack();
+    if (!clip.paused || masterVolume === 0) return;
+    clip.volume = 0;
+    clip.play().then(fadeInAudio).catch(() => {});
 }
 
 ["pointerdown", "touchstart", "keydown"].forEach(evt => {
@@ -2770,6 +2798,7 @@ volumeSlider.addEventListener("input", () => {
 
     fadeGeneration++;
     bgAudio.volume = clampVolume(masterVolume);
+    altAudio.volume = trackSwapped ? clampVolume(masterVolume) : 0;
     syncVolumeDisplay();
 
     resumeAudio();
@@ -2777,6 +2806,7 @@ volumeSlider.addEventListener("input", () => {
 
 resumeAudio();
 bgAudio.addEventListener("canplay", resumeAudio);
+altAudio.addEventListener("canplay", resumeAudio);
 
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") videoBG.play().catch(() => {});
@@ -2908,7 +2938,21 @@ document.addEventListener("keydown", (e) => {
 refreshBalance();
 startPolling();
 
+// section for periodic corruption
+function startCorruption() {
+    if (!window.zoneoutCorruption) return;
+    window.zoneoutCorruption.register({
+        effects: ["music", "border"],
+        busy: () => anyModalOpen() || screenVeil.classList.contains("on")
+    });
+}
+
+if (window.zoneoutCorruption && window.zoneoutCorruption.ready) startCorruption();
+else document.addEventListener("zoneout:corruptionready", startCorruption, { once: true });
+
 </script>
+
+<script src="/corruption.js" defer></script>
 
 </body>
 </html>

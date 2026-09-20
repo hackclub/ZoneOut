@@ -1,6 +1,6 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
 import { withTransaction } from "../../lib/db.mjs";
-import { setBalanceHours, listAllUsersForAdmin, setProjectReview, listProjectsForReview, normaliseRemarks, MAX_BALANCE_HOURS, ValidationError } from "../../lib/users.mjs";
+import { setBalanceHours, listAllUsersForAdmin, setProjectReview, listProjectsForReview, normaliseRemarks, fraudRemarks, normaliseApprovedHours, normalisePayoutHours, MAX_BALANCE_HOURS, ValidationError } from "../../lib/users.mjs";
 import { parseCommand, applyCommand, CommandError } from "../../lib/adminCommands.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { syncAllLinkedUsers, isConfigured } from "../../lib/hackatime.mjs";
@@ -8,6 +8,7 @@ import { presentUsers } from "./users.mjs";
 import { presentReviews } from "./reviews.mjs";
 import { presentOrders } from "./orders.mjs";
 import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
+import { readFxSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
 
 const MAX_BATCH = 200;
 
@@ -45,8 +46,10 @@ export default async function handler(req, res) {
     const rawCommands = Array.isArray(body.commands) ? body.commands : [];
     const rawReviews = Array.isArray(body.reviews) ? body.reviews : [];
     const rawOrders = Array.isArray(body.orders) ? body.orders : [];
+    const rawFx = body.fx && typeof body.fx === "object" ? body.fx : null;
 
-    const size = balances.length + rawCommands.length + rawReviews.length + rawOrders.length;
+    const size = balances.length + rawCommands.length + rawReviews.length + rawOrders.length
+               + (rawFx ? 1 : 0);
 
     if (size === 0) {
         return res.status(400).json({ ok: false, error: "nothing to save" });
@@ -62,8 +65,11 @@ export default async function handler(req, res) {
             balances: balances.map(readBalanceEdit),
             commands: rawCommands.map(line => parseCommand(line)),
             reviews: rawReviews.map(readReviewEdit),
-            orders: rawOrders.map(readOrderEdit)
+            orders: rawOrders.map(readOrderEdit),
+            fx: rawFx ? readFxSettings(rawFx) : null
         };
+
+        if (staged.fx && Object.keys(staged.fx).length === 0) staged.fx = null;
     } catch (err) {
         if (err instanceof CommandError || err instanceof RangeError || err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
@@ -90,7 +96,8 @@ export default async function handler(req, res) {
     // apply balances and commands in one transaction
     const applied = [];
     const writing = staged.balances.length > 0 || staged.commands.length > 0
-                 || staged.reviews.length > 0 || staged.orders.length > 0;
+                 || staged.reviews.length > 0 || staged.orders.length > 0
+                 || staged.fx !== null;
 
     try {
         if (writing) await withTransaction(async client => {
@@ -106,10 +113,17 @@ export default async function handler(req, res) {
 
             for (const review of staged.reviews) {
                 const row = await setProjectReview(
-                    review.projectId, review.status, review.remarks, admin.user_id, client
+                    review.projectId, review.status, review.remarks, admin.user_id, client,
+                    { approvedHours: review.approvedHours, payoutHours: review.payoutHours,
+                      fraud: review.fraud, wipe: review.wipe, extraRemarks: review.remarks }
                 );
                 if (!row) throw new CommandError(`no project ${review.projectId}`);
-                applied.push(`${review.status} project ${review.projectId}`);
+                applied.push(
+                    `${review.fraud ? "permanently rejected" : review.status} project ${review.projectId}`
+                    + (review.status === "approved"
+                        ? ` at ${Number(row.round_approved) || 0} hours, paying ${Number(row.awarded_hours) || 0}` : "")
+                    + (review.wipe ? " and wiped the balance and pending orders" : "")
+                );
             }
 
             for (const order of staged.orders) {
@@ -122,9 +136,14 @@ export default async function handler(req, res) {
                     + (row.refund_paid ? ` and refunded ${row.hours_spent} hours` : "")
                 );
             }
+
+            if (staged.fx) {
+                await writeEventState(staged.fx, client);
+                applied.push("retuned the corruption effects");
+            }
         });
     } catch (err) {
-        if (err instanceof CommandError) {
+        if (err instanceof CommandError || err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message, applied: [] });
         }
         console.error("admin batch failed:", err.message);
@@ -139,11 +158,30 @@ export default async function handler(req, res) {
             applied,
             users: presentUsers(await listAllUsersForAdmin()),
             reviews: staged.reviews.length ? presentReviews(await listProjectsForReview()) : null,
-            orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null
+            orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null,
+            fx: await readFx()
         });
     } catch (err) {
         console.error("admin reload failed:", err.message);
         return res.status(200).json({ ok: true, applied, users: null, reviews: null, orders: null });
+    }
+}
+
+// the corruption knobs as they now stand
+async function readFx() {
+    try {
+        const state = await readEventState();
+        if (!state) return null;
+        const figures = derive(state, await eventTotals());
+        return {
+            fxEnabled: figures.fxEnabled,
+            fxIntensity: figures.fxIntensity,
+            fxBeatSeconds: figures.fxBeatSeconds,
+            fxLevelScale: figures.fxLevelScale
+        };
+    } catch (err) {
+        console.error("fx settings lookup failed:", err.message);
+        return null;
     }
 }
 
@@ -174,15 +212,28 @@ function readReviewEdit(entry) {
         throw new RangeError(`"${entry?.projectId}" is not a project id`);
     }
 
+    const fraud  = entry?.decision === "fraud";
     const status = entry?.decision === "approve" ? "approved"
                  : entry?.decision === "reject"  ? "rejected"
+                 : fraud                         ? "rejected"
                  : null;
 
     if (!status) {
         throw new RangeError(`project ${projectId} must be approved or rejected`);
     }
 
-    return { projectId, status, remarks: normaliseRemarks(entry?.remarks) };
+    // thrown here, before the transaction opens; the write re-runs the same validators
+    if (fraud) fraudRemarks(entry?.remarks); else normaliseRemarks(entry?.remarks);
+
+    return {
+        projectId,
+        status,
+        fraud,
+        remarks: entry?.remarks,
+        wipe: fraud && entry?.wipe === true,
+        approvedHours: status === "approved" ? normaliseApprovedHours(entry?.approvedHours) : 0,
+        payoutHours: status === "approved" ? normalisePayoutHours(entry?.payoutHours) : 0
+    };
 }
 
 // the hackatime sweep, reported rather than thrown: the batch has already committed

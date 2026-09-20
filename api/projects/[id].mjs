@@ -7,10 +7,11 @@ import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 
 // response shape, the hackatime name is for the owner and administrators only
-function present(project, ownerName, showLink = true) {
+function present(project, ownerName, showLink = true, showOwnerId = false, showReview = false) {
     return {
         projectId: project.project_id,
         ownerName: ownerName ?? project.owner_name ?? null,
+        ownerSlackId: showOwnerId ? (project.owner_slack_id ?? null) : null,
         name: project.name,
         description: project.description,
         repoUrl: project.repo_url,
@@ -18,7 +19,17 @@ function present(project, ownerName, showLink = true) {
         hackatimeLinked: Boolean(project.hackatime_project),
         hackatimeProject: showLink ? (project.hackatime_project ?? null) : null,
         hackatimeHours: project.hackatime_hours ?? 0,
+        approvedHours: project.approved_hours ?? 0,
+        creditedHours: project.credited_hours ?? 0,
+        judgedHours: project.judged_hours ?? 0,
+        roundSettled: Boolean(project.round_settled),
+        roundLocked: Boolean(project.round_locked),
+        submissions: showReview ? (project.submissions ?? []) : null,
+        previousRound: showReview ? (project.previous_round ?? null) : null,
+        ownerBalanceHours: showReview ? (project.owner_balance_hours ?? 0) : null,
+        ownerPendingOrders: showReview ? (project.owner_pending_orders ?? 0) : null,
         reviewStatus: project.review_status ?? "draft",
+        fraudRejected: Boolean(project.fraud_rejected),
         reviewRemarks: project.review_remarks ?? null,
         reviewedAt: project.reviewed_at ?? null,
         submittedAt: project.submitted_at ?? null,
@@ -67,7 +78,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             ok: true,
-            project: present(project, null, owns || admin),
+            project: present(project, null, owns || admin, admin, admin),
             canEdit: owns || admin,
             canReview: admin,
             adminOverride: admin && !owns,

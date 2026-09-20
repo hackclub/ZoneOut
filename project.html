@@ -200,6 +200,40 @@ opacity:0.55;
 display:none;
 }
 
+.approvedHours{
+opacity:0.8;
+color:rgb(var(--reviewOk));
+}
+
+/* SUBMISSION HISTORY */
+.submissionList{
+display:block;
+margin-top:10px;
+padding:8px 12px;
+border:1px solid rgba(var(--reviewWait),0.4);
+font-size:12px;
+letter-spacing:1px;
+color:rgb(var(--reviewWait));
+}
+
+.submissionList[hidden]{
+display:none;
+}
+
+.submissionHead{
+opacity:0.7;
+letter-spacing:3px;
+margin-bottom:6px;
+}
+
+.submissionRow{
+display:flex;
+justify-content:space-between;
+gap:18px;
+padding:2px 0;
+opacity:0.9;
+}
+
 /* REVIEW STATE */
 .reviewLine{
 display:inline-flex;
@@ -454,6 +488,56 @@ flex-wrap:wrap;
 align-items:center;
 }
 
+.fraudPrefix,
+.fraudWarn{
+margin-bottom:10px;padding:8px 10px;
+border:1px solid rgba(var(--reviewBad),0.5);
+color:rgb(var(--reviewBad));
+font-size:13px;letter-spacing:1px;
+}
+.fraudPrefix[hidden]{display:none;}
+.fraudWarn[hidden]{display:none;}
+.guidelineList{
+margin:0 0 16px;padding-left:22px;
+font-size:14px;line-height:1.7;
+}
+.guidelineList li{margin-bottom:8px;}
+
+.guidelineWarn{
+margin-bottom:18px;padding:10px 12px;
+border:1px solid rgba(var(--reviewWait),0.5);
+color:rgb(var(--reviewWait));
+font-size:13px;line-height:1.7;
+}
+
+/* section for the approval breakdown */
+.roundPanel{
+display:block;margin-bottom:18px;padding:10px 12px;
+border:1px solid rgba(var(--reviewWait),0.5);
+color:rgb(var(--reviewWait));
+font-size:12px;letter-spacing:1px;
+}
+
+.roundPanel[hidden]{display:none;}
+
+.balancePanel{
+display:block;margin-bottom:18px;padding:10px 12px;
+border:1px solid rgba(var(--fg),0.2);
+font-size:12px;letter-spacing:1px;opacity:0.85;
+}
+
+.balancePanel[hidden]{display:none;}
+
+.panelHead{opacity:0.7;letter-spacing:3px;margin-bottom:6px;}
+
+.panelTotal{margin-top:4px;padding-top:6px;border-top:1px solid rgba(var(--fg),0.2);opacity:1;}
+
+.fieldHint{display:block;margin-top:6px;font-size:12px;opacity:0.55;letter-spacing:1px;}
+.fieldHint.over{color:rgb(var(--reviewBad));opacity:1;}
+.formField[hidden]{display:none;}
+.ownerSlack{display:block;margin-top:2px;font-size:12px;opacity:0.55;letter-spacing:1px;}
+.ownerSlack[hidden]{display:none;}
+
 .submitRow[hidden],
 .reviewActions[hidden]{
 display:none;
@@ -593,6 +677,10 @@ gap:16px;
 <source src="https://cdn.hackclub.com/019d157e-42db-7c9d-a810-abcb9247cf07/faqmusic.mp3" type="audio/mpeg">
 </audio>
 
+<audio loop id="altAudio" preload="none">
+<source src="https://cdn.hackclub.com/01a08bd7-7896-72b9-b3c2-f05140549e0f/entity_escape_aftermath.mp3" type="audio/mpeg">
+</audio>
+
 <audio id="uiClick" preload="auto">
 <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
 </audio>
@@ -616,10 +704,16 @@ gap:16px;
 <div>
 <div class="projectTitle" id="viewTitle"></div>
 <div class="projectId" id="viewId"></div>
+<div class="ownerSlack" id="viewOwnerSlack" hidden></div>
 <div class="activeHours" id="viewHours" hidden>
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="viewHoursValue"></span>
 </div>
+<div class="activeHours approvedHours" id="viewApproved" hidden>
+<svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
+<span id="viewApprovedValue"></span>
+</div>
+<div class="submissionList" id="viewSubmissions" hidden></div>
 <button class="reviewLine" id="viewReview" type="button" aria-expanded="false" hidden></button>
 <div class="reviewDrop" id="viewRemarks" hidden></div>
 <div class="htAdmin" id="viewHtAdmin" hidden></div>
@@ -646,6 +740,8 @@ gap:16px;
 <div class="reviewActions" id="reviewActions" hidden>
 <button class="camNode approveNode" id="approveBtn" type="button">APPROVE</button>
 <button class="camNode rejectNode" id="rejectBtn" type="button">REJECT</button>
+<button class="camNode rejectNode" id="fraudBtn" type="button">FRAUD SQUAD REJECT</button>
+<button class="camNode" id="remarksBtn" type="button">EDIT REMARKS</button>
 <button class="camNode queueNode" id="queueBtn" type="button">ADD TO QUEUE</button>
 </div>
 
@@ -746,6 +842,30 @@ gap:16px;
 </div>
 </div>
 
+<div class="modalScrim" id="guidelinesModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="guidelinesTitle">
+<button class="modalClose" id="guidelinesClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="guidelinesTitle">BEFORE YOU SUBMIT</div>
+
+<div class="confirmText" id="guidelinesText"></div>
+
+<ul class="guidelineList">
+<li>Your project is a horror themed project.</li>
+<li>You have sufficient proof to prove your time is legitimate: frequent GitHub commits, a proper working demo, all time tracked spent making features, art etc (includes Lapse) and absolutely no fraud.</li>
+<li>Follows project guidelines and integrity.</li>
+<li>Isn't AI slop, or uses tons of AI everywhere, or the frontend is an AI design.</li>
+</ul>
+
+<div class="guidelineWarn">Any project who doesn't follow the above guidelines may be subjected to <strong>less credited hours than their actual hours logged.</strong></div>
+
+<div class="modalActions">
+<button class="camNode" id="guidelinesGo" type="button" disabled>SUBMIT (5)</button>
+<button class="camNode" id="guidelinesCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
 <div class="modalScrim" id="blockModal" hidden>
 <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="blockTitle">
 <button class="modalClose" id="blockClose" type="button" aria-label="Close">&times;</button>
@@ -760,6 +880,47 @@ gap:16px;
 </div>
 </div>
 
+<div class="modalScrim" id="queueModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="queueTitle">
+<button class="modalClose" id="queueClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="queueTitle">ADD TO QUEUE</div>
+
+<div class="fraudWarn">The following project is a fraud reject. Are you sure?</div>
+
+<div class="confirmText" id="queueText"></div>
+
+<div class="modalActions">
+<button class="camNode queueNode" id="queueGo" type="button">CONTINUE</button>
+<button class="camNode" id="queueCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="remarksModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="remarksTitle">
+<button class="modalClose" id="remarksClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="remarksTitle">EDIT REMARKS</div>
+
+<div class="confirmText">Only the remarks shown on the project page change. No hours and no balance are touched.</div>
+
+<div class="fraudPrefix" id="remarksPrefix" hidden>Rejected by fraud squad.</div>
+
+<label class="formField">
+<span id="remarksLabel">REVIEW REMARKS</span>
+<textarea class="textInput" id="remarksInput" maxlength="500" required></textarea>
+</label>
+
+<div class="formError" id="remarksError" role="alert"></div>
+
+<div class="modalActions">
+<button class="camNode" id="remarksSave" type="button">SAVE REMARKS</button>
+<button class="camNode" id="remarksCancel" type="button">CANCEL</button>
+</div>
+</div>
+</div>
+
 <div class="modalScrim" id="reviewModal" hidden>
 <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
 <button class="modalClose" id="reviewClose" type="button" aria-label="Close">&times;</button>
@@ -768,15 +929,36 @@ gap:16px;
 
 <div class="confirmText" id="reviewText"></div>
 
+<div class="fraudWarn" id="reviewWarn" hidden>The following project is a fraud reject. Are you sure?</div>
+
+<div class="fraudPrefix" id="reviewPrefix" hidden>Rejected by fraud squad.</div>
+
 <label class="formField">
-<span>ATTACH ADDITIONAL REMARKS</span>
+<span id="reviewRemarksLabel">ATTACH ADDITIONAL REMARKS</span>
 <textarea class="textInput" id="reviewRemarks" maxlength="500" required></textarea>
 </label>
+
+<div class="roundPanel" id="reviewRounds" hidden></div>
+
+<label class="formField" id="reviewApprovedField" hidden>
+<span>SET APPROVED HOURS</span>
+<input class="textInput" id="reviewApproved" type="number" min="0" max="99999" step="0.25" inputmode="decimal" autocomplete="off">
+<span class="fieldHint" id="reviewApprovedHint"></span>
+</label>
+
+<label class="formField" id="reviewPayoutField" hidden>
+<span>HOUR BALANCE</span>
+<input class="textInput" id="reviewPayout" type="number" min="0" max="99999" step="0.25" inputmode="decimal" autocomplete="off">
+<span class="fieldHint" id="reviewPayoutHint"></span>
+</label>
+
+<div class="balancePanel" id="reviewBalance" hidden></div>
 
 <div class="formError" id="reviewError" role="alert"></div>
 
 <div class="modalActions">
 <button class="camNode" id="reviewConfirm" type="button">APPROVE</button>
+<button class="camNode rejectNode dangerNode" id="reviewWipe" type="button" hidden>REJECT EVERYTHING</button>
 <button class="camNode" id="reviewCancel" type="button">CANCEL</button>
 </div>
 </div>
@@ -846,15 +1028,32 @@ var htChoice = null;
 var htList = null;
 var htListPending = false;
 
+function owns() {
+    return canEdit && !adminOverride;
+}
+
 function hoursLine() {
     var box = document.getElementById("viewHours");
     var linked = project && (project.hackatimeLinked || project.hackatimeProject);
+    var approved = project && project.reviewStatus === "approved";
+    var inside = owns() || canReview;
 
-    box.hidden = !linked;
-    if (!linked) return;
+    box.hidden = !linked && !(approved && !inside);
+    if (box.hidden) return;
 
-    var hours = Number(project.hackatimeHours) || 0;
-    document.getElementById("viewHoursValue").textContent = hours + " ACTIVE HOURS";
+    var label = inside ? trackedHours() + " TIME LOGGED"
+              : approved ? approvedHours() + " HOURS LOGGED"
+              : trackedHours() + " TOTAL HOURS";
+
+    document.getElementById("viewHoursValue").textContent = label;
+}
+
+function trackedHours() {
+    return Math.round((Number(project && project.hackatimeHours) || 0) * 100) / 100;
+}
+
+function approvedHours() {
+    return Math.round((Number(project && project.approvedHours) || 0) * 100) / 100;
 }
 
 // review state
@@ -863,6 +1062,30 @@ var REVIEW_LABELS = {
     approved: "APPROVED",
     rejected: "REJECTED"
 };
+
+var FRAUD_PREFIX = "Rejected by fraud squad.";
+
+function fraudRejected() {
+    return Boolean(project && project.fraudRejected);
+}
+
+function roundLocked() {
+    return Boolean(project && project.roundLocked);
+}
+
+function previousRound() {
+    return (canReview && project && project.previousRound) || null;
+}
+
+// the open round, to a reviewer: whose it is and whether it follows a verdict
+function reviewChipLabel(status) {
+    if (status === "rejected" && fraudRejected()) return "PERMANENT REJECTION";
+    if (status === "under_review" && canReview) {
+        if (roundLocked()) return "RE-QUEUED BY ADMIN";
+        if (previousRound()) return "UPDATED PROJECT";
+    }
+    return REVIEW_LABELS[status];
+}
 
 var SUBMIT_LABELS = {
     draft: "SUBMIT PROJECT",
@@ -884,11 +1107,84 @@ function newHours() {
     return Math.round(Math.max(since, 0) * 10) / 10;
 }
 
+function approvedLine() {
+    var line = document.getElementById("viewApproved");
+    var show = canReview && project && project.reviewStatus === "approved";
+
+    line.hidden = !show;
+    if (!show) return;
+
+    document.getElementById("viewApprovedValue").textContent =
+        "TOTAL APPROVED HOURS: " + approvedHours();
+}
+
+// section for the submission history, administrators only
+var ORDINALS = ["1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH"];
+
+function spanText(hours) {
+    if (hours === null) return "—";
+    var value = Math.round(hours * 100) / 100;
+    if (value < 1) return Math.round(value * 60) + " mins";
+    return value + " hours";
+}
+
+function submissionRow(label, text) {
+    var row = document.createElement("div");
+    row.className = "submissionRow";
+
+    var left = document.createElement("span");
+    left.textContent = label;
+
+    var right = document.createElement("span");
+    right.textContent = text;
+
+    row.appendChild(left);
+    row.appendChild(right);
+    return row;
+}
+
+function submissionHistory() {
+    var box = document.getElementById("viewSubmissions");
+    var list = (canReview && project && project.submissions) || [];
+
+    box.hidden = list.length < 2;
+    if (box.hidden) return;
+
+    box.replaceChildren();
+
+    var head = document.createElement("div");
+    head.className = "submissionHead";
+    head.textContent = "SUBMISSION HISTORY";
+    box.appendChild(head);
+
+    var previous = null;
+
+    list.forEach(function (entry, index) {
+        var hours = entry && entry.hours === null || entry && entry.hours === undefined
+            ? null
+            : Number(entry.hours);
+
+        var label = (ORDINALS[index] || (index + 1) + "TH") + " SUBMISSION";
+        var text;
+
+        if (index === 0) {
+            text = spanText(hours);
+        } else if (hours === null || previous === null) {
+            text = "—";
+        } else {
+            text = "+ " + spanText(Math.max(hours - previous, 0)) + " after previous submission";
+        }
+
+        box.appendChild(submissionRow(label, text));
+        previous = hours;
+    });
+}
+
 function reviewLine() {
     var line = document.getElementById("viewReview");
     var drop = document.getElementById("viewRemarks");
     var status = reviewStatus();
-    var label = REVIEW_LABELS[status];
+    var label = reviewChipLabel(status);
     var remarks = (project && project.reviewRemarks) || "";
 
     line.hidden = !label;
@@ -920,13 +1216,34 @@ function submitLine() {
     var button = document.getElementById("submitBtn");
     var status = reviewStatus();
 
+    var permanent = fraudRejected();
+
     row.hidden = !canEdit || adminOverride;
-    button.textContent = SUBMIT_LABELS[status] || SUBMIT_LABELS.draft;
-    button.disabled = status === "under_review";
+    button.textContent = permanent ? "PERMANENTLY REJECTED" : (SUBMIT_LABELS[status] || SUBMIT_LABELS.draft);
+    button.disabled = permanent || status === "under_review";
 
     document.getElementById("reviewActions").hidden = !canReview;
     document.getElementById("queueBtn").disabled = status === "under_review";
+    document.getElementById("rejectBtn").disabled = false;
+    document.getElementById("fraudBtn").disabled = permanent;
+
+    var approve = document.getElementById("approveBtn");
+    approve.disabled = roundSettled();
+    approve.textContent = roundSettled() ? "ROUND SETTLED" : "APPROVE";
+    approve.title = roundSettled()
+        ? "This round has already been approved. Add it to the queue or wait for a re-submission."
+        : "";
+    document.getElementById("remarksBtn").disabled = status !== "approved" && status !== "rejected";
     document.getElementById("queueError").textContent = "";
+}
+
+// the owner's slack id, administrators only
+function ownerSlackLine() {
+    var line = document.getElementById("viewOwnerSlack");
+    var id = adminOverride && project ? project.ownerSlackId : null;
+
+    line.hidden = !id;
+    line.textContent = id ? "SLACK ID: " + id : "";
 }
 
 // the attached hackatime project, administrators only
@@ -1079,6 +1396,8 @@ function renderView() {
     document.getElementById("viewTitle").textContent = project.name;
     document.getElementById("viewId").textContent = ownerLine();
     hoursLine();
+    approvedLine();
+    submissionHistory();
     document.getElementById("viewDescription").textContent = project.description;
 
     var links = document.getElementById("viewLinks");
@@ -1096,6 +1415,7 @@ function renderView() {
 
     document.getElementById("ownerRow").hidden = !canEdit;
     document.getElementById("adminNote").hidden = !adminOverride;
+    ownerSlackLine();
     reviewLine();
     submitLine();
     hackatimeAdminLine();
@@ -1169,6 +1489,36 @@ function load() {
         });
 }
 
+// section for the administrator-only figures, which ride GET /api/projects/:id alone
+var ADMIN_FIGURES = ["submissions", "previousRound", "ownerSlackId",
+                     "ownerBalanceHours", "ownerPendingOrders"];
+
+function adoptProject(next) {
+    if (!next) return;
+
+    ADMIN_FIGURES.forEach(function (key) {
+        if (next[key] === null || next[key] === undefined) {
+            next[key] = project ? project[key] : null;
+        }
+    });
+
+    project = next;
+}
+
+// a write answers with the project alone, so the figures behind it are re-read
+function refreshFigures() {
+    if (!canReview || !projectId) return;
+
+    fetch("/api/projects/" + projectId, { credentials: "same-origin" })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (payload) {
+            if (!payload || !payload.project) return;
+            project = payload.project;
+            renderView();
+        })
+        .catch(function () {});
+}
+
 // review remarks drop
 document.getElementById("viewReview").addEventListener("click", toggleRemarks);
 
@@ -1227,7 +1577,7 @@ document.getElementById("editForm").addEventListener("submit", function (e) {
                 return;
             }
 
-            project = result.payload.project;
+            adoptProject(result.payload.project);
             canEdit = true;
             renderView();
             stashEdit(project);
@@ -1492,7 +1842,10 @@ function modalOpen(modal) {
 
 function currentModal() {
     if (modalOpen(blockModal)) return { el: blockModal, close: closeBlockModal };
+    if (modalOpen(guidelinesModal)) return { el: guidelinesModal, close: closeGuidelinesModal };
+    if (modalOpen(queueModal)) return { el: queueModal, close: closeQueueModal };
     if (modalOpen(reviewModal)) return { el: reviewModal, close: closeReviewModal };
+    if (modalOpen(remarksModal)) return { el: remarksModal, close: closeRemarksModal };
     if (modalOpen(resubmitModal)) return { el: resubmitModal, close: closeResubmitModal };
     if (modalOpen(deleteModal)) return { el: deleteModal, close: closeDeleteModal };
     return null;
@@ -1586,11 +1939,21 @@ deleteConfirm.addEventListener("click", function () {
 // review dialogs
 var resubmitModal = document.getElementById("resubmitModal");
 var blockModal = document.getElementById("blockModal");
+var guidelinesModal = document.getElementById("guidelinesModal");
 var reviewModal = document.getElementById("reviewModal");
+var queueModal = document.getElementById("queueModal");
+var remarksModal = document.getElementById("remarksModal");
+var remarksInput = document.getElementById("remarksInput");
+var remarksError = document.getElementById("remarksError");
+var remarksSave = document.getElementById("remarksSave");
 var reviewRemarksInput = document.getElementById("reviewRemarks");
+var reviewApprovedInput = document.getElementById("reviewApproved");
+var reviewPayoutInput = document.getElementById("reviewPayout");
+var payoutTouched = false;
 var reviewConfirm = document.getElementById("reviewConfirm");
 var reviewError = document.getElementById("reviewError");
 var reviewDecision = null;
+var reviewWipe = document.getElementById("reviewWipe");
 var modalReturnFocus = null;
 
 var VEIL_MS = 450;
@@ -1662,6 +2025,58 @@ function usableLink(value) {
     }
 }
 
+// section for the submission guidelines gate
+var GUIDELINES_WAIT = 5;
+var guidelinesTick = null;
+
+function openGuidelinesModal() {
+    document.getElementById("guidelinesText").textContent =
+        "You are submitting “" + project.name + "”. Before you proceed, make sure your project "
+        + "follows the following guidelines:";
+
+    var button = document.getElementById("guidelinesGo");
+    var left = GUIDELINES_WAIT;
+
+    button.disabled = true;
+    button.textContent = "SUBMIT (" + left + ")";
+
+    clearInterval(guidelinesTick);
+    guidelinesTick = setInterval(function () {
+        left -= 1;
+
+        if (left > 0) {
+            button.textContent = "SUBMIT (" + left + ")";
+            return;
+        }
+
+        clearInterval(guidelinesTick);
+        guidelinesTick = null;
+        button.textContent = "SUBMIT";
+        button.disabled = false;
+    }, 1000);
+
+    openModal(guidelinesModal, document.getElementById("guidelinesCancel"));
+}
+
+function closeGuidelinesModal() {
+    clearInterval(guidelinesTick);
+    guidelinesTick = null;
+    closeModal(guidelinesModal);
+}
+
+document.getElementById("guidelinesGo").addEventListener("click", function () {
+    if (document.getElementById("guidelinesGo").disabled) return;
+    closeGuidelinesModal();
+    openForm();
+});
+
+document.getElementById("guidelinesCancel").addEventListener("click", closeGuidelinesModal);
+document.getElementById("guidelinesClose").addEventListener("click", closeGuidelinesModal);
+
+guidelinesModal.addEventListener("mousedown", function (e) {
+    if (e.target === guidelinesModal) closeGuidelinesModal();
+});
+
 function openBlockModal() {
     openModal(blockModal, document.getElementById("blockOk"));
 }
@@ -1690,7 +2105,7 @@ document.getElementById("submitBtn").addEventListener("click", function () {
         openResubmitModal();
         return;
     }
-    openForm();
+    openGuidelinesModal();
 });
 
 document.getElementById("resubmitGo").addEventListener("click", function () {
@@ -1708,26 +2123,268 @@ resubmitModal.addEventListener("mousedown", function (e) {
 // the verdict, administrators only
 function openReviewModal(decision) {
     if (!canReview || !project) return;
+    if (fraudRejected() && decision === "fraud") return;
+    if (decision === "approve" && roundSettled()) return;
 
     reviewDecision = decision;
+
     var approving = decision === "approve";
+    var fraud     = decision === "fraud";
 
-    document.getElementById("reviewTitle").textContent = approving ? "APPROVE PROJECT" : "REJECT PROJECT";
-    document.getElementById("reviewText").textContent =
-        "“" + project.name + "” will be marked " + (approving ? "approved" : "rejected")
-        + ". Your remarks are shown on the project page.";
+    var warn = document.getElementById("reviewWarn");
+    warn.hidden = !(fraudRejected() && (approving || decision === "reject"));
+    warn.textContent = decision === "reject"
+        ? "This project is a fraud reject. Rejecting normally lifts the permanent rejection and lets them submit again."
+        : "The following project is a fraud reject. Are you sure?";
 
-    reviewConfirm.textContent = approving ? "APPROVE" : "REJECT";
+    reviewRemarksInput.maxLength = fraud ? 500 - FRAUD_PREFIX.length - 1 : 500;
+
+    document.getElementById("reviewTitle").textContent =
+        approving ? "APPROVE PROJECT" : fraud ? "PERMANENT REJECTION" : "REJECT PROJECT";
+
+    document.getElementById("reviewText").textContent = fraud
+        ? "“" + project.name + "” will be permanently rejected and cannot be submitted again. "
+          + wipeCost()
+        : "“" + project.name + "” will be marked " + (approving ? "approved" : "rejected")
+          + ". Your remarks are shown on the project page.";
+
+    document.getElementById("reviewPrefix").hidden = !fraud;
+    document.getElementById("reviewRemarksLabel").textContent =
+        fraud ? "ADDITIONAL REMARKS" : "ATTACH ADDITIONAL REMARKS";
+
+    reviewConfirm.textContent = approving ? "APPROVE"
+                              : fraud     ? "REJECT WITHOUT PAYOUT & ORDERS"
+                                          : "REJECT";
     reviewConfirm.classList.toggle("approveNode", approving);
-    reviewConfirm.classList.toggle("rejectNode", !approving);
+    reviewConfirm.classList.toggle("rejectNode", !approving && !fraud);
     reviewConfirm.disabled = false;
 
-    var amending = project.reviewStatus === (approving ? "approved" : "rejected");
+    reviewWipe.hidden = !fraud;
+    reviewWipe.disabled = false;
+    reviewWipe.textContent = "REJECT EVERYTHING";
+
+    var amending = !fraud && !fraudRejected()
+                && project.reviewStatus === (approving ? "approved" : "rejected");
     reviewRemarksInput.value = amending ? (project.reviewRemarks || "") : "";
+
+    paintApproved(approving);
     reviewError.textContent = "";
 
-    openModal(reviewModal, reviewRemarksInput);
+    openModal(reviewModal, approving && !roundLocked() ? reviewApprovedInput : reviewRemarksInput);
 }
+
+// what a wipe costs, from the administrator-only figures
+function wipeCost() {
+    var balance = Math.round((Number(project && project.ownerBalanceHours) || 0) * 100) / 100;
+    var orders = Number(project && project.ownerPendingOrders) || 0;
+
+    return "Rejecting everything takes their whole " + balance + " hour balance and rejects "
+         + orders + (orders === 1 ? " pending order" : " pending orders") + ". This cannot be undone.";
+}
+
+// section for the round's hours
+function round2(hours) {
+    return Math.round((Number(hours) || 0) * 100) / 100;
+}
+
+function hoursLabel(hours) {
+    return hours === 0 ? "0 hours" : spanText(hours);
+}
+
+function roundSettled() {
+    return Boolean(project && project.roundSettled);
+}
+
+function submissionSnapshots() {
+    return (canReview && project && project.submissions) || [];
+}
+
+// what this submission put in front of the reviewer
+function submittedSnapshot() {
+    if (!project) return 0;
+    return round2(project.submittedAt ? project.submittedHours : project.hackatimeHours);
+}
+
+// the snapshot this project has already been approved through
+function judgedSnapshot() {
+    return round2(project && project.judgedHours);
+}
+
+// the new hours this round is judged on
+function pendingHours() {
+    if (roundLocked()) return 0;
+    return round2(Math.max(submittedSnapshot() - judgedSnapshot(), 0));
+}
+
+function ownerBalance() {
+    return round2(project && project.ownerBalanceHours);
+}
+
+// the hours credited to this round, never more than it has pending
+function paintApproved(approving) {
+    var field = document.getElementById("reviewApprovedField");
+    var payField = document.getElementById("reviewPayoutField");
+
+    field.hidden = !approving;
+    payField.hidden = !approving;
+    document.getElementById("reviewBalance").hidden = !approving;
+
+    paintRounds(approving);
+    if (!approving) return;
+
+    var locked = roundLocked();
+
+    reviewApprovedInput.value = String(pendingHours());
+    reviewApprovedInput.max = String(pendingHours());
+    reviewApprovedInput.disabled = locked;
+
+    reviewPayoutInput.value = String(approvedValue());
+    reviewPayoutInput.max = String(approvedValue());
+    reviewPayoutInput.disabled = locked;
+    payoutTouched = false;
+
+    approvedHint();
+    payoutHint();
+    paintBalance();
+}
+
+// the yellow breakdown, resubmissions only
+var SUBMISSION_WORDS = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH",
+                        "SIXTH", "SEVENTH", "EIGHTH", "NINTH", "TENTH"];
+
+function paintRounds(approving) {
+    var box = document.getElementById("reviewRounds");
+    var list = submissionSnapshots();
+    var last = previousRound();
+
+    box.hidden = !approving || (list.length < 2 && !last);
+    if (box.hidden) return;
+
+    box.replaceChildren();
+
+    var head = document.createElement("div");
+    head.className = "panelHead";
+    head.textContent = roundLocked() ? "RE-QUEUED BY ADMIN" : "RE-SUBMISSION";
+    box.appendChild(head);
+
+    if (last) {
+        box.appendChild(submissionRow("TRACKED AT PREVIOUS SHIP", hoursLabel(roundFigure(last.hours))));
+        box.appendChild(submissionRow("APPROVED THEN", hoursLabel(roundFigure(last.approved))));
+        box.appendChild(submissionRow("PAID OUT THEN", hoursLabel(roundFigure(last.payout))));
+    }
+
+    list.forEach(function (entry, index) {
+        var hours = entry && (entry.hours === null || entry.hours === undefined)
+            ? null
+            : Number(entry.hours);
+
+        box.appendChild(submissionRow(
+            (SUBMISSION_WORDS[index] || (index + 1) + "TH") + " SUBMISSION", hoursLabel(hours)));
+    });
+
+    var pending = submissionRow(
+        last ? "LOGGED SINCE PREVIOUS APPROVAL" : "PENDING APPROVAL",
+        roundLocked() ? "—" : hoursLabel(pendingHours()));
+    pending.className = "submissionRow panelTotal";
+    box.appendChild(pending);
+}
+
+// a stored round figure, or nothing when the round predates the columns
+function roundFigure(value) {
+    return value === null || value === undefined ? null : Number(value);
+}
+
+// what the payout does to their balance
+function paintBalance() {
+    var box = document.getElementById("reviewBalance");
+    if (box.hidden) return;
+
+    box.replaceChildren();
+
+    var head = document.createElement("div");
+    head.className = "panelHead";
+    head.textContent = "HOUR BALANCE";
+    box.appendChild(head);
+
+    box.appendChild(submissionRow("CURRENT BALANCE", hoursLabel(ownerBalance())));
+    box.appendChild(submissionRow("ESTIMATED USER PAYOUT", hoursLabel(payoutValue())));
+
+    var total = submissionRow("NEW BALANCE",
+        hoursLabel(round2(ownerBalance() + payoutValue())));
+    total.className = "submissionRow panelTotal";
+    box.appendChild(total);
+}
+
+function approvedValue() {
+    var raw = reviewApprovedInput.value.trim();
+    var hours = Number(raw);
+    return raw && isFinite(hours) && hours > 0 ? round2(hours) : 0;
+}
+
+function payoutValue() {
+    var raw = reviewPayoutInput.value.trim();
+    var hours = Number(raw);
+    return raw && isFinite(hours) && hours > 0 ? round2(hours) : 0;
+}
+
+function approvedOver() {
+    var raw = reviewApprovedInput.value.trim();
+    if (!raw) return false;
+
+    var hours = Number(raw);
+    return isFinite(hours) && hours > pendingHours();
+}
+
+function payoutOver() {
+    var raw = reviewPayoutInput.value.trim();
+    if (!raw) return false;
+
+    var hours = Number(raw);
+    return isFinite(hours) && hours > approvedValue();
+}
+
+function approvedHint() {
+    var hint = document.getElementById("reviewApprovedHint");
+    var over = approvedOver();
+    var resubmission = submissionSnapshots().length > 1;
+
+    hint.classList.toggle("over", over);
+    hint.textContent = roundLocked()
+        ? "This round was re-opened by an administrator. Hours stay frozen until they re-submit."
+        : over
+        ? "Only " + pendingHours() + " hours are pending approval. The approved hours cannot be higher."
+        : resubmission
+        ? "Pending " + pendingHours() + " new hours since their previous approval."
+        : "Pending " + pendingHours() + " submitted hours.";
+}
+
+function payoutHint() {
+    var hint = document.getElementById("reviewPayoutHint");
+    var over = payoutOver();
+
+    hint.classList.toggle("over", over);
+    hint.textContent = roundLocked()
+        ? "No payout on an administrator's round. Their balance is untouched."
+        : over
+        ? "The payout cannot be more than the " + approvedValue() + " approved hours."
+        : "Estimated user payout. Credited to their shop balance on approval.";
+}
+
+reviewApprovedInput.addEventListener("input", function () {
+    reviewPayoutInput.max = String(approvedValue());
+    if (!payoutTouched || payoutValue() > approvedValue()) {
+        reviewPayoutInput.value = String(approvedValue());
+    }
+    approvedHint();
+    payoutHint();
+    paintBalance();
+});
+
+reviewPayoutInput.addEventListener("input", function () {
+    payoutTouched = true;
+    payoutHint();
+    paintBalance();
+});
 
 function closeReviewModal() {
     closeModal(reviewModal);
@@ -1735,11 +2392,134 @@ function closeReviewModal() {
 
 document.getElementById("approveBtn").addEventListener("click", function () { openReviewModal("approve"); });
 document.getElementById("rejectBtn").addEventListener("click", function () { openReviewModal("reject"); });
+document.getElementById("fraudBtn").addEventListener("click", function () { openReviewModal("fraud"); });
 
 // the queue, administrators only
 document.getElementById("queueBtn").addEventListener("click", function () {
     if (!canReview || !project) return;
 
+    if (fraudRejected()) {
+        document.getElementById("queueText").textContent =
+            "“" + project.name + "” will go back under review and its permanent rejection will be lifted.";
+        openModal(queueModal, document.getElementById("queueGo"));
+        return;
+    }
+
+    runQueue();
+});
+
+// section for editing remarks, no hours and no balance
+function openRemarksModal() {
+    if (!canReview || !project) return;
+
+    var status = reviewStatus();
+    if (status !== "approved" && status !== "rejected") return;
+
+    var permanent = fraudRejected();
+    var stored = project.reviewRemarks || "";
+
+    if (permanent && stored.indexOf(FRAUD_PREFIX) === 0) {
+        stored = stored.slice(FRAUD_PREFIX.length).trim();
+    }
+
+    document.getElementById("remarksPrefix").hidden = !permanent;
+    document.getElementById("remarksLabel").textContent =
+        permanent ? "ADDITIONAL REMARKS" : "REVIEW REMARKS";
+
+    remarksInput.maxLength = permanent ? 500 - FRAUD_PREFIX.length - 1 : 500;
+    remarksInput.value = stored;
+    remarksError.textContent = "";
+    remarksSave.disabled = false;
+    remarksSave.textContent = "SAVE REMARKS";
+
+    openModal(remarksModal, remarksInput);
+}
+
+function closeRemarksModal() {
+    closeModal(remarksModal);
+}
+
+document.getElementById("remarksBtn").addEventListener("click", openRemarksModal);
+document.getElementById("remarksCancel").addEventListener("click", closeRemarksModal);
+document.getElementById("remarksClose").addEventListener("click", closeRemarksModal);
+
+remarksModal.addEventListener("mousedown", function (e) {
+    if (e.target === remarksModal) closeRemarksModal();
+});
+
+remarksSave.addEventListener("click", function () {
+    var remarks = remarksInput.value.trim();
+
+    if (!remarks) {
+        remarksError.textContent = "Remarks are required.";
+        remarksInput.focus();
+        return;
+    }
+
+    remarksError.textContent = "";
+    remarksSave.disabled = true;
+    remarksSave.textContent = "SAVING\u2026";
+
+    fetch("/api/projects/review", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            projectId: Number(projectId),
+            decision: "remarks",
+            remarks: remarks
+        })
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json()
+                .catch(function () { return {}; })
+                .then(function (payload) {
+                    return { ok: response.ok, status: response.status, payload: payload };
+                });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            if (!result.ok) {
+                remarksError.textContent = result.status === 404
+                    ? "You cannot edit this project's remarks."
+                    : (result.payload.error || "Could not save the remarks.");
+                remarksSave.disabled = false;
+                remarksSave.textContent = "SAVE REMARKS";
+                return;
+            }
+
+            adoptProject(result.payload.project);
+            closeRemarksModal();
+            renderView();
+            stashEdit(project);
+            refreshFigures();
+        })
+        .catch(function () {
+            remarksError.textContent = "Could not reach ZoneOut.";
+            remarksSave.disabled = false;
+            remarksSave.textContent = "SAVE REMARKS";
+        });
+});
+
+function closeQueueModal() {
+    closeModal(queueModal);
+}
+
+document.getElementById("queueCancel").addEventListener("click", closeQueueModal);
+document.getElementById("queueClose").addEventListener("click", closeQueueModal);
+
+queueModal.addEventListener("mousedown", function (e) {
+    if (e.target === queueModal) closeQueueModal();
+});
+
+document.getElementById("queueGo").addEventListener("click", function () {
+    closeQueueModal();
+    runQueue();
+});
+
+function runQueue() {
     var button = document.getElementById("queueBtn");
     var note = document.getElementById("queueError");
 
@@ -1774,16 +2554,18 @@ document.getElementById("queueBtn").addEventListener("click", function () {
                 return;
             }
 
-            project = result.payload.project;
+            adoptProject(result.payload.project);
             renderView();
             stashEdit(project);
+            refreshFigures();
         })
         .catch(function () {
             button.textContent = "ADD TO QUEUE";
             note.textContent = "Could not reach ZoneOut.";
             button.disabled = false;
         });
-});
+}
+
 document.getElementById("reviewCancel").addEventListener("click", closeReviewModal);
 document.getElementById("reviewClose").addEventListener("click", closeReviewModal);
 
@@ -1791,8 +2573,9 @@ reviewModal.addEventListener("mousedown", function (e) {
     if (e.target === reviewModal) closeReviewModal();
 });
 
-reviewConfirm.addEventListener("click", function () {
+function sendReview(wipe) {
     var remarks = reviewRemarksInput.value.trim();
+    var approving = reviewDecision === "approve";
 
     if (!remarks) {
         reviewError.textContent = "Remarks are required.";
@@ -1800,16 +2583,77 @@ reviewConfirm.addEventListener("click", function () {
         return;
     }
 
-    var label = reviewConfirm.textContent;
+    var approved = null;
+    var payout = null;
+
+    if (approving) {
+        var rawApproved = reviewApprovedInput.value.trim();
+
+        if (!rawApproved) {
+            reviewError.textContent = "The approved hours are required.";
+            reviewApprovedInput.focus();
+            return;
+        }
+
+        approved = Number(rawApproved);
+
+        if (!isFinite(approved) || approved < 0) {
+            reviewError.textContent = "The approved hours must be zero or more.";
+            reviewApprovedInput.focus();
+            return;
+        }
+
+        if (approved > pendingHours()) {
+            reviewError.textContent = "The approved hours cannot be more than the "
+                + pendingHours() + " hours pending approval.";
+            reviewApprovedInput.focus();
+            return;
+        }
+
+        var rawPayout = reviewPayoutInput.value.trim();
+
+        if (!rawPayout) {
+            reviewError.textContent = "The payout hours are required.";
+            reviewPayoutInput.focus();
+            return;
+        }
+
+        payout = Number(rawPayout);
+
+        if (!isFinite(payout) || payout < 0) {
+            reviewError.textContent = "The payout must be zero or more.";
+            reviewPayoutInput.focus();
+            return;
+        }
+
+        if (payout > approved) {
+            reviewError.textContent = "The payout cannot be more than the "
+                + approved + " approved hours.";
+            reviewPayoutInput.focus();
+            return;
+        }
+    }
+
+    var pressed = wipe ? reviewWipe : reviewConfirm;
+    var label = pressed.textContent;
+
     reviewError.textContent = "";
     reviewConfirm.disabled = true;
-    reviewConfirm.textContent = "SAVING…";
+    reviewWipe.disabled = true;
+    pressed.textContent = "SAVING…";
 
     fetch("/api/projects/review", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: Number(projectId), decision: reviewDecision, remarks: remarks })
+        body: JSON.stringify({
+            projectId: Number(projectId),
+            decision: reviewDecision,
+            remarks: remarks,
+            approvedHours: approved,
+            payoutHours: payout,
+            wipe: wipe === true
+        })
     })
         .then(function (response) {
             if (response.status === 403) { window.location.replace("/ban"); return null; }
@@ -1827,21 +2671,27 @@ reviewConfirm.addEventListener("click", function () {
                     ? "You cannot review this project."
                     : (result.payload.error || "Could not save the review.");
                 reviewConfirm.disabled = false;
-                reviewConfirm.textContent = label;
+                reviewWipe.disabled = false;
+                pressed.textContent = label;
                 return;
             }
 
-            project = result.payload.project;
+            adoptProject(result.payload.project);
             closeReviewModal();
             renderView();
             stashEdit(project);
+            refreshFigures();
         })
         .catch(function () {
             reviewError.textContent = "Could not reach ZoneOut.";
             reviewConfirm.disabled = false;
-            reviewConfirm.textContent = label;
+            reviewWipe.disabled = false;
+            pressed.textContent = label;
         });
-});
+}
+
+reviewConfirm.addEventListener("click", function () { sendReview(false); });
+reviewWipe.addEventListener("click", function () { sendReview(true); });
 
 function stashRemove(removedId) {
     try {
@@ -1867,6 +2717,7 @@ var lastInputWasKeyboard = false;
 
 // audio
 var bgAudio = document.getElementById("bgAudio");
+var altAudio = document.getElementById("altAudio");
 var uiClick = document.getElementById("uiClick");
 var FADE_IN_MS = 1600;
 
@@ -1886,26 +2737,44 @@ function clampVolume(level) {
 var fadeGeneration = 0;
 
 function fadeInAudio() {
+    var clip = activeTrack();
     var mine = ++fadeGeneration;
     var start = performance.now();
 
     function step(now) {
         if (mine !== fadeGeneration) return;
         var progress = Math.min((now - start) / FADE_IN_MS, 1);
-        bgAudio.volume = clampVolume(masterVolume * progress);
+        clip.volume = clampVolume(masterVolume * progress);
         if (progress < 1) requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
     setTimeout(function () {
-        if (mine === fadeGeneration) bgAudio.volume = clampVolume(masterVolume);
+        if (mine === fadeGeneration) clip.volume = clampVolume(masterVolume);
     }, FADE_IN_MS + 250);
 }
 
+// section for the corruption music swap
+var trackSwapped = false;
+
+function activeTrack() {
+    return trackSwapped ? altAudio : bgAudio;
+}
+
+window.zoneoutAudio = {
+    main: function () { return bgAudio; },
+    alt: function () { return altAudio; },
+    level: function () { return masterVolume; },
+    retire: function () { fadeGeneration++; },
+    swapped: function () { return trackSwapped; },
+    setSwapped: function (on) { trackSwapped = Boolean(on); }
+};
+
 function resumeAudio() {
-    if (!bgAudio.paused || masterVolume === 0) return;
-    bgAudio.volume = 0;
-    bgAudio.play().then(fadeInAudio).catch(function () {  });
+    var clip = activeTrack();
+    if (!clip.paused || masterVolume === 0) return;
+    clip.volume = 0;
+    clip.play().then(fadeInAudio).catch(function () {  });
 }
 
 // click sound
@@ -1940,6 +2809,7 @@ volumeSlider.addEventListener("input", function () {
 
     fadeGeneration++;
     bgAudio.volume = clampVolume(masterVolume);
+    altAudio.volume = trackSwapped ? clampVolume(masterVolume) : 0;
     syncVolumeDisplay();
 
     resumeAudio();
@@ -1947,6 +2817,7 @@ volumeSlider.addEventListener("input", function () {
 
 resumeAudio();
 bgAudio.addEventListener("canplay", resumeAudio);
+altAudio.addEventListener("canplay", resumeAudio);
 
 var videoBG = document.getElementById("videoBG");
 
@@ -1960,10 +2831,25 @@ document.addEventListener("visibilitychange", function () {
     }
 });
 
+// section for periodic corruption, the music swap only
+function startCorruption() {
+    if (!window.zoneoutCorruption) return;
+    window.zoneoutCorruption.register({
+        effects: ["music"],
+        busy: function () {
+            return Boolean(currentModal()) || document.getElementById("screenVeil").classList.contains("on");
+        }
+    });
+}
+
+if (window.zoneoutCorruption && window.zoneoutCorruption.ready) startCorruption();
+else document.addEventListener("zoneout:corruptionready", startCorruption, { once: true });
+
 </script>
 
 <script src="/settings.js" defer></script>
 <script src="/cutscene.js" defer></script>
+<script src="/corruption.js" defer></script>
 
 </body>
 </html>

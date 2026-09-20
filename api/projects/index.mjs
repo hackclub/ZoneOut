@@ -16,10 +16,16 @@ function present(project) {
         hackatimeProject: project.hackatime_project ?? null,
         hackatimeHours: project.hackatime_hours ?? 0,
         reviewStatus: project.review_status ?? "draft",
+        fraudRejected: Boolean(project.fraud_rejected),
         reviewRemarks: project.review_remarks ?? null,
         reviewedAt: project.reviewed_at ?? null,
         submittedAt: project.submitted_at ?? null,
         submittedHours: project.submitted_hours ?? 0,
+        approvedHours: project.approved_hours ?? 0,
+        creditedHours: project.credited_hours ?? 0,
+        judgedHours: project.judged_hours ?? 0,
+        roundSettled: Boolean(project.round_settled),
+        roundLocked: Boolean(project.round_locked),
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };

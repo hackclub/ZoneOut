@@ -2,7 +2,8 @@ import { readSession } from "../../lib/session.mjs";
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { ValidationError } from "../../lib/users.mjs";
-import { readEventState, writeEventState, eventTotals, isParticipant, derive, MAX_EVENT_HOURS } from "../../lib/event.mjs";
+import { readEventState, writeEventState, eventTotals, isParticipant, derive,
+         readFxSettings, MAX_EVENT_HOURS } from "../../lib/event.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -92,6 +93,8 @@ function readPatch(body) {
         patch.setCorruptionOverride = true;
         patch.corruptionOverride = readOptional(body.corruptionOverride, "The corruption meter", 0, 100);
     }
+
+    Object.assign(patch, readFxSettings(body));
 
     if (body.startsAt) patch.startsAt = readDate(body.startsAt, "The start date");
     if (body.endsAt) patch.endsAt = readDate(body.endsAt, "The end date");

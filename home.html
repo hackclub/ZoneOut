@@ -582,6 +582,10 @@ letter-spacing:0;
 }
 
 /* ADMIN METER FIELDS */
+#fxFireMenu{
+min-width:200px;
+}
+
 .meterField{
 display:flex;
 flex-direction:column;
@@ -625,6 +629,7 @@ opacity:1;
 --mapW:min(900px,92vw);
 --mapH:clamp(380px,68vh,600px);
 --wireLen:620px;
+--wireHalf:310px;
 position:fixed;
 top:50%;
 left:50%;
@@ -637,6 +642,7 @@ z-index:2;
 @supports (stroke-dashoffset: hypot(1px,1px)){
 .camMap{
 --wireLen:hypot(calc(var(--mapW) * 0.56), calc(var(--mapH) * 0.76));
+--wireHalf:hypot(calc(var(--mapW) * 0.28), calc(var(--mapH) * 0.38));
 }
 }
 
@@ -742,6 +748,24 @@ animation:wireCharge 3.4s linear infinite;
 animation-name:wireChargeBack;
 }
 
+.camLines .wireFx{
+display:none;
+animation-name:wireChargeFx;
+}
+
+.camMap.fxOn .camLines .wireFx{
+display:inline;
+}
+
+.camMap.fxOn .camLines .wirePulse:not(.wireFx){
+display:none;
+}
+
+@keyframes wireChargeFx{
+from{stroke-dashoffset:86px;}
+to{stroke-dashoffset:calc(0px - var(--wireHalf));}
+}
+
 @keyframes wireCharge{
 from{stroke-dashoffset:86px;}
 to{stroke-dashoffset:calc(0px - var(--wireLen));}
@@ -803,6 +827,10 @@ to{background-position:50% 0%;}
 }
 
 .camLines{
+display:none;
+}
+
+.camMap #nodeFx{
 display:none;
 }
 
@@ -1297,6 +1325,10 @@ background:rgb(var(--bg));
 <source src="https://cdn.hackclub.com/019d157e-42db-7c9d-a810-abcb9247cf07/faqmusic.mp3" type="audio/mpeg">
 </audio>
 
+<audio loop id="altAudio" preload="none">
+<source src="https://cdn.hackclub.com/01a08bd7-7896-72b9-b3c2-f05140549e0f/entity_escape_aftermath.mp3" type="audio/mpeg">
+</audio>
+
 <audio id="uiClick" preload="auto">
 <source src="https://cdn.hackclub.com/019d15a1-fb3f-7c96-96b2-7b1052138e08/buttonpress.mp3" type="audio/mpeg">
 </audio>
@@ -1368,11 +1400,16 @@ background:rgb(var(--bg));
 <polyline class="wirePulse rev" points="22,12 78,88"></polyline>
 <polyline class="wirePulse" points="78,12 22,88"></polyline>
 <polyline class="wirePulse rev" points="78,12 22,88"></polyline>
+<polyline class="wirePulse wireFx" points="22,12 50,50"></polyline>
+<polyline class="wirePulse wireFx" points="78,12 50,50"></polyline>
+<polyline class="wirePulse wireFx" points="22,88 50,50"></polyline>
+<polyline class="wirePulse wireFx" points="78,88 50,50"></polyline>
 </svg>
 <button class="camNode" id="nodeProfile" type="button" style="left:22%;top:12%">PROFILE</button>
 <button class="camNode" id="nodeShop" type="button" style="left:78%;top:12%">SHOP</button>
 <button class="camNode" id="nodeProjects" type="button" style="left:22%;top:88%">PROJECTS</button>
 <button class="camNode camEvents" id="nodeEvents" type="button" style="left:78%;top:88%">EVENTS</button>
+<button class="camNode fxNode" id="nodeFx" type="button" style="left:50%;top:50%" hidden>???</button>
 </div>
 
 <div class="subPage" id="pageSubmit">
@@ -1537,7 +1574,6 @@ Where do you live? Choose your region for shop items!
 
 <div class="modalScrim" id="eventModal" hidden>
 <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
-<button class="modalClose" id="eventModalClose" type="button" aria-label="Close">&times;</button>
 
 <div class="proseHead" id="eventModalTitle">ENTITY BREAKOUT</div>
 
@@ -1715,6 +1751,14 @@ toward the project.</p>
 <div class="modalActions">
 <button class="camNode" id="infoModalOk" type="button">GOT IT</button>
 </div>
+</div>
+</div>
+
+<div class="modalScrim" id="fxModal" hidden>
+<div class="modalCard fxCard" id="fxCard" role="dialog" aria-modal="true" aria-labelledby="fxTitle">
+<button class="modalClose" id="fxModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="fxTitle" id="fxTitle" data-text="HELP ME OUT NOW.">HELP ME OUT NOW.</div>
 </div>
 </div>
 
@@ -2064,6 +2108,7 @@ function hideToast() {
 
 function showToast(message) {
     toast.textContent = message;
+    toast.classList.remove("toastGhost");
     toast.classList.add("show");
 
     clearTimeout(toastTimer);
@@ -2080,6 +2125,7 @@ function showToast(message) {
 
 // audio
 const bgAudio = document.getElementById("bgAudio");
+const altAudio = document.getElementById("altAudio");
 const FADE_IN_MS = 1600;
 
 let masterVolume = 0.35;
@@ -2096,28 +2142,45 @@ const clampVolume = level => Math.min(Math.max(level, 0), 1);
 let fadeGeneration = 0;
 
 function fadeInAudio() {
+    const clip = activeTrack();
     const mine = ++fadeGeneration;
     const start = performance.now();
 
     function step(now) {
         if (mine !== fadeGeneration) return;
         const progress = Math.min((now - start) / FADE_IN_MS, 1);
-        bgAudio.volume = clampVolume(masterVolume * progress);
+        clip.volume = clampVolume(masterVolume * progress);
         if (progress < 1) requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
     setTimeout(() => {
-        if (mine === fadeGeneration) bgAudio.volume = clampVolume(masterVolume);
+        if (mine === fadeGeneration) clip.volume = clampVolume(masterVolume);
     }, FADE_IN_MS + 250);
 }
+
+// section for the corruption music swap
+let trackSwapped = false;
+
+function activeTrack() {
+    return trackSwapped ? altAudio : bgAudio;
+}
+
+window.zoneoutAudio = {
+    main: () => bgAudio,
+    alt: () => altAudio,
+    level: () => masterVolume,
+    retire: () => { fadeGeneration++; },
+    swapped: () => trackSwapped,
+    setSwapped: (on) => { trackSwapped = Boolean(on); }
+};
 
 // click sound
 const uiClick = document.getElementById("uiClick");
 const eventClick = document.getElementById("eventClick");
 
 function playClick(source) {
-    const clip = source && source.closest("#eventModal") ? eventClick : uiClick;
+    const clip = source && source.closest("#eventModal, #fxModal") ? eventClick : uiClick;
     clip.currentTime = 0;
     clip.volume = clampVolume(masterVolume * 0.35);
     clip.play().catch(() => {});
@@ -2125,6 +2188,9 @@ function playClick(source) {
 
 document.addEventListener("click", (e) => {
     if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .trophyBtn, .projCard, .proseFigBtn, .modalClose")) playClick(e.target);
+    if (e.target.closest("#nodeFx, #fxModal")) return;
+    if (e.target.closest(".camNode, .backBtn, .projCard, .infoBtn, .trophyBtn")
+        && window.zoneoutCorruption) window.zoneoutCorruption.press();
 });
 
 // volume
@@ -2144,19 +2210,22 @@ volumeSlider.addEventListener("input", () => {
 
     fadeGeneration++;
     bgAudio.volume = clampVolume(masterVolume);
+    altAudio.volume = trackSwapped ? clampVolume(masterVolume) : 0;
     syncVolumeDisplay();
 
     resumeAudio();
 });
 
 function resumeAudio() {
-    if (!bgAudio.paused || masterVolume === 0) return;
-    bgAudio.volume = 0;
-    bgAudio.play().then(fadeInAudio).catch(() => {});
+    const clip = activeTrack();
+    if (!clip.paused || masterVolume === 0) return;
+    clip.volume = 0;
+    clip.play().then(fadeInAudio).catch(() => {});
 }
 
 resumeAudio();
 bgAudio.addEventListener("canplay", resumeAudio);
+altAudio.addEventListener("canplay", resumeAudio);
 
 // the fillout embed, injected on first entry to /submit
 const FORM_URL = "https://forms.hackclub.com/t/gXaU3KEUqCus";
@@ -2272,20 +2341,26 @@ function sizeSparks() {
 
 // every charge shares one coordinate system, so one CTM serves all four
 function pulseCTM() {
-    const first = wirePulses[0];
-    return first && first.getScreenCTM ? first.getScreenCTM() : null;
+    for (const line of wirePulses) {
+        if (getComputedStyle(line).display === "none") continue;
+        return line.getScreenCTM ? line.getScreenCTM() : null;
+    }
+    return null;
 }
 
 // non-scaling-stroke measures the dash in screen pixels, so the head is read there too
 function pulseHead(index, ctm, lead) {
     const ends = pulseEnds[index];
+    const style = getComputedStyle(wirePulses[index]);
+    if (style.display === "none") return null;
+
     const from = new DOMPoint(ends.x1, ends.y1).matrixTransform(ctm);
     const to = new DOMPoint(ends.x2, ends.y2).matrixTransform(ctm);
 
     const span = Math.hypot(to.x - from.x, to.y - from.y);
     if (!span) return null;
 
-    const offset = parseFloat(getComputedStyle(wirePulses[index]).strokeDashoffset) || 0;
+    const offset = parseFloat(style.strokeDashoffset) || 0;
     const at = (lead - offset) / span;
 
     if (at < 0 || at > 1) return null;
@@ -2731,7 +2806,7 @@ function setInertBehind(on, dialog) {
 function anyModalOpen() {
     return projModalOpen() || htModalOpen() || regModalOpen() || lightboxOpen()
         || panelOpen(infoModal) || panelOpen(bookModal)
-        || panelOpen(eventModal) || panelOpen(boardModal);
+        || panelOpen(eventModal) || panelOpen(boardModal) || fxModalOpen();
 }
 
 // info and rulebook dialogs
@@ -2740,6 +2815,67 @@ const infoModal = document.getElementById("infoModal");
 const bookModal = document.getElementById("bookModal");
 const eventModal = document.getElementById("eventModal");
 const boardModal = document.getElementById("boardModal");
+
+// section for the corruption dialog
+const fxModal = document.getElementById("fxModal");
+const fxCard = document.getElementById("fxCard");
+let fxReturnFocus = null;
+let fxHideTimer = null;
+let fxDeep = false;
+
+function fxModalOpen() {
+    return fxModal.classList.contains("show");
+}
+
+function openFxModal(deep) {
+    if (fxModalOpen()) return;
+
+    clearTimeout(fxHideTimer);
+    fxDeep = Boolean(deep);
+    fxCard.classList.toggle("deep", fxDeep);
+
+    fxReturnFocus = document.activeElement;
+    fxModal.hidden = false;
+
+    const raise = () => fxModal.classList.add("show");
+    requestAnimationFrame(raise);
+    setTimeout(raise, 60);
+
+    document.body.classList.add("noScroll");
+    setInertBehind(true, fxModal);
+
+    document.getElementById("fxModalClose").focus({ preventScroll: true });
+}
+
+function closeFxModal() {
+    if (!fxModalOpen()) return;
+
+    const again = !fxDeep && window.zoneoutCorruption && window.zoneoutCorruption.reopens();
+
+    fxModal.classList.remove("show");
+    setInertBehind(false, fxModal);
+    restoreScroll();
+
+    clearTimeout(fxHideTimer);
+    fxHideTimer = setTimeout(() => {
+        if (!fxModalOpen()) fxModal.hidden = true;
+
+        if (again) {
+            openFxModal(true);
+            return;
+        }
+
+        fxCard.classList.remove("deep");
+        fxDeep = false;
+        maybePrompt();
+    }, 240);
+
+    if (!again && fxReturnFocus && document.contains(fxReturnFocus)) fxReturnFocus.focus();
+    fxReturnFocus = null;
+}
+
+document.getElementById("fxModalClose").addEventListener("click", closeFxModal);
+
 
 function panelOpen(modal) {
     return modal.classList.contains("show");
@@ -2782,6 +2918,7 @@ function currentModal() {
     if (projModalOpen()) return { el: projModal, close: closeProjectModal };
     if (regModalOpen()) return { el: regModal, close: closeRegionModal };
     if (htModalOpen()) return { el: htModal, close: closeHtModal };
+    if (fxModalOpen()) return { el: fxModal, close: closeFxModal };
     if (panelOpen(boardModal)) return { el: boardModal, close: closeBoard };
     if (panelOpen(eventModal)) return { el: eventModal, close: closeEvents };
     if (panelOpen(infoModal)) return { el: infoModal, close: () => closePanel(infoModal) };
@@ -2886,6 +3023,8 @@ async function refreshEventState() {
 
         eventFigures = payload;
         if (typeof payload.joined === "boolean") eventJoined = payload.joined;
+
+        publishCorruptionConfig(payload);
 
         paintMeters();
         paintJoinState();
@@ -3396,7 +3535,6 @@ async function sendBoard(payload) {
 
 trophyBtn.addEventListener("click", openBoard);
 document.getElementById("nodeEvents").addEventListener("click", () => openEvents());
-document.getElementById("eventModalClose").addEventListener("click", closeEvents);
 document.getElementById("eventClose").addEventListener("click", closeEvents);
 eventJoinBtn.addEventListener("click", joinTheEvent);
 document.getElementById("boardModalClose").addEventListener("click", closeBoard);
@@ -3428,6 +3566,11 @@ let adminHourField = null;
 let adminCorruptField = null;
 let adminStartField = null;
 let adminEndField = null;
+let adminFxField = null;
+let adminFxLevelField = null;
+let fxFireWrap = null;
+let fxFireBtn = null;
+let fxFireMenu = null;
 let adminMeterNote = null;
 let settingsAdmin = false;
 
@@ -3447,6 +3590,13 @@ function mountEventSettings() {
     api.addRow("Event start", adminStartField.wrap);
     api.addRow("Event end", adminEndField.wrap);
 
+    adminFxField = fxToggle();
+    adminFxLevelField = meterInput("FX intensity", "0 to 5, scales every effect");
+
+    api.addRow("Corruption FX", adminFxField.wrap);
+    api.addRow("FX intensity", adminFxLevelField.wrap);
+    api.addRow("Trigger FX", fxFirePicker());
+
     const save = document.createElement("button");
     save.className = "camNode settingsAction";
     save.type = "button";
@@ -3463,6 +3613,127 @@ function mountEventSettings() {
 
     adminMeterRows = api.addRow("", saveWrap);
     paintAdminMeters();
+}
+
+// section for the admin corruption trigger
+const FX_EFFECTS = [
+    { id: "music", label: "MUSIC SWAP" },
+    { id: "restore", label: "MUSIC RESTORE" },
+    { id: "border", label: "RED BORDER" },
+    { id: "node", label: "??? NODE" },
+    { id: "modal", label: "HELP MODAL" },
+    { id: "jumpscare", label: "JUMPSCARE" }
+];
+
+function fxFirePicker() {
+    const slot = document.createElement("div");
+    slot.className = "meterField settingsSlot";
+
+    fxFireWrap = document.createElement("div");
+    fxFireWrap.className = "htWrap";
+    fxFireWrap.id = "fxFireWrap";
+
+    fxFireBtn = document.createElement("button");
+    fxFireBtn.className = "camNode htBtn";
+    fxFireBtn.id = "fxFireBtn";
+    fxFireBtn.type = "button";
+    fxFireBtn.setAttribute("aria-haspopup", "listbox");
+    fxFireBtn.setAttribute("aria-expanded", "false");
+    fxFireBtn.textContent = "— choose —";
+
+    fxFireMenu = document.createElement("div");
+    fxFireMenu.className = "htMenu";
+    fxFireMenu.id = "fxFireMenu";
+    fxFireMenu.setAttribute("role", "listbox");
+    fxFireMenu.setAttribute("aria-label", "Corruption effect");
+    fxFireMenu.hidden = true;
+
+    for (const effect of FX_EFFECTS) {
+        const option = document.createElement("button");
+        option.className = "htOption";
+        option.type = "button";
+        option.setAttribute("role", "option");
+        option.textContent = effect.label;
+        option.addEventListener("click", () => fireFx(effect.id));
+        fxFireMenu.appendChild(option);
+    }
+
+    fxFireBtn.addEventListener("click", () => {
+        if (fxFireMenu.hidden) openFxFireMenu();
+        else closeFxFireMenu(true);
+    });
+
+    fxFireWrap.addEventListener("focusout", () => {
+        setTimeout(() => {
+            if (!fxFireWrap.contains(document.activeElement)) closeFxFireMenu(false);
+        }, 0);
+    });
+
+    fxFireWrap.appendChild(fxFireBtn);
+    fxFireWrap.appendChild(fxFireMenu);
+    slot.appendChild(fxFireWrap);
+
+    const note = document.createElement("div");
+    note.className = "meterHint";
+    note.textContent = "fires once, ignoring the schedule";
+    slot.appendChild(note);
+
+    return slot;
+}
+
+function openFxFireMenu() {
+    fxFireMenu.hidden = false;
+    fxFireBtn.setAttribute("aria-expanded", "true");
+    const first = fxFireMenu.firstElementChild;
+    if (first) first.focus();
+}
+
+function closeFxFireMenu(refocus) {
+    if (!fxFireMenu || fxFireMenu.hidden) return;
+    fxFireMenu.hidden = true;
+    fxFireBtn.setAttribute("aria-expanded", "false");
+    if (refocus) fxFireBtn.focus();
+}
+
+function fireFx(id) {
+    closeFxFireMenu(false);
+    if (window.zoneoutSettings) window.zoneoutSettings.close();
+
+    setTimeout(() => {
+        if (window.zoneoutCorruption) window.zoneoutCorruption.trigger(id);
+    }, 320);
+}
+
+function fxToggle() {
+    const wrap = document.createElement("div");
+    wrap.className = "meterField settingsSlot";
+
+    const field = document.createElement("button");
+    field.className = "camNode settingsAction";
+    field.type = "button";
+    field.setAttribute("role", "switch");
+    field.dataset.on = "false";
+
+    function paint() {
+        const on = field.dataset.on === "true";
+        field.setAttribute("aria-checked", on ? "true" : "false");
+        field.textContent = on ? "[X] ON" : "[ ] OFF";
+    }
+
+    field.addEventListener("click", () => {
+        field.dataset.on = field.dataset.on === "true" ? "false" : "true";
+        paint();
+    });
+
+    paint();
+    wrap.appendChild(field);
+
+    const note = document.createElement("div");
+    note.className = "meterHint";
+    note.textContent = "periodic jumpscares";
+    wrap.appendChild(note);
+
+    return { wrap, field, paint };
 }
 
 function meterInput(label, hint) {
@@ -3506,6 +3777,16 @@ function paintAdminMeters() {
 
     if (document.activeElement !== adminEndField.field) {
         adminEndField.field.value = dayOf(eventFigures.endsAt);
+    }
+
+    if (adminFxField) {
+        adminFxField.field.dataset.on = eventFigures.fxEnabled === true ? "true" : "false";
+        adminFxField.paint();
+    }
+
+    if (adminFxLevelField && document.activeElement !== adminFxLevelField.field) {
+        adminFxLevelField.field.value = String(eventFigures.fxIntensity ?? 0);
+        adminFxLevelField.field.placeholder = "0.5";
     }
 }
 
@@ -3553,7 +3834,11 @@ async function saveMeters() {
                 hoursOverride: hours === "" ? null : hours,
                 corruptionOverride: corrupt === "" ? null : corrupt,
                 startsAt: startsAt,
-                endsAt: endsAt
+                endsAt: endsAt,
+                fxEnabled: adminFxField ? adminFxField.field.dataset.on === "true" : false,
+                fxIntensity: adminFxLevelField && adminFxLevelField.field.value.trim() !== ""
+                    ? adminFxLevelField.field.value.trim()
+                    : 0
             })
         });
 
@@ -3565,6 +3850,7 @@ async function saveMeters() {
         }
 
         eventFigures = body;
+        publishCorruptionConfig(body);
         paintMeters();
         paintAdminMeters();
         if (adminMeterNote) adminMeterNote.textContent = "Saved.";
@@ -4466,6 +4752,70 @@ if (knownSession || entryPath === "/error") render(entryPath);
 
 load();
 
+// section for periodic corruption
+const nodeFx = document.getElementById("nodeFx");
+
+function publishCorruptionConfig(payload) {
+    if (!window.zoneoutCorruption || !payload) return;
+    window.zoneoutCorruption.publishConfig(payload);
+}
+
+function corruptionBusy() {
+    if (anyModalOpen()) return true;
+    if (screenVeil.classList.contains("on")) return true;
+    return currentPath === "/submit" || currentPath === "/error";
+}
+
+function revealFxNode() {
+    if (currentPath !== "/home") return false;
+    nodeFx.hidden = false;
+    camMap.classList.add("fxOn");
+    return true;
+}
+
+function ghostHint() {
+    showToast("hey! press me. its safe!");
+    toast.classList.add("toastGhost");
+}
+
+function dropGhostHint() {
+    if (!toast.classList.contains("toastGhost")) return;
+    hideToast();
+}
+
+nodeFx.addEventListener("pointerenter", ghostHint);
+nodeFx.addEventListener("focus", ghostHint);
+nodeFx.addEventListener("pointerleave", dropGhostHint);
+nodeFx.addEventListener("blur", dropGhostHint);
+
+nodeFx.addEventListener("click", () => {
+    if (window.zoneoutCorruption) window.zoneoutCorruption.jumpscare();
+});
+
+function startCorruption() {
+    const api = window.zoneoutCorruption;
+    if (!api) return;
+
+    if (eventFigures) publishCorruptionConfig(eventFigures);
+    if (api.revealed()) {
+        nodeFx.hidden = false;
+        camMap.classList.add("fxOn");
+    }
+
+    api.register({
+        effects: ["music", "border", "node"],
+        busy: corruptionBusy,
+        modal: () => {
+            if (currentPath !== "/home" && currentPath !== "/profile") return;
+            afterArrival(() => openFxModal(false));
+        },
+        reveal: revealFxNode
+    });
+}
+
+if (window.zoneoutCorruption && window.zoneoutCorruption.ready) startCorruption();
+else document.addEventListener("zoneout:corruptionready", startCorruption, { once: true });
+
 // nothing decodes for a hidden tab
 const videoBG = document.getElementById("videoBG");
 
@@ -4478,6 +4828,7 @@ document.addEventListener("visibilitychange", () => {
 
 <script src="/settings.js" defer></script>
 <script src="/cutscene.js" defer></script>
+<script src="/corruption.js" defer></script>
 
 </body>
 </html>
