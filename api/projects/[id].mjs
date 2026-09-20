@@ -157,7 +157,7 @@ async function remove(req, res, projectId) {
         let deleted = await deleteProjectForUser(user.user_id, projectId);
 
         if (!deleted && isAdminEmail(user.email)) {
-            deleted = await deleteProjectAsAdmin(projectId);
+            deleted = await deleteProjectAsAdmin(projectId, user.user_id);
         }
 
         if (!deleted) {

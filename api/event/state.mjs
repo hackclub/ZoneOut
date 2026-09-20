@@ -64,7 +64,7 @@ async function write(req, res) {
     }
 
     try {
-        const state = await writeEventState(patch);
+        const state = await writeEventState(patch, null, admin.user_id);
         const totals = await eventTotals();
         return res.status(200).json({ ok: true, ...derive(state, totals) });
     } catch (err) {

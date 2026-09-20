@@ -102,13 +102,13 @@ export default async function handler(req, res) {
     try {
         if (writing) await withTransaction(async client => {
             for (const edit of staged.balances) {
-                const row = await setBalanceHours(edit.userId, edit.balanceHours, client);
+                const row = await setBalanceHours(edit.userId, edit.balanceHours, client, admin.user_id);
                 if (!row) throw new CommandError(`no user ${edit.userId}`);
                 applied.push(`set user ${edit.userId} to ${edit.balanceHours} hours`);
             }
 
             for (const command of staged.commands) {
-                applied.push(await applyCommand(command, client));
+                applied.push(await applyCommand(command, client, admin.user_id));
             }
 
             for (const review of staged.reviews) {
@@ -138,7 +138,7 @@ export default async function handler(req, res) {
             }
 
             if (staged.fx) {
-                await writeEventState(staged.fx, client);
+                await writeEventState(staged.fx, client, admin.user_id);
                 applied.push("retuned the corruption effects");
             }
         });
