@@ -1941,9 +1941,9 @@ toward the project.</p>
 <div class="proseHead" id="infoModalTitle">DEADLINE</div>
 
 <div class="modalProse">
-<p>Project submission deadline is on <strong>September 7th!</strong></p>
+<p>Project submission deadline is on <strong>September 30th!</strong></p>
 <p>To create a project, hit the <strong>"New Project"</strong> button and get started!</p>
-<p>To submit a project, go back to the home page and press the <strong>"Submit"</strong> button!</p>
+<p>To submit a project, submit it via your projects page once your project is done building!</p>
 </div>
 
 <div class="modalActions">
@@ -1961,10 +1961,6 @@ toward the project.</p>
 
 <div class="mailList" id="mailList" hidden></div>
 <div class="mailEmpty" id="mailEmpty">Nothing has been sent yet.</div>
-
-<div class="modalActions">
-<button class="camNode" id="mailOk" type="button">CLOSE</button>
-</div>
 </div>
 </div>
 
@@ -3294,7 +3290,6 @@ function closeMail() {
 
 mailBtn.addEventListener("click", openMail);
 document.getElementById("mailModalClose").addEventListener("click", closeMail);
-document.getElementById("mailOk").addEventListener("click", closeMail);
 
 mailModal.addEventListener("mousedown", (e) => {
     if (e.target === mailModal) closeMail();
