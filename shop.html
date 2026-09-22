@@ -770,6 +770,63 @@ box-shadow:0 0 12px rgba(var(--newFlagGlow),0.45);
 pointer-events:none;
 }
 
+/* sale ribbon */
+.saleFlag{
+position:absolute;
+top:22px;
+left:-58px;
+z-index:3;
+width:164px;
+padding:5px 0;
+text-align:center;
+font-size:12px;
+font-weight:bold;
+letter-spacing:2px;
+line-height:1.2;
+white-space:nowrap;
+color:rgb(var(--saleFlagText));
+background:
+linear-gradient(to right,
+rgba(var(--saleFlagDeep),0.95) 0%,
+rgba(var(--saleFlagDeep),0) 22%,
+rgba(var(--saleFlagDeep),0) 78%,
+rgba(var(--saleFlagDeep),0.95) 100%),
+linear-gradient(to bottom,
+rgb(var(--saleFlagHot)) 0%,
+rgb(var(--saleFlag)) 46%,
+rgb(var(--saleFlagDeep)) 100%);
+transform:rotate(-45deg);
+box-shadow:
+inset 0 1px 0 rgba(var(--saleFlagShine),0.5),
+inset 0 -2px 5px rgba(var(--saleFlagDeep),0.7),
+0 5px 12px rgba(var(--bg),0.7);
+pointer-events:none;
+}
+
+.itemHours .wasHours{
+color:rgba(var(--fg),0.4);
+text-decoration:line-through;
+}
+
+.orderSale{
+margin-top:6px;
+font-size:13px;
+letter-spacing:2px;
+font-weight:bold;
+color:rgb(var(--saleFlagHot));
+}
+
+.orderSale[hidden]{
+display:none;
+}
+
+.orderSale .wasHours{
+color:rgba(var(--fg),0.45);
+text-decoration:line-through;
+font-weight:normal;
+letter-spacing:1px;
+}
+
 /* full view of an item picture */
 .lightbox{
 position:fixed;
@@ -1052,6 +1109,7 @@ justify-content:center;
 }
 
 .orderCost,
+.orderSale,
 .orderCharge{
 text-align:center;
 }
@@ -1270,6 +1328,7 @@ display:none;
 <div class="orderInfo">
 <div class="orderName" id="orderName"></div>
 <div class="orderCost" id="orderCost"></div>
+<div class="orderSale" id="orderSale" hidden></div>
 <div class="orderCharge" id="orderCharge" hidden></div>
 <p class="orderDesc" id="orderDesc"></p>
 
@@ -1405,7 +1464,7 @@ display:none;
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemLimit, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
+import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemListHours, itemSalePercent, itemLimit, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
 
 // elements
 const sectionsHost = document.getElementById("shopSections");
@@ -1418,6 +1477,7 @@ const orderCost = document.getElementById("orderCost");
 const orderDesc = document.getElementById("orderDesc");
 const orderWarning = document.getElementById("orderWarning");
 const orderCharge = document.getElementById("orderCharge");
+const orderSale = document.getElementById("orderSale");
 const orderNote = document.getElementById("orderNote");
 const orderBalanceEl = document.getElementById("orderBalance");
 const orderArt = document.getElementById("orderArt");
@@ -1591,10 +1651,27 @@ function renderSections() {
                 card.appendChild(note);
             }
 
+            const off = itemSalePercent(item, priced);
+
+            if (off) {
+                const sale = document.createElement("div");
+                sale.className = "saleFlag";
+                sale.textContent = off + "% OFF";
+                card.appendChild(sale);
+            }
+
             const price = document.createElement("div");
             price.className = "itemHours";
             price.appendChild(hourGlyph());
             price.appendChild(document.createTextNode(hoursLabel(itemHours(item, priced))));
+
+            if (off) {
+                const was = document.createElement("span");
+                was.className = "wasHours";
+                was.textContent = hoursLabel(itemListHours(item, priced));
+                price.appendChild(was);
+            }
+
             card.appendChild(price);
 
             card.addEventListener("click", () => openOrder(item.id));
@@ -1978,6 +2055,22 @@ function updateOrderButton() {
 
     orderCost.textContent = hoursLabel(each) + " each · "
                           + hoursLabel(cost) + " total";
+
+    // the sale line, priced in the browsing region like orderCost
+    const saved = itemSalePercent(openItem, priceRegion());
+
+    if (saved) {
+        orderSale.textContent = "";
+        orderSale.appendChild(document.createTextNode(saved + "% OFF · usually "));
+        const was = document.createElement("span");
+        was.className = "wasHours";
+        was.textContent = hoursLabel(itemListHours(openItem, priceRegion())) + " each";
+        orderSale.appendChild(was);
+        orderSale.hidden = false;
+    } else {
+        orderSale.textContent = "";
+        orderSale.hidden = true;
+    }
 
     // the declared region is what is charged
     const charge = chargeRegion();

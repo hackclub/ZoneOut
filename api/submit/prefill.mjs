@@ -1,8 +1,8 @@
 import { requireUser } from "../../lib/guard.mjs";
-import { readSubmitProfile, clearSubmitProfile } from "../../lib/users.mjs";
+import { readSubmitProfile, clearSubmitProfile, getProjectById } from "../../lib/users.mjs";
 import { openProfile, sealRef } from "../../lib/secretbox.mjs";
 import { hasEnv } from "../../lib/env.mjs";
-import { CAPTURED_FIELDS } from "../../submitFields.js";
+import { CAPTURED_FIELDS, PROJECT_FIELDS } from "../../submitFields.js";
 import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
@@ -47,6 +47,9 @@ async function prefill(user, res, projectId) {
     put("email", user.email);
     put("slack_id", user.slack_id);
 
+    // the project's own half, held here rather than captured, so it is per project and current
+    if (projectId) await putProject(put, user.user_id, projectId);
+
     // the sealed half, absent on a deployment with no key
     let ref = null;
 
@@ -82,6 +85,38 @@ async function prefill(user, res, projectId) {
     }
 
     return res.status(200).json({ ok: true, params, ref });
+}
+
+// the project the form was opened from, and only when it belongs to this session
+async function putProject(put, userId, projectId) {
+    let row;
+    try {
+        row = await getProjectById(projectId);
+    } catch (err) {
+        console.error("submit project read failed:", err.message);
+        return;
+    }
+
+    if (!row || row.user_id !== userId) return;
+
+    const sources = {
+        project_description: row.description,
+        code_url: row.repo_url,
+        demo_url: row.demo_url
+    };
+
+    // PROJECT_FIELDS is the list, so a key added there with no source is skipped, never uncapped
+    for (const [key, max] of Object.entries(PROJECT_FIELDS)) {
+        put(key, clip(sources[key], max));
+    }
+}
+
+// a cut that cannot strand half a surrogate pair, which encodeURIComponent throws on
+function clip(value, max) {
+    if (typeof value !== "string" || value.length <= max) return value;
+
+    const cut = value.slice(0, max);
+    return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
 }
 
 // forget what we captured

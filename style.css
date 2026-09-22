@@ -63,9 +63,16 @@
 --newFlag:255,80,80;
 --newFlagText:12,0,0;
 --newFlagGlow:255,107,107;
+--saleFlag:214,28,28;
+--saleFlagHot:255,86,86;
+--saleFlagDeep:118,8,8;
+--saleFlagText:255,240,240;
+--saleFlagShine:255,196,196;
 --reviewOk:74,222,128;
 --reviewBad:248,81,73;
 --reviewWait:250,204,21;
+--mailDot:255,60,60;
+--mailDotGlow:255,120,120;
 /* HALLOWEEN CARDS */
 --pumpkin:232,151,74;
 --pumpkinSoft:224,160,102;
@@ -2149,6 +2156,117 @@ animation:none !important;
 transform:none;
 filter:contrast(1.1) saturate(1.1);
 }
+}
+
+/* ANNOUNCEMENT PROSE */
+.annBody{
+font-size:15px;
+line-height:1.9;
+color:rgba(var(--fg),0.9);
+}
+
+.annBody > *:first-child{
+margin-top:0;
+}
+
+.annBody > *:last-child{
+margin-bottom:0;
+}
+
+.annP{
+margin:0 0 16px;
+}
+
+.annH1{
+font-size:clamp(15px,2.2vw,18px);
+letter-spacing:4px;
+font-weight:bold;
+color:rgb(var(--accentText));
+margin:26px 0 14px;
+padding-bottom:8px;
+border-bottom:1px solid rgba(var(--accent),0.35);
+}
+
+.annH2{
+font-size:15px;
+letter-spacing:2px;
+font-weight:bold;
+color:rgb(var(--accentTextSoft));
+margin:22px 0 10px;
+}
+
+.annH3{
+font-size:14px;
+letter-spacing:1px;
+font-weight:bold;
+color:rgba(var(--fg),0.95);
+margin:18px 0 8px;
+}
+
+.annBody strong{
+font-weight:bold;
+color:rgb(var(--fg));
+}
+
+.annBody em{
+font-style:italic;
+opacity:0.85;
+}
+
+.annBody u{
+text-decoration:underline;
+text-underline-offset:3px;
+}
+
+.annBody s{
+opacity:0.6;
+}
+
+.annCode{
+padding:1px 6px;
+background:rgba(var(--fg),0.09);
+border:1px solid rgba(var(--accent),0.3);
+color:rgb(var(--accentText));
+font-size:13px;
+}
+
+.annQuote{
+margin:0 0 16px;
+padding:2px 0 2px 16px;
+border-left:2px solid rgba(var(--accent),0.55);
+color:rgba(var(--fg),0.75);
+font-style:italic;
+}
+
+.annList{
+margin:0 0 16px;
+padding-left:22px;
+}
+
+.annItem{
+margin:0 0 8px;
+}
+
+.annItem::marker{
+color:rgb(var(--accentText));
+}
+
+.annHr{
+border:none;
+border-top:1px dashed rgba(var(--accent),0.4);
+margin:22px 0;
+}
+
+.annBody a{
+color:rgb(var(--accentLink));
+text-decoration:none;
+border-bottom:1px solid rgba(var(--accentLink),0.5);
+}
+
+.annBody a:hover,
+.annBody a:focus-visible{
+color:rgb(var(--fg));
+border-bottom-color:rgba(var(--fg),0.7);
 }
 
 /* CUSTOM CURSOR */

@@ -7,9 +7,12 @@ export const SHOP_SECTIONS = [
 ];
 
 // new-item label expiry
-const DEPLOYED_AT = "2026-09-13T00:00:00Z";
-const NEW_DAYS = 6;
-const NEW_UNTIL = new Date(Date.parse(DEPLOYED_AT) + NEW_DAYS * 86400000).toISOString();
+function newWindow(from, days) {
+    return new Date(Date.parse(from) + days * 86400000).toISOString();
+}
+
+const NEW_UNTIL = newWindow("2026-09-13T00:00:00Z", 6);
+const NEW_UNTIL_SUBS = newWindow("2026-09-22T00:00:00Z", 4);
 
 export function itemIsNew(item, now) {
     if (!item || !item.newUntil) return false;
@@ -19,7 +22,7 @@ export function itemIsNew(item, now) {
 
 export const SHOP_ITEMS = [
     {
-        id: "big-blahaj", fit: "contain", name: "Big Blahaj", hours: 7, section: "games", image: "https://cdn.hackclub.com/01a03ec8-3c66-7650-982f-0031f7fc041a/blahaj.webp",
+        id: "big-blahaj", fit: "contain", name: "Big Blahaj", hours: 7, discount: 1, section: "games", image: "https://cdn.hackclub.com/01a03ec8-3c66-7650-982f-0031f7fc041a/blahaj.webp",
         description: "A metre of shark. very huggable"
     },
     {
@@ -76,7 +79,7 @@ export const SHOP_ITEMS = [
         description: "EVERYBODY'S FAV BLOCK GAME!!!!"
     },
     {
-        id: "laptop-grant", zoom: 1.15, name: "Laptop Grant (100$)", hours: 25, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-565a-703d-bd88-d6e5fd21b578/laptop.png",
+        id: "laptop-grant", zoom: 1.15, name: "Laptop Grant (100$)", hours: 25, discount: 3, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-565a-703d-bd88-d6e5fd21b578/laptop.png",
         description: "need me some devices - stackable!"
     },
     {
@@ -306,6 +309,26 @@ export const SHOP_ITEMS = [
         id: "innioasis-y2", local: true, fit: "contain", name: "Innioasis Y2 MP3 Player", hours: 20, section: "tech", note: "Better version of the Y1", newUntil: NEW_UNTIL,
         image: "https://cdn.hackclub.com/01a09b03-f0e8-750c-b526-a17d150fcb24/innoasisv2.png",
         description: "The better MP3 player. 72GB and more cool features."
+    },
+    {
+        id: "spotify-subscription", fit: "contain", name: "Spotify Subscription", hours: 3, section: "games", newUntil: NEW_UNTIL_SUBS,
+        image: "https://cdn.hackclub.com/01a0c932-ecc9-7508-894f-4a166d636aad/spotify.png",
+        description: "want a break from the ads? listen to music uninterrupted!"
+    },
+    {
+        id: "tablet-grant", fit: "contain", name: "Tablet Grant (40$)", hours: 9, section: "grants", note: "Stackable", newUntil: NEW_UNTIL_SUBS,
+        image: "https://cdn.hackclub.com/01a0c932-e93a-7463-9f27-302ccafd43a0/tabletg.png",
+        description: "Buy a tablet with this grant. Stackable!"
+    },
+    {
+        id: "setup-grant", fit: "contain", name: "Setup Grant (100$)", hours: 25, discount: 3, section: "grants", note: "Stackable", newUntil: NEW_UNTIL_SUBS,
+        image: "https://cdn.hackclub.com/01a0c932-ebc8-7f93-8e3a-5c64acdfa7e6/deskchairg.png",
+        description: "Get yourself a desk or a gaming chair ONLY with this grant. Stackable!"
+    },
+    {
+        id: "camera-grant", fit: "contain", name: "Camera Grant (20$)", hours: 4, section: "grants", note: "Stackable", newUntil: NEW_UNTIL_SUBS,
+        image: "https://cdn.hackclub.com/01a0c932-eab4-74c8-8c76-6686ee883b13/camerag.png",
+        description: "Like clicking pictures? buy yourself a camera using this grant. Stackable!"
     }
 ];
 
@@ -345,12 +368,32 @@ export function itemImage(item, regionId) {
 }
 
 // regional pricing
-export function itemHours(item, regionId) {
+export function itemListHours(item, regionId) {
     if (!item) return 0;
     if (item.rates && Object.prototype.hasOwnProperty.call(item.rates, regionId)) {
         return item.rates[regionId];
     }
     return item.hours;
+}
+
+// section for sale pricing
+export function itemDiscount(item) {
+    const off = Number(item?.discount);
+    return Number.isFinite(off) && off > 0 ? off : 0;
+}
+
+export function itemHours(item, regionId) {
+    const full = itemListHours(item, regionId);
+    const off = itemDiscount(item);
+    if (!off) return full;
+    return Math.max(0, Math.round((full - off) * 100) / 100);
+}
+
+export function itemSalePercent(item, regionId) {
+    const full = itemListHours(item, regionId);
+    const off = itemDiscount(item);
+    if (!off || !full) return 0;
+    return Math.min(99, Math.max(1, Math.round((off / full) * 100)));
 }
 
 // per-user order caps

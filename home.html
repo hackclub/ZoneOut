@@ -20,6 +20,8 @@ try {
 </script>
 <title>ZoneOut Terminal</title>
 
+<script src="/announce.js"></script>
+
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -201,6 +203,185 @@ body.hasLoginBar .trophyBtn{
 top:calc(var(--loginBarH, 72px) + 20px);
 }
 
+/* MAIL BUTTON */
+.mailBtn{
+display:none;
+position:fixed;
+top:max(64px, calc(env(safe-area-inset-top) + 56px));
+right:max(20px, calc(env(safe-area-inset-right) + 14px));
+z-index:130;
+background:none;
+border:none;
+padding:8px;
+line-height:0;
+color:rgb(var(--fg));
+opacity:0.65;
+transition:opacity .2s ease, transform .3s ease, filter .2s ease;
+}
+
+html[data-mail="on"] .mailBtn{
+display:block;
+}
+
+.mailBtn[hidden]{
+display:none;
+}
+
+.mailBtn svg{
+display:block;
+width:24px;
+height:24px;
+}
+
+.mailBtn:hover,
+.mailBtn:focus-visible{
+outline:none;
+opacity:1;
+transform:scale(1.12);
+filter:drop-shadow(0 0 8px rgba(var(--fg),0.6));
+}
+
+html[data-mailnew="on"] .mailBtn{
+opacity:1;
+color:rgb(var(--mailDotGlow));
+animation:mailPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes mailPulse{
+0%, 100%{ filter:drop-shadow(0 0 7px rgba(var(--mailDotGlow),0.55)); }
+50%{ filter:drop-shadow(0 0 14px rgba(var(--mailDotGlow),1)); }
+}
+
+.mailDot{
+display:none;
+position:absolute;
+top:5px;
+right:5px;
+width:9px;
+height:9px;
+border-radius:50%;
+background:rgb(var(--mailDot));
+box-shadow:0 0 0 2px rgb(var(--bg));
+}
+
+html[data-mailnew="on"] .mailDot{
+display:block;
+}
+
+body.hasLoginBar .mailBtn{
+top:calc(var(--loginBarH, 72px) + 58px);
+}
+
+/* MAIL DIALOG */
+.mailNote{
+font-size:13px;
+letter-spacing:2px;
+opacity:0.55;
+margin:-10px 0 20px;
+}
+
+.mailList{
+display:flex;
+flex-direction:column;
+gap:12px;
+margin-bottom:24px;
+}
+
+.mailList[hidden],
+.mailEmpty[hidden]{
+display:none;
+}
+
+.mailEmpty{
+font-size:14px;
+letter-spacing:2px;
+opacity:0.5;
+margin-bottom:24px;
+}
+
+.mailItem{
+border:1px solid rgba(var(--accent),0.3);
+background:rgba(var(--panelBot),0.55);
+}
+
+.mailItem.unread{
+border-color:rgba(var(--mailDot),0.55);
+}
+
+.mailHead{
+display:block;
+width:100%;
+text-align:left;
+background:none;
+border:none;
+padding:14px 16px;
+color:rgb(var(--fg));
+font-size:14px;
+transition:background-color .2s ease, box-shadow .2s ease;
+}
+
+.mailHead:hover,
+.mailHead:focus-visible{
+outline:none;
+background:rgba(var(--fg),0.05);
+box-shadow:inset 0 0 0 1px rgba(var(--accentBright),0.45), inset 0 0 12px rgba(var(--accentGlow),0.18);
+}
+
+.mailTitle{
+display:block;
+font-weight:bold;
+letter-spacing:2px;
+color:rgb(var(--accentText));
+}
+
+.mailFlag{
+display:none;
+margin-right:8px;
+padding:1px 7px;
+font-size:10px;
+letter-spacing:2px;
+font-weight:bold;
+background:rgb(var(--mailDot));
+color:rgb(var(--newFlagText));
+vertical-align:2px;
+}
+
+.mailItem.unread .mailFlag{
+display:inline-block;
+}
+
+.mailMeta{
+display:block;
+margin-top:5px;
+font-size:11px;
+letter-spacing:2px;
+opacity:0.45;
+}
+
+.mailSum{
+display:block;
+margin-top:8px;
+font-size:13px;
+line-height:1.7;
+opacity:0.7;
+}
+
+.mailItem.open .mailSum{
+display:none;
+}
+
+.mailBody{
+display:block;
+padding:0 16px 18px;
+border-top:1px dashed rgba(var(--accent),0.28);
+margin-top:2px;
+padding-top:16px;
+}
+
+.mailBody[hidden]{
+display:none;
+}
+
 /* EVENT METERS */
 .meterDock{
 position:fixed;
@@ -316,11 +497,20 @@ body.hasMeters .trophyBtn,
 body.hasMeters .infoBtn{
 top:calc(var(--meterDockH, 70px) + 26px);
 }
+
+body.hasMeters .mailBtn{
+top:calc(var(--meterDockH, 70px) + 70px);
+}
 }
 
 @media (prefers-reduced-motion: reduce){
 .meterFill{
 transition:none;
+}
+
+html[data-mailnew="on"] .mailBtn{
+animation:none;
+filter:drop-shadow(0 0 9px rgba(var(--mailDotGlow),0.85));
 }
 }
 
@@ -1371,6 +1561,14 @@ background:rgb(var(--bg));
 </svg>
 </button>
 
+<button class="mailBtn" id="mailBtn" type="button" aria-haspopup="dialog" aria-label="Mail">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<rect x="2.6" y="5.2" width="18.8" height="13.6"/>
+<path d="M2.6 6.4 12 13.2l9.4-6.8"/>
+</svg>
+<span class="mailDot" aria-hidden="true"></span>
+</button>
+
 <div class="volumeDock">
 <label for="masterVolume">Volume</label>
 <input id="masterVolume" type="range" min="0" max="100" value="35" aria-label="Volume">
@@ -1754,6 +1952,22 @@ toward the project.</p>
 </div>
 </div>
 
+<div class="modalScrim" id="mailModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="mailModalTitle">
+<button class="modalClose" id="mailModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="proseHead" id="mailModalTitle">MAIL</div>
+<div class="mailNote">Announcements from the ZoneOut organizers.</div>
+
+<div class="mailList" id="mailList" hidden></div>
+<div class="mailEmpty" id="mailEmpty">Nothing has been sent yet.</div>
+
+<div class="modalActions">
+<button class="camNode" id="mailOk" type="button">CLOSE</button>
+</div>
+</div>
+</div>
+
 <div class="modalScrim" id="fxModal" hidden>
 <div class="modalCard fxCard" id="fxCard" role="dialog" aria-modal="true" aria-labelledby="fxTitle">
 <button class="modalClose" id="fxModalClose" type="button" aria-label="Close">&times;</button>
@@ -1980,6 +2194,9 @@ function render(path) {
     document.documentElement.dataset.trophy =
         (path === "/home" || path === "/projects" || path === "/profile") ? "on" : "off";
 
+    document.documentElement.dataset.mail =
+        (path === "/home" || path === "/projects" || path === "/profile") ? "on" : "off";
+
     showMeters(path === "/home");
 
     document.body.classList.toggle("noScroll", path === "/home" || path === "/error");
@@ -2187,9 +2404,9 @@ function playClick(source) {
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .trophyBtn, .projCard, .proseFigBtn, .modalClose")) playClick(e.target);
+    if (e.target.closest(".camNode, .backBtn, .htOption, .infoBtn, .trophyBtn, .mailBtn, .mailHead, .projCard, .proseFigBtn, .modalClose")) playClick(e.target);
     if (e.target.closest("#nodeFx, #fxModal")) return;
-    if (e.target.closest(".camNode, .backBtn, .projCard, .infoBtn, .trophyBtn")
+    if (e.target.closest(".camNode, .backBtn, .projCard, .infoBtn, .trophyBtn, .mailBtn")
         && window.zoneoutCorruption) window.zoneoutCorruption.press();
 });
 
@@ -2806,7 +3023,8 @@ function setInertBehind(on, dialog) {
 function anyModalOpen() {
     return projModalOpen() || htModalOpen() || regModalOpen() || lightboxOpen()
         || panelOpen(infoModal) || panelOpen(bookModal)
-        || panelOpen(eventModal) || panelOpen(boardModal) || fxModalOpen();
+        || panelOpen(eventModal) || panelOpen(boardModal) || panelOpen(mailModal)
+        || fxModalOpen();
 }
 
 // info and rulebook dialogs
@@ -2815,6 +3033,7 @@ const infoModal = document.getElementById("infoModal");
 const bookModal = document.getElementById("bookModal");
 const eventModal = document.getElementById("eventModal");
 const boardModal = document.getElementById("boardModal");
+const mailModal = document.getElementById("mailModal");
 
 // section for the corruption dialog
 const fxModal = document.getElementById("fxModal");
@@ -2919,6 +3138,7 @@ function currentModal() {
     if (regModalOpen()) return { el: regModal, close: closeRegionModal };
     if (htModalOpen()) return { el: htModal, close: closeHtModal };
     if (fxModalOpen()) return { el: fxModal, close: closeFxModal };
+    if (panelOpen(mailModal)) return { el: mailModal, close: closeMail };
     if (panelOpen(boardModal)) return { el: boardModal, close: closeBoard };
     if (panelOpen(eventModal)) return { el: eventModal, close: closeEvents };
     if (panelOpen(infoModal)) return { el: infoModal, close: () => closePanel(infoModal) };
@@ -2940,6 +3160,144 @@ infoModal.addEventListener("mousedown", (e) => {
 
 bookModal.addEventListener("mousedown", (e) => {
     if (e.target === bookModal) closePanel(bookModal);
+});
+
+// section for the mail dialog
+const mailBtn = document.getElementById("mailBtn");
+const mailList = document.getElementById("mailList");
+const mailEmpty = document.getElementById("mailEmpty");
+const MAIL_READ_KEY = "zoneoutMailRead";
+
+let announcements = [];
+let mailPending = null;
+
+function readMailMark() {
+    try {
+        const mark = Number(localStorage.getItem(MAIL_READ_KEY));
+        return Number.isFinite(mark) && mark > 0 ? mark : 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
+function writeMailMark(id) {
+    try { localStorage.setItem(MAIL_READ_KEY, String(id)); } catch (e) {  }
+}
+
+function newestMail() {
+    return announcements.reduce((top, note) => Math.max(top, Number(note.id) || 0), 0);
+}
+
+function paintMailFlag() {
+    document.documentElement.dataset.mailnew = newestMail() > readMailMark() ? "on" : "off";
+}
+
+function loadMail() {
+    if (mailPending) return mailPending;
+
+    mailPending = fetch("/api/announcements", { credentials: "same-origin" })
+        .then(r => (r.ok ? r.json() : null))
+        .then(data => {
+            if (data && Array.isArray(data.announcements)) announcements = data.announcements;
+            paintMailFlag();
+        })
+        .catch(() => { mailPending = null; });
+
+    return mailPending;
+}
+
+function mailStamp(value) {
+    const when = new Date(value);
+    if (Number.isNaN(when.getTime())) return "";
+    return when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function renderMail(mark) {
+    mailList.textContent = "";
+
+    announcements.forEach(note => {
+        const unread = Number(note.id) > mark;
+
+        const item = document.createElement("div");
+        item.className = "mailItem" + (unread ? " unread open" : "");
+
+        const head = document.createElement("button");
+        head.className = "mailHead";
+        head.type = "button";
+        head.setAttribute("aria-expanded", unread ? "true" : "false");
+
+        const title = document.createElement("span");
+        title.className = "mailTitle";
+
+        const flag = document.createElement("span");
+        flag.className = "mailFlag";
+        flag.textContent = "NEW";
+        title.appendChild(flag);
+        title.appendChild(document.createTextNode(note.title || "ANNOUNCEMENT"));
+
+        const meta = document.createElement("span");
+        meta.className = "mailMeta";
+        meta.textContent = (note.author || "ZONEOUT") + " · " + mailStamp(note.createdAt);
+
+        const sum = document.createElement("span");
+        sum.className = "mailSum";
+        sum.textContent = window.zoneoutAnnounce ? window.zoneoutAnnounce.summary(note.body) : "";
+
+        head.appendChild(title);
+        head.appendChild(meta);
+        head.appendChild(sum);
+
+        const body = document.createElement("div");
+        body.className = "mailBody annBody";
+        if (window.zoneoutAnnounce) window.zoneoutAnnounce.render(note.body, body);
+        body.hidden = !unread;
+
+        head.addEventListener("click", () => {
+            const open = item.classList.toggle("open");
+            body.hidden = !open;
+            head.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+
+        item.appendChild(head);
+        item.appendChild(body);
+        mailList.appendChild(item);
+    });
+
+    mailList.hidden = announcements.length === 0;
+    mailEmpty.hidden = announcements.length > 0;
+}
+
+// opening the mail is what marks it read
+function markMailRead() {
+    const newest = newestMail();
+    if (newest > readMailMark()) writeMailMark(newest);
+    paintMailFlag();
+}
+
+function openMail() {
+    const mark = readMailMark();
+
+    renderMail(mark);
+    openPanel(mailModal);
+    markMailRead();
+
+    loadMail().then(() => {
+        if (mailModal.hidden) return;
+        renderMail(mark);
+        markMailRead();
+    });
+}
+
+function closeMail() {
+    closePanel(mailModal);
+}
+
+mailBtn.addEventListener("click", openMail);
+document.getElementById("mailModalClose").addEventListener("click", closeMail);
+document.getElementById("mailOk").addEventListener("click", closeMail);
+
+mailModal.addEventListener("mousedown", (e) => {
+    if (e.target === mailModal) closeMail();
 });
 
 // section for the entity breakout event
@@ -4491,6 +4849,8 @@ function focusables() {
 
     if (document.documentElement.getAttribute("data-trophy") === "on") list.push(trophyBtn);
 
+    if (document.documentElement.getAttribute("data-mail") === "on") list.push(mailBtn);
+
     return list.filter(el => el && !el.disabled && el.getClientRects().length > 0);
 }
 
@@ -4500,7 +4860,7 @@ function dialogControls(dialog) {
 }
 
 function scrollingModal(dialog) {
-    if (!dialog.querySelector(".modalProse")) return null;
+    if (!dialog.querySelector(".modalProse, .annBody")) return null;
     return dialog.scrollHeight - dialog.clientHeight > 4 ? dialog : null;
 }
 
@@ -4740,6 +5100,7 @@ async function load() {
     eventsPending = takeFlag("zoneoutEventsOpen");
     refreshEventState();
     startStatePoll();
+    loadMail();
 
     maybePrompt();
 }

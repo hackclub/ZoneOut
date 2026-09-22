@@ -614,6 +614,22 @@ margin-bottom:18px;
 word-break:break-word;
 }
 
+.blockList{
+margin:0 0 18px;
+padding-left:22px;
+font-size:15px;
+line-height:1.8;
+word-break:break-word;
+}
+
+.blockList li{
+margin:0 0 8px;
+}
+
+.blockList li::marker{
+color:rgb(var(--danger));
+}
+
 /* VOLUME */
 .volumeDock{
 right:max(16px, calc(env(safe-area-inset-right) + 12px));
@@ -873,7 +889,8 @@ gap:16px;
 
 <div class="modalTitle" id="blockTitle">SUBMISSION NOT ALLOWED!</div>
 
-<div class="confirmText">You must add a valid repository and demo link to your project!</div>
+<div class="confirmText">Your project is not ready to submit yet:</div>
+<ul class="blockList" id="blockList"></ul>
 
 <div class="modalActions">
 <button class="camNode" id="blockOk" type="button">OK</button>
@@ -2115,7 +2132,33 @@ guidelinesModal.addEventListener("mousedown", function (e) {
     if (e.target === guidelinesModal) closeGuidelinesModal();
 });
 
-function openBlockModal() {
+function missingForSubmit() {
+    var gaps = [];
+    if (!project) return gaps;
+
+    if (!project.hackatimeProject) gaps.push("Attach a Hackatime project to this project.");
+    else if (!(Number(project.hackatimeHours) > 0)) {
+        gaps.push("Log some time on “" + project.hackatimeProject + "” first — it has no hours yet.");
+    }
+
+    if (!usableLink(project.repoUrl)) gaps.push("Add a valid code repository link.");
+    if (!usableLink(project.demoUrl)) gaps.push("Add a valid demo link.");
+
+    return gaps;
+}
+
+function openBlockModal(gaps) {
+    var list = document.getElementById("blockList");
+    var lines = gaps.length ? gaps : ["This project could not be checked. Reload the page and try again."];
+
+    list.textContent = "";
+
+    lines.forEach(function (gap) {
+        var row = document.createElement("li");
+        row.textContent = gap;
+        list.appendChild(row);
+    });
+
     openModal(blockModal, document.getElementById("blockOk"));
 }
 
@@ -2134,8 +2177,9 @@ document.getElementById("submitBtn").addEventListener("click", function () {
     if (!canEdit || adminOverride) return;
     if (reviewStatus() === "under_review") return;
 
-    if (!project || !usableLink(project.repoUrl) || !usableLink(project.demoUrl)) {
-        openBlockModal();
+    var gaps = missingForSubmit();
+    if (!project || gaps.length) {
+        openBlockModal(gaps);
         return;
     }
 

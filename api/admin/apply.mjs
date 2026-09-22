@@ -9,6 +9,7 @@ import { presentReviews } from "./reviews.mjs";
 import { presentOrders } from "./orders.mjs";
 import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
 import { readFxSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
+import { createAnnouncement, deleteAnnouncement, listAnnouncements, presentAnnouncements, normaliseTitle, normaliseBody } from "../../lib/announcements.mjs";
 
 const MAX_BATCH = 200;
 
@@ -47,9 +48,10 @@ export default async function handler(req, res) {
     const rawReviews = Array.isArray(body.reviews) ? body.reviews : [];
     const rawOrders = Array.isArray(body.orders) ? body.orders : [];
     const rawFx = body.fx && typeof body.fx === "object" ? body.fx : null;
+    const rawAnnouncements = Array.isArray(body.announcements) ? body.announcements : [];
 
     const size = balances.length + rawCommands.length + rawReviews.length + rawOrders.length
-               + (rawFx ? 1 : 0);
+               + rawAnnouncements.length + (rawFx ? 1 : 0);
 
     if (size === 0) {
         return res.status(400).json({ ok: false, error: "nothing to save" });
@@ -66,6 +68,7 @@ export default async function handler(req, res) {
             commands: rawCommands.map(line => parseCommand(line)),
             reviews: rawReviews.map(readReviewEdit),
             orders: rawOrders.map(readOrderEdit),
+            announcements: rawAnnouncements.map(readAnnouncementEdit),
             fx: rawFx ? readFxSettings(rawFx) : null
         };
 
@@ -97,7 +100,7 @@ export default async function handler(req, res) {
     const applied = [];
     const writing = staged.balances.length > 0 || staged.commands.length > 0
                  || staged.reviews.length > 0 || staged.orders.length > 0
-                 || staged.fx !== null;
+                 || staged.announcements.length > 0 || staged.fx !== null;
 
     try {
         if (writing) await withTransaction(async client => {
@@ -148,6 +151,18 @@ export default async function handler(req, res) {
                 );
             }
 
+            for (const note of staged.announcements) {
+                if (note.remove) {
+                    const gone = await deleteAnnouncement(note.announcementId, admin.user_id, client);
+                    if (!gone) throw new CommandError(`no announcement ${note.announcementId}`);
+                    applied.push(`pulled announcement ${note.announcementId}`);
+                    continue;
+                }
+
+                const posted = await createAnnouncement(note.title, note.body, admin.user_id, client);
+                applied.push(`posted announcement “${posted.title}”`);
+            }
+
             if (staged.fx) {
                 await writeEventState(staged.fx, client, admin.user_id);
                 applied.push("retuned the corruption effects");
@@ -170,6 +185,8 @@ export default async function handler(req, res) {
             users: presentUsers(await listAllUsersForAdmin()),
             reviews: staged.reviews.length ? presentReviews(await listProjectsForReview()) : null,
             orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null,
+            announcements: staged.announcements.length
+                ? presentAnnouncements(await listAnnouncements()) : null,
             fx: await readFx()
         });
     } catch (err) {
@@ -194,6 +211,23 @@ async function readFx() {
         console.error("fx settings lookup failed:", err.message);
         return null;
     }
+}
+
+// announcement validation
+function readAnnouncementEdit(entry) {
+    if (entry?.action === "delete") {
+        const announcementId = Number(entry?.announcementId);
+        if (!Number.isSafeInteger(announcementId) || announcementId < 1) {
+            throw new RangeError(`"${entry?.announcementId}" is not an announcement id`);
+        }
+        return { remove: true, announcementId };
+    }
+
+    if (entry?.action !== "post") {
+        throw new RangeError("an announcement must be posted or deleted");
+    }
+
+    return { remove: false, title: normaliseTitle(entry?.title), body: normaliseBody(entry?.body) };
 }
 
 // order decision validation

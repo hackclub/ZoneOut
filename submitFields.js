@@ -14,8 +14,20 @@ export const CAPTURED_FIELDS = {
     birthday: 32
 };
 
+// derived from the project the form was opened from, never captured
+export const PROJECT_FIELDS = {
+    project_description: 1500,
+    code_url: 500,
+    demo_url: 500
+};
+
 // every attribute the mount is allowed to carry
-export const PREFILL_KEYS = [...IDENTITY_FIELDS, ...Object.keys(CAPTURED_FIELDS), "zo_ref"];
+export const PREFILL_KEYS = [
+    ...IDENTITY_FIELDS,
+    ...Object.keys(CAPTURED_FIELDS),
+    ...Object.keys(PROJECT_FIELDS),
+    "zo_ref"
+];
 
 // the sealed payload ceiling
 export const PROFILE_MAX = 2500;
