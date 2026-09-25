@@ -1,6 +1,6 @@
 import { requireUser } from "../../lib/guard.mjs";
 import { readToken, fetchProjectStats, writeProjectHours, eventHoursFor, syncedRecently } from "../../lib/hackatime.mjs";
-import { isParticipant, writeEventHours } from "../../lib/event.mjs";
+import { writeEventHours } from "../../lib/event.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 
 export default async function handler(req, res) {
@@ -35,22 +35,24 @@ export default async function handler(req, res) {
         }
 
         // both windows in parallel, so the event figure costs no extra latency
-        const joined = await isParticipant(user.user_id);
-        const [stats, eventHours] = await Promise.all([
+        const [stats, event] = await Promise.all([
             fetchProjectStats(token),
-            joined ? eventHoursFor(user.user_id, token) : Promise.resolve(null)
+            eventHoursFor(user.user_id, token)
         ]);
 
         const settled = await writeProjectHours(user.user_id, stats);
-        if (eventHours !== null) await writeEventHours(user.user_id, eventHours);
+        await writeEventHours(user.user_id, event.total, event.projects);
+
+        const eventByProject = new Map(event.projects.map(row => [row.projectId, row.hours]));
 
         return res.status(200).json({
             ok: true,
             linked: true,
-            eventHours,
+            eventHours: event.total,
             projects: settled.map(row => ({
                 projectId: row.project_id,
-                hackatimeHours: row.hackatime_hours
+                hackatimeHours: row.hackatime_hours,
+                eventHours: eventByProject.get(row.project_id) ?? 0
             }))
         });
     } catch (err) {

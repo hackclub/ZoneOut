@@ -13,6 +13,7 @@ function newWindow(from, days) {
 
 const NEW_UNTIL = newWindow("2026-09-13T00:00:00Z", 6);
 const NEW_UNTIL_SUBS = newWindow("2026-09-22T00:00:00Z", 4);
+const NEW_UNTIL_DUO = newWindow("2026-09-25T00:00:00Z", 6);
 
 export function itemIsNew(item, now) {
     if (!item || !item.newUntil) return false;
@@ -314,6 +315,11 @@ export const SHOP_ITEMS = [
         id: "spotify-subscription", fit: "contain", name: "Spotify Subscription", hours: 3, section: "games", newUntil: NEW_UNTIL_SUBS,
         image: "https://cdn.hackclub.com/01a0c932-ecc9-7508-894f-4a166d636aad/spotify.png",
         description: "want a break from the ads? listen to music uninterrupted!"
+    },
+    {
+        id: "duolingo-premium", fit: "contain", name: "Duolingo Premium", hours: 3, section: "tech", note: "Stackable", newUntil: NEW_UNTIL_DUO,
+        image: "https://cdn.hackclub.com/01a0d994-11d4-7862-9a13-e0836ec89214/duo.jfif",
+        description: "good ol' language bird who everybody knows and loves/is afraid of. Helps in learning new languages!"
     },
     {
         id: "tablet-grant", fit: "contain", name: "Tablet Grant (40$)", hours: 9, section: "grants", note: "Stackable", newUntil: NEW_UNTIL_SUBS,

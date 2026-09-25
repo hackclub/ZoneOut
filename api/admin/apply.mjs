@@ -8,7 +8,7 @@ import { presentUsers } from "./users.mjs";
 import { presentReviews } from "./reviews.mjs";
 import { presentOrders } from "./orders.mjs";
 import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
-import { readFxSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
+import { readFxSettings, readMeterSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
 import { createAnnouncement, deleteAnnouncement, listAnnouncements, presentAnnouncements, normaliseTitle, normaliseBody } from "../../lib/announcements.mjs";
 
 const MAX_BATCH = 200;
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             reviews: rawReviews.map(readReviewEdit),
             orders: rawOrders.map(readOrderEdit),
             announcements: rawAnnouncements.map(readAnnouncementEdit),
-            fx: rawFx ? readFxSettings(rawFx) : null
+            fx: rawFx ? { ...readFxSettings(rawFx), ...readMeterSettings(rawFx) } : null
         };
 
         if (staged.fx && Object.keys(staged.fx).length === 0) staged.fx = null;
@@ -132,10 +132,12 @@ export default async function handler(req, res) {
                       fraud: review.fraud, wipe: review.wipe, extraRemarks: review.remarks }
                 );
                 if (!row) throw new CommandError(`no project ${review.projectId}`);
+                const deflated = Number(row.board_hit) || 0;
                 applied.push(
                     `${review.fraud ? "permanently rejected" : review.status} project ${review.projectId}`
                     + (review.status === "approved"
                         ? ` at ${Number(row.round_approved) || 0} hours, paying ${Number(row.awarded_hours) || 0}` : "")
+                    + (deflated > 0 ? `, taking ${deflated} hours off the leaderboard` : "")
                     + (review.wipe ? " and wiped the balance and pending orders" : "")
                 );
             }
@@ -165,7 +167,7 @@ export default async function handler(req, res) {
 
             if (staged.fx) {
                 await writeEventState(staged.fx, client, admin.user_id);
-                applied.push("retuned the corruption effects");
+                applied.push(describeMeters(staged.fx));
             }
         });
     } catch (err) {
@@ -195,6 +197,20 @@ export default async function handler(req, res) {
     }
 }
 
+// what the one event-state write actually changed
+function describeMeters(patch) {
+    const parts = [];
+    if (patch.hourGoal !== undefined) parts.push(`set the hour goal to ${patch.hourGoal}`);
+    if (patch.setHoursCeiling === true) {
+        parts.push(patch.hoursCeiling === null
+            ? "let the leaderboard meter run free"
+            : `stopped the leaderboard meter at ${patch.hoursCeiling}`);
+    }
+    if (parts.length === 0) return "retuned the corruption effects";
+    const tuned = Object.keys(patch).some(key => key.startsWith("fx"));
+    return parts.join(", ") + (tuned ? " and retuned the corruption effects" : "");
+}
+
 // the corruption knobs as they now stand
 async function readFx() {
     try {
@@ -205,7 +221,12 @@ async function readFx() {
             fxEnabled: figures.fxEnabled,
             fxIntensity: figures.fxIntensity,
             fxBeatSeconds: figures.fxBeatSeconds,
-            fxLevelScale: figures.fxLevelScale
+            fxLevelScale: figures.fxLevelScale,
+            goal: figures.goal,
+            hours: figures.hours,
+            liveHours: figures.liveHours,
+            hoursCeiling: figures.hoursCeiling,
+            hoursFrozen: figures.hoursFrozen
         };
     } catch (err) {
         console.error("fx settings lookup failed:", err.message);

@@ -205,6 +205,11 @@ opacity:0.8;
 color:rgb(var(--reviewOk));
 }
 
+.boardHoursLine{
+opacity:0.8;
+color:rgb(var(--hourBar));
+}
+
 /* SUBMISSION HISTORY */
 .submissionList{
 display:block;
@@ -729,6 +734,10 @@ gap:16px;
 <svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
 <span id="viewApprovedValue"></span>
 </div>
+<div class="activeHours boardHoursLine" id="viewBoardHours" hidden>
+<svg class="hourMark" aria-hidden="true"><use href="#clockGlyph"></use></svg>
+<span id="viewBoardHoursValue"></span>
+</div>
 <div class="submissionList" id="viewSubmissions" hidden></div>
 <button class="reviewLine" id="viewReview" type="button" aria-expanded="false" hidden></button>
 <div class="reviewDrop" id="viewRemarks" hidden></div>
@@ -1155,6 +1164,27 @@ function newHours() {
     return Math.round(Math.max(since, 0) * 10) / 10;
 }
 
+// section for the leaderboard contribution, the owner and administrators only
+function boardHoursLine() {
+    var line = document.getElementById("viewBoardHours");
+    var figure = project ? project.eventHours : null;
+    var show = (canReview || owns()) && typeof figure === "number";
+
+    line.hidden = !show;
+    if (!show) return;
+
+    var lp = Math.round((Number(figure) || 0) * 100) / 100;
+    var cut = Math.round((Number(project.eventDeducted) || 0) * 100) / 100;
+    var net = Math.round(Math.max(lp - cut, 0) * 100) / 100;
+
+    var text = project.onLeaderboard === false
+        ? net + " HOURS WOULD COUNT ON THE LEADERBOARD \u2014 NOT ON IT YET"
+        : net + " HOURS ON THE LEADERBOARD";
+
+    document.getElementById("viewBoardHoursValue").textContent =
+        cut > 0 ? text + " (\u2212" + cut + " DEFLATED)" : text;
+}
+
 function approvedLine() {
     var line = document.getElementById("viewApproved");
     var show = canReview && project && project.reviewStatus === "approved";
@@ -1446,6 +1476,7 @@ function renderView() {
     document.getElementById("viewId").textContent = ownerLine();
     hoursLine();
     approvedLine();
+    boardHoursLine();
     submissionHistory();
     document.getElementById("viewDescription").textContent = project.description;
 

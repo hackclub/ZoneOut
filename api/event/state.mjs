@@ -89,6 +89,11 @@ function readPatch(body) {
         patch.hoursOverride = readOptional(body.hoursOverride, "The hour meter", 0, MAX_EVENT_HOURS);
     }
 
+    if (Object.prototype.hasOwnProperty.call(body, "hoursCeiling")) {
+        patch.setHoursCeiling = true;
+        patch.hoursCeiling = readOptional(body.hoursCeiling, "The hour ceiling", 0, MAX_EVENT_HOURS);
+    }
+
     if (Object.prototype.hasOwnProperty.call(body, "corruptionOverride")) {
         patch.setCorruptionOverride = true;
         patch.corruptionOverride = readOptional(body.corruptionOverride, "The corruption meter", 0, 100);

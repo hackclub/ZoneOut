@@ -48,6 +48,8 @@ async function write(req, res) {
         return res.status(403).json({ ok: false, error: "bad origin" });
     }
 
+    if (await limited(res, "event-board-write", admin.user_id, 60, 60)) return;
+
     let body;
     try {
         body = await readJsonBody(req);
@@ -60,7 +62,7 @@ async function write(req, res) {
     }
 
     try {
-        await apply(body);
+        await apply(body, admin.user_id);
         return res.status(200).json({ ok: true, isAdmin: true, rows: present(await leaderboard()) });
     } catch (err) {
         if (err instanceof ValidationError) {
@@ -72,7 +74,7 @@ async function write(req, res) {
 }
 
 // one edit per request, validated before it is written
-async function apply(body) {
+async function apply(body, actorId) {
     const action = typeof body?.action === "string" ? body.action : "";
 
     if (action === "add") {
@@ -80,12 +82,12 @@ async function apply(body) {
         if (!email || email.length > 320 || !email.includes("@")) {
             throw new ValidationError("That is not an email address.");
         }
-        return addParticipantByEmail(email);
+        return addParticipantByEmail(email, actorId);
     }
 
     const userId = readId(body?.userId);
 
-    if (action === "remove") return removeParticipant(userId);
+    if (action === "remove") return removeParticipant(userId, actorId);
 
     // the adjustment is signed, so an organiser can take hours away as well as give them
     if (action === "adjust") {
@@ -94,7 +96,7 @@ async function apply(body) {
         if (!Number.isFinite(adjust) || adjust < -MAX_EVENT_HOURS || adjust > MAX_EVENT_HOURS) {
             throw new ValidationError(`The adjustment must be between -${MAX_EVENT_HOURS} and ${MAX_EVENT_HOURS}.`);
         }
-        return setParticipantAdjust(userId, Math.round(adjust * 100) / 100);
+        return setParticipantAdjust(userId, Math.round(adjust * 100) / 100, actorId);
     }
 
     throw new ValidationError("Unknown action.");
@@ -113,6 +115,7 @@ function present(rows) {
         hours: row.hours ?? 0,
         trackedHours: row.tracked_hours ?? 0,
         adjust: row.adjust ?? 0,
+        deflation: row.deflation ?? 0,
         tickets: row.tickets ?? 0
     }));
 }

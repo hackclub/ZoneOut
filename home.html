@@ -680,6 +680,13 @@ letter-spacing:1px;
 color:rgba(var(--warn),0.9);
 }
 
+.boardCut{
+margin-left:6px;
+font-size:10px;
+letter-spacing:1px;
+color:rgba(var(--reviewBad),0.9);
+}
+
 .boardHint{
 margin-top:6px;
 font-size:10px;
@@ -692,18 +699,25 @@ color:rgba(var(--fg),0.5);
 display:flex;
 gap:6px;
 align-items:center;
+flex-wrap:wrap;
 }
 
 .boardEdit .textInput{
-width:82px;
+width:72px;
 padding:5px 7px;
 font-size:12px;
 }
 
 .boardKill{
-padding:5px 9px;
+padding:5px 7px;
 font-size:12px;
-letter-spacing:1px;
+letter-spacing:0;
+}
+
+.boardSave{
+padding:5px 7px;
+font-size:12px;
+letter-spacing:0;
 }
 
 .boardEmpty{
@@ -748,7 +762,8 @@ width:88px;
 }
 
 .boardCrown,
-.boardForced{
+.boardForced,
+.boardCut{
 display:block;
 margin-left:0;
 margin-top:3px;
@@ -764,7 +779,8 @@ gap:5px;
 width:100%;
 }
 
-.boardKill{
+.boardKill,
+.boardSave{
 padding:4px 6px;
 font-size:11px;
 letter-spacing:0;
@@ -3728,6 +3744,7 @@ dlgBox.addEventListener("keydown", (e) => {
 
 // the leaderboard
 const boardRows = document.getElementById("boardRows");
+let boardFocus = 0;
 const boardEmpty = document.getElementById("boardEmpty");
 const boardError = document.getElementById("boardError");
 const boardNote = document.getElementById("boardNote");
@@ -3808,8 +3825,16 @@ function renderBoard(rows) {
             const forced = document.createElement("span");
             forced.className = "boardForced";
             forced.textContent = signed(row.adjust);
-            forced.title = "tracked " + trimHours(row.trackedHours) + " " + signed(row.adjust);
+            forced.title = boardBreakdown(row);
             hours.appendChild(forced);
+        }
+
+        if (row.deflation && boardAdmin) {
+            const cut = document.createElement("span");
+            cut.className = "boardCut";
+            cut.textContent = "\u2212" + trimHours(row.deflation) + " DEFLATED";
+            cut.title = boardBreakdown(row);
+            hours.appendChild(cut);
         }
         tr.appendChild(hours);
 
@@ -3826,14 +3851,35 @@ function renderBoard(rows) {
             field.inputMode = "decimal";
             field.value = row.adjust ? signed(row.adjust) : "";
             field.placeholder = "+/-";
-            field.title = "Added to their tracked " + trimHours(row.trackedHours) + " hours. Negative takes hours away.";
+            field.title = boardBreakdown(row)
+                + ". A negative figure takes hours away and stays as their starting point; "
+                + "their Hackatime time keeps counting on top of it.";
             field.setAttribute("aria-label", "Hour adjustment for " + row.name);
+
+            if (row.userId === boardFocus) {
+                boardFocus = 0;
+                const restore = () => { field.focus(); field.select(); };
+                requestAnimationFrame(restore);
+                setTimeout(restore, 60);
+            }
+
+            const commit = () => sendBoard(
+                { action: "adjust", userId: row.userId, adjust: field.value },
+                row.userId
+            );
 
             field.addEventListener("keydown", (e) => {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
-                sendBoard({ action: "adjust", userId: row.userId, adjust: field.value });
+                commit();
             });
+
+            const save = document.createElement("button");
+            save.className = "camNode boardSave";
+            save.type = "button";
+            save.textContent = "SAVE";
+            save.setAttribute("aria-label", "Save the hour adjustment for " + row.name);
+            save.addEventListener("click", commit);
 
             const kill = document.createElement("button");
             kill.className = "camNode boardKill";
@@ -3843,6 +3889,7 @@ function renderBoard(rows) {
             kill.addEventListener("click", () => sendBoard({ action: "remove", userId: row.userId }));
 
             wrap.appendChild(field);
+            wrap.appendChild(save);
             wrap.appendChild(kill);
             edit.appendChild(wrap);
         }
@@ -3852,11 +3899,22 @@ function renderBoard(rows) {
     });
 
     boardNote.textContent = boardAdmin
-        ? "ADJUST adds to somebody's tracked hours, and a negative figure takes hours away. Their Hackatime time keeps counting underneath."
+        ? "ADJUST is added to somebody's tracked hours, and a negative figure takes hours away. "
+          + "Press SAVE or Enter to write it. It stays as their starting point and their Hackatime "
+          + "time keeps counting on top. A total never falls below zero. DEFLATED is what approving "
+          + "their projects for fewer hours than they logged has already taken off."
         : "Hours recorded toward the freedom of the entity.";
 }
 
-async function sendBoard(payload) {
+// the whole sum behind a row's figure, for the admin
+function boardBreakdown(row) {
+    let text = "tracked " + trimHours(row.trackedHours);
+    if (row.adjust) text += " " + signed(row.adjust) + " manual";
+    if (row.deflation) text += " \u2212" + trimHours(row.deflation) + " deflated";
+    return text + " = " + trimHours(row.hours);
+}
+
+async function sendBoard(payload, keepFocus = 0) {
     if (boardBusy) return;
     boardBusy = true;
     boardError.textContent = "";
@@ -3877,6 +3935,7 @@ async function sendBoard(payload) {
         }
 
         boardAdmin = Boolean(body.isAdmin);
+        boardFocus = keepFocus;
         renderBoard(body.rows || []);
         refreshEventState();
     } catch (e) {
@@ -4114,7 +4173,9 @@ function paintAdminMeters() {
 
     if (document.activeElement !== adminHourField.field) {
         adminHourField.field.value = eventFigures.hoursAuto ? "" : trimHours(eventFigures.hours);
-        adminHourField.field.placeholder = trimHours(eventFigures.liveHours);
+        adminHourField.field.placeholder = trimHours(
+            eventFigures.hoursCapped === undefined ? eventFigures.liveHours : eventFigures.hoursCapped
+        );
     }
 
     if (document.activeElement !== adminCorruptField.field) {
