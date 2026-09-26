@@ -1,5 +1,5 @@
 import { requireAdmin } from "../../lib/guard.mjs";
-import { boardProjects, boardUsers } from "../../lib/event.mjs";
+import { boardProjects, boardUsers, boardDeflations } from "../../lib/event.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -16,12 +16,43 @@ export default async function handler(req, res) {
     }
 
     try {
-        const [rows, users] = await Promise.all([boardProjects(), boardUsers()]);
-        return res.status(200).json({ ok: true, rows: present(rows), users: presentBoardUsers(users) });
+        const [rows, users, deflations] = await Promise.all([boardProjects(), boardUsers(), boardDeflations()]);
+        return res.status(200).json({
+            ok: true,
+            rows: present(rows),
+            users: presentBoardUsers(users),
+            deflations: presentDeflations(deflations)
+        });
     } catch (err) {
         console.error("admin leaderboard list failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
     }
+}
+
+// section for the deflation history
+function presentDeflations(rows) {
+    return rows.map(row => {
+        const detail = row.detail || "";
+        const after = detail.match(/leaderboard now (-?[0-9.]+)/);
+        return {
+            eventId: Number(row.event_id),
+            restored: row.kind === "event.restored",
+            reason: detail.startsWith("fraud reject") ? "fraud"
+                  : detail.startsWith("fraud lifted") || row.kind === "event.restored" ? "lifted"
+                  : "approval",
+            projectId: row.project_id ?? null,
+            projectName: row.project_name ?? null,
+            projectExists: row.project_exists === true,
+            fraudRejected: row.fraud_rejected === true,
+            userId: row.user_id ?? null,
+            ownerName: row.owner_name || "Unnamed",
+            slackId: row.slack_id ?? null,
+            hours: row.hours ?? 0,
+            boardAfter: after ? Number(after[1]) : null,
+            actorName: row.actor_name ?? null,
+            at: row.created_at
+        };
+    });
 }
 
 // section for the per-account board standing

@@ -77,6 +77,11 @@ export default async function handler(req, res) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
+        // a shadow-banned viewer sees only the project they were banned over
+        if (project.viewer_shadow && project.viewer_shadow_project !== project.project_id) {
+            return res.status(404).json({ ok: false, error: "not found" });
+        }
+
         const mine = Boolean(session) && session.userId === project.user_id;
         const owns = mine && !project.viewer_shadow;
         const admin = Boolean(session) && !project.viewer_banned && !project.viewer_shadow
