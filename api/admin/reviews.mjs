@@ -32,6 +32,8 @@ export function presentReviews(rows) {
         ownerName: row.owner_name,
         email: row.email,
         slackId: row.slack_id,
+        repoUrl: row.repo_url ?? null,
+        demoUrl: row.demo_url ?? null,
         hackatimeProject: row.hackatime_project ?? null,
         balanceHours: row.balance_hours ?? 0,
         fraudRejected: Boolean(row.fraud_rejected),
