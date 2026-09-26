@@ -58,6 +58,7 @@ function present(rows) {
         projectName: row.project_name,
         hackatimeProject: row.hackatime_project ?? null,
         eventHours: row.event_hours ?? 0,
-        eventDeducted: row.event_deducted ?? 0
+        eventDeducted: row.event_deducted ?? 0,
+        fraudRejected: row.fraud_rejected === true
     }));
 }

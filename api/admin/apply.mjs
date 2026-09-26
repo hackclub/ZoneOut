@@ -132,12 +132,15 @@ export default async function handler(req, res) {
                       fraud: review.fraud, wipe: review.wipe, extraRemarks: review.remarks }
                 );
                 if (!row) throw new CommandError(`no project ${review.projectId}`);
-                const deflated = Number(row.board_hit) || 0;
+                const shifted = row.board_hours == null ? 0
+                    : (Number(row.fraud_shift) || 0) * ((Number(row.shift_event) || 0) - (Number(row.shift_deducted) || 0));
+                const deflated = Math.round(((Number(row.board_hit) || 0) + shifted) * 100) / 100;
                 applied.push(
                     `${review.fraud ? "permanently rejected" : review.status} project ${review.projectId}`
                     + (review.status === "approved"
                         ? ` at ${Number(row.round_approved) || 0} hours, paying ${Number(row.awarded_hours) || 0}` : "")
                     + (deflated > 0 ? `, taking ${deflated} hours off the leaderboard` : "")
+                    + (deflated < 0 ? `, returning ${-deflated} hours to the leaderboard` : "")
                     + (review.wipe ? " and wiped the balance and pending orders" : "")
                 );
             }
