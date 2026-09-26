@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     try {
         return res.status(200).json({
             ok: true,
-            announcements: presentAnnouncements(await listAnnouncements())
+            announcements: presentAnnouncements(await listAnnouncements(undefined, user.user_id))
         });
     } catch (err) {
         console.error("announcement list failed:", err.message);

@@ -9,7 +9,7 @@ import { presentReviews } from "./reviews.mjs";
 import { presentOrders } from "./orders.mjs";
 import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
 import { readFxSettings, readMeterSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
-import { createAnnouncement, deleteAnnouncement, listAnnouncements, presentAnnouncements, normaliseTitle, normaliseBody } from "../../lib/announcements.mjs";
+import { createAnnouncement, deleteAnnouncement, listAnnouncements, presentAnnouncements, normaliseTitle, normaliseBody, normaliseAuthor } from "../../lib/announcements.mjs";
 
 const MAX_BATCH = 200;
 
@@ -161,7 +161,9 @@ export default async function handler(req, res) {
                     continue;
                 }
 
-                const posted = await createAnnouncement(note.title, note.body, admin.user_id, client);
+                const posted = await createAnnouncement(
+                    note.title, note.body, admin.user_id, client, note.author
+                );
                 applied.push(`posted announcement “${posted.title}”`);
             }
 
@@ -188,7 +190,7 @@ export default async function handler(req, res) {
             reviews: staged.reviews.length ? presentReviews(await listProjectsForReview()) : null,
             orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null,
             announcements: staged.announcements.length
-                ? presentAnnouncements(await listAnnouncements()) : null,
+                ? presentAnnouncements(await listAnnouncements(undefined, admin.user_id)) : null,
             fx: await readFx()
         });
     } catch (err) {
@@ -248,7 +250,12 @@ function readAnnouncementEdit(entry) {
         throw new RangeError("an announcement must be posted or deleted");
     }
 
-    return { remove: false, title: normaliseTitle(entry?.title), body: normaliseBody(entry?.body) };
+    return {
+        remove: false,
+        title: normaliseTitle(entry?.title),
+        body: normaliseBody(entry?.body),
+        author: normaliseAuthor(entry?.author)
+    };
 }
 
 // order decision validation

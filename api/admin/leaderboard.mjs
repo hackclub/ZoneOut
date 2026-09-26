@@ -1,5 +1,5 @@
 import { requireAdmin } from "../../lib/guard.mjs";
-import { boardProjects } from "../../lib/event.mjs";
+import { boardProjects, boardUsers } from "../../lib/event.mjs";
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
@@ -16,11 +16,32 @@ export default async function handler(req, res) {
     }
 
     try {
-        return res.status(200).json({ ok: true, rows: present(await boardProjects()) });
+        const [rows, users] = await Promise.all([boardProjects(), boardUsers()]);
+        return res.status(200).json({ ok: true, rows: present(rows), users: presentBoardUsers(users) });
     } catch (err) {
         console.error("admin leaderboard list failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
     }
+}
+
+// section for the per-account board standing
+function presentBoardUsers(rows) {
+    return rows.map(row => ({
+        userId: row.user_id,
+        name: row.name || "Unnamed",
+        slackId: row.slack_id ?? null,
+        email: row.email ?? null,
+        onBoard: row.on_board === true,
+        hidden: row.hidden === true,
+        tracked: row.tracked ?? 0,
+        adjust: row.adjust ?? 0,
+        deflation: row.deflation ?? 0,
+        hours: row.hours ?? null,
+        projects: row.projects ?? 0,
+        projectHours: row.project_hours ?? 0,
+        joinedAt: row.joined_at ?? null,
+        syncedAt: row.synced_at ?? null
+    }));
 }
 
 // row shape for the admin table
