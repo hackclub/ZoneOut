@@ -90,7 +90,7 @@ export default async function handler(req, res) {
 
     // an administrator who banned themselves could never reach the panel to undo it
     const selfBan = staged.commands.find(
-        command => command.verb === "BAN" && command.userId === admin.user_id
+        command => (command.verb === "BAN" || command.verb === "PS") && command.userId === admin.user_id
     );
     if (selfBan) {
         return res.status(400).json({ ok: false, error: "you cannot ban your own account" });
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
             ok: true,
             applied,
             users: presentUsers(await listAllUsersForAdmin()),
-            reviews: staged.reviews.length ? presentReviews(await listProjectsForReview()) : null,
+            reviews: staged.reviews.length ? presentReviews(await listProjectsForReview(), admin.user_id) : null,
             orders: staged.orders.length ? presentOrders(await listAllOrdersForAdmin()) : null,
             announcements: staged.announcements.length
                 ? presentAnnouncements(await listAnnouncements(undefined, admin.user_id)) : null,

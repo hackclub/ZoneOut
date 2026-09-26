@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        return res.status(200).json({ ok: true, reviews: presentReviews(await listProjectsForReview()) });
+        return res.status(200).json({ ok: true, reviews: presentReviews(await listProjectsForReview(), admin.user_id) });
     } catch (err) {
         console.error("admin review list failed:", err.message);
         return res.status(503).json({ ok: false, error: "database unreachable" });
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 }
 
 // row shape for the reviews panel
-export function presentReviews(rows) {
+export function presentReviews(rows, viewerId = null) {
     return rows.map(row => ({
         projectId: row.project_id,
         userId: row.user_id,
@@ -36,6 +36,8 @@ export function presentReviews(rows) {
         demoUrl: row.demo_url ?? null,
         hackatimeProject: row.hackatime_project ?? null,
         balanceHours: row.balance_hours ?? 0,
+        ownerShadowBanned: Boolean(row.owner_shadow_banned),
+        ownerIsViewer: row.user_id === viewerId,
         fraudRejected: Boolean(row.fraud_rejected),
         approvedHours: row.approved_hours ?? 0,
         creditedHours: row.credited_hours ?? 0,

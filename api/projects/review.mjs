@@ -1,5 +1,5 @@
 import { requireAdmin, sameOrigin } from "../../lib/guard.mjs";
-import { setProjectReview, setReviewRemarks, queueProjectForReview, updateApprovedHours, ValidationError } from "../../lib/users.mjs";
+import { setProjectReview, setReviewRemarks, queueProjectForReview, updateApprovedHours, shadowBanProjectOwner, ValidationError } from "../../lib/users.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 
 // response shape, the same fields the project page already reads
@@ -63,6 +63,18 @@ export default async function handler(req, res) {
     const projectId = Number(body.projectId);
     if (!Number.isSafeInteger(projectId) || projectId < 1) {
         return res.status(404).json({ ok: false, error: "not found" });
+    }
+
+    // shadow ban the owner
+    if (body.decision === "shadow") {
+        try {
+            const owner = await shadowBanProjectOwner(projectId, admin.user_id);
+            if (!owner) return res.status(404).json({ ok: false, error: "not found" });
+            return res.status(200).json({ ok: true, shadowBanned: true });
+        } catch (err) {
+            console.error("shadow ban failed:", err.message);
+            return res.status(503).json({ ok: false, error: "database unreachable" });
+        }
     }
 
     const queueing = body.decision === "queue";

@@ -1,4 +1,4 @@
-import { requireUser } from "../../lib/guard.mjs";
+import { requireUser, refuseReadOnly } from "../../lib/guard.mjs";
 import { readSubmitProfile, clearSubmitProfile, getProjectById } from "../../lib/users.mjs";
 import { openProfile, sealRef } from "../../lib/secretbox.mjs";
 import { hasEnv } from "../../lib/env.mjs";
@@ -17,6 +17,7 @@ export default async function handler(req, res) {
     // session
     const user = await requireUser(req, res);
     if (!user) return;
+    if (refuseReadOnly(user, res)) return;
 
     // rate limit
     if (await limited(res, "submit-prefill", user.user_id, 30, 60)) return;

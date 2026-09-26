@@ -1,5 +1,5 @@
 import { readSession } from "../../lib/session.mjs";
-import { requireUser } from "../../lib/guard.mjs";
+import { requireUser, refuseReadOnly } from "../../lib/guard.mjs";
 import { getProjectWithViewer, updateProjectForUser, deleteProjectForUser, updateProjectAsAdmin, deleteProjectAsAdmin, ValidationError } from "../../lib/users.mjs";
 import { isAdminEmail } from "../../lib/admin.mjs";
 import { resolveProjectLink } from "../../lib/hackatime.mjs";
@@ -31,6 +31,7 @@ function present(project, ownerName, showLink = true, showOwnerId = false, showR
         previousRound: showReview ? (project.previous_round ?? null) : null,
         ownerBalanceHours: showReview ? (project.owner_balance_hours ?? 0) : null,
         ownerPendingOrders: showReview ? (project.owner_pending_orders ?? 0) : null,
+        ownerShadowBanned: showReview ? Boolean(project.owner_shadow_banned) : null,
         reviewStatus: project.review_status ?? "draft",
         fraudRejected: Boolean(project.fraud_rejected),
         reviewRemarks: project.review_remarks ?? null,
@@ -76,12 +77,14 @@ export default async function handler(req, res) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
-        const owns = Boolean(session) && session.userId === project.user_id;
-        const admin = Boolean(session) && !project.viewer_banned && isAdminEmail(project.viewer_email);
+        const mine = Boolean(session) && session.userId === project.user_id;
+        const owns = mine && !project.viewer_shadow;
+        const admin = Boolean(session) && !project.viewer_banned && !project.viewer_shadow
+                   && isAdminEmail(project.viewer_email);
 
         return res.status(200).json({
             ok: true,
-            project: present(project, null, owns || admin, admin, admin),
+            project: present(project, null, mine || admin, admin, admin),
             canEdit: owns || admin,
             canReview: admin,
             adminOverride: admin && !owns,
@@ -97,6 +100,7 @@ export default async function handler(req, res) {
 async function edit(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
+    if (refuseReadOnly(user, res)) return;
 
     // rate limit
     if (await limited(res, "project-write", user.user_id, 40, 60)) return;
@@ -152,6 +156,7 @@ async function edit(req, res, projectId) {
 async function remove(req, res, projectId) {
     const user = await requireUser(req, res);
     if (!user) return;
+    if (refuseReadOnly(user, res)) return;
 
     // rate limit
     if (await limited(res, "project-write", user.user_id, 40, 60)) return;

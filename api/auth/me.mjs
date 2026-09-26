@@ -54,7 +54,8 @@ export default async function handler(req, res) {
                 hackatimeLinked: Boolean(user.hackatime_user_id),
                 submitProfile: Boolean(user.submit_profile_on),
                 eventJoined: Boolean(user.event_joined),
-                isAdmin: isAdminEmail(user.email)
+                readOnly: Boolean(user.shadow_banned),
+                isAdmin: isAdminEmail(user.email) && !user.shadow_banned
             },
             projects: user.projects.map(p => ({
                 projectId: p.project_id,

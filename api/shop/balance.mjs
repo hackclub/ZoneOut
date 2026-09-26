@@ -43,6 +43,7 @@ export default async function handler(req, res) {
             ok: true,
             balanceHours: row.balance_hours,
             region: row.region ?? null,
+            readOnly: Boolean(row.shadow_banned),
             grants: grantsFor(row),
             fxEnabled: fx ? fx.fxEnabled : false,
             fxIntensity: fx ? fx.fxIntensity : 0,

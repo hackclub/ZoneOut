@@ -36,6 +36,7 @@ export function presentUsers(rows) {
         cgAccess: Boolean(row.cg_access),
         balanceHours: row.balance_hours,
         isBanned: row.is_banned,
+        shadowBanned: Boolean(row.shadow_banned),
         banReason: row.ban_reason,
         projectIds: row.project_ids
     }));

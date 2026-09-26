@@ -33,6 +33,7 @@ function presentBoardUsers(rows) {
         email: row.email ?? null,
         onBoard: row.on_board === true,
         hidden: row.hidden === true,
+        shadowed: row.shadowed === true,
         tracked: row.tracked ?? 0,
         adjust: row.adjust ?? 0,
         deflation: row.deflation ?? 0,

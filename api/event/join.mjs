@@ -1,4 +1,4 @@
-import { requireUser, sameOrigin } from "../../lib/guard.mjs";
+import { requireUser, sameOrigin, refuseReadOnly } from "../../lib/guard.mjs";
 import { joinEvent, readEventState, eventTotals, derive } from "../../lib/event.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 
@@ -8,6 +8,7 @@ export default async function handler(req, res) {
     // session
     const user = await requireUser(req, res);
     if (!user) return;
+    if (refuseReadOnly(user, res)) return;
 
     // method
     if (req.method !== "POST") {

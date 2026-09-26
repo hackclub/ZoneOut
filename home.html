@@ -720,6 +720,17 @@ font-size:12px;
 letter-spacing:0;
 }
 
+.boardHammer{
+padding:5px 7px;
+font-size:12px;
+letter-spacing:0;
+}
+
+.boardHammer.hammerOn{
+color:rgb(var(--reviewBad));
+border-color:rgba(var(--reviewBad),0.8);
+}
+
 .boardEmpty{
 padding:16px 12px;
 font-size:12px;
@@ -780,7 +791,8 @@ width:100%;
 }
 
 .boardKill,
-.boardSave{
+.boardSave,
+.boardHammer{
 padding:4px 6px;
 font-size:11px;
 letter-spacing:0;
@@ -1142,6 +1154,23 @@ opacity:0.45;
 
 .plusCard{
 justify-content:center;
+}
+
+.projCard[hidden]{
+display:none;
+}
+
+.projState{
+font-size:11px;
+letter-spacing:2px;
+}
+
+.projState.stateOk{
+color:rgb(var(--reviewOk));
+}
+
+.projState.stateBad{
+color:rgb(var(--reviewBad));
 }
 
 .plusMark{
@@ -2822,6 +2851,7 @@ let projectsFresh = false;
 let projectsInFlight = null;
 let currentUserId = null;
 let currentUserName = null;
+let readOnly = false;
 
 function stashProjects(userId, list) {
     const cache = { userId, userName: currentUserName, list };
@@ -2907,7 +2937,7 @@ let currentList = [];
 function renderProjects(projects) {
     const list = Array.isArray(projects) ? projects : [];
 
-    const signature = JSON.stringify(list);
+    const signature = JSON.stringify(list) + readOnly;
     if (signature === renderedSignature) return;
     renderedSignature = signature;
     currentList = list;
@@ -2929,7 +2959,8 @@ function renderProjects(projects) {
         thumb.style.fontSize = thumbFontSize(list[i].name, boxWidth) + "px";
     });
 
-    projEmpty.textContent = list.length ? "" : "No projects yet. Press + to make your first.";
+    projEmpty.textContent = list.length ? ""
+        : readOnly ? "No projects yet." : "No projects yet. Press + to make your first.";
 }
 
 function projectCard(project) {
@@ -2947,12 +2978,28 @@ function projectCard(project) {
     name.textContent = project.name;
     card.appendChild(name);
 
+    const state = projectState(project);
+    if (state) {
+        const tag = document.createElement("div");
+        tag.className = "projState " + state.tone;
+        tag.textContent = state.text;
+        card.appendChild(tag);
+    }
+
     const meta = document.createElement("div");
     meta.className = "projMeta";
     meta.textContent = "#" + project.projectId;
     card.appendChild(meta);
 
     return card;
+}
+
+// section for the card's review state
+function projectState(project) {
+    if (project.fraudRejected) return { text: "PERMANENTLY REJECTED", tone: "stateBad" };
+    if (project.reviewStatus === "approved") return { text: "APPROVED", tone: "stateOk" };
+    if (project.reviewStatus === "rejected") return { text: "REJECTED", tone: "stateBad" };
+    return null;
 }
 
 function thumbBoxWidth() {
@@ -3488,11 +3535,11 @@ document.addEventListener("zoneout:cutsceneend", () => {
 
 function paintJoinState() {
     eventJoinBtn.textContent = eventJoined ? "YOU ARE IN" : "I'M IN!";
-    eventJoinBtn.disabled = eventJoined;
+    eventJoinBtn.disabled = eventJoined || readOnly;
 }
 
 async function joinTheEvent() {
-    if (eventJoined) return;
+    if (eventJoined || readOnly) return;
 
     eventJoinBtn.disabled = true;
     eventError.textContent = "";
@@ -3836,6 +3883,14 @@ function renderBoard(rows) {
             cut.title = boardBreakdown(row);
             hours.appendChild(cut);
         }
+
+        if (row.shadowed && boardAdmin) {
+            const shade = document.createElement("span");
+            shade.className = "boardCut";
+            shade.textContent = "SHADOWED";
+            shade.title = "Everybody else sees 0 hours for this person, and none of it reaches the meter.";
+            hours.appendChild(shade);
+        }
         tr.appendChild(hours);
 
         const edit = document.createElement("td");
@@ -3888,8 +3943,21 @@ function renderBoard(rows) {
             kill.setAttribute("aria-label", "Remove " + row.name);
             kill.addEventListener("click", () => sendBoard({ action: "remove", userId: row.userId }));
 
+            const hammer = document.createElement("button");
+            hammer.className = "camNode boardHammer" + (row.shadowed ? " hammerOn" : "");
+            hammer.type = "button";
+            hammer.textContent = row.shadowed ? "LIFT HAMMER" : "BAN-HAMMER";
+            hammer.title = row.shadowed
+                ? "Let this person's hours count again."
+                : "Shadow ban on the leaderboard: they see their own hours, everybody else sees 0.";
+            hammer.setAttribute("aria-label", (row.shadowed ? "Lift the ban-hammer on " : "Ban-hammer ") + row.name);
+            hammer.addEventListener("click", () => sendBoard(
+                { action: "shadow", userId: row.userId, on: !row.shadowed }
+            ));
+
             wrap.appendChild(field);
             wrap.appendChild(save);
+            wrap.appendChild(hammer);
             wrap.appendChild(kill);
             edit.appendChild(wrap);
         }
@@ -3902,7 +3970,9 @@ function renderBoard(rows) {
         ? "ADJUST is added to somebody's tracked hours, and a negative figure takes hours away. "
           + "Press SAVE or Enter to write it. It stays as their starting point and their Hackatime "
           + "time keeps counting on top. A total never falls below zero. DEFLATED is what approving "
-          + "their projects for fewer hours than they logged has already taken off."
+          + "their projects for fewer hours than they logged has already taken off. "
+          + "BAN-HAMMER shadows somebody: they still see their own hours, everybody else sees 0, "
+          + "and none of their time reaches the meter."
         : "Hours recorded toward the freedom of the entity.";
 }
 
@@ -4462,7 +4532,7 @@ function closeHtModal() {
 function maybePrompt() {
     if (anyModalOpen()) return;
 
-    if (htKnown && !hackatimeLinked && currentPath !== "/error") {
+    if (htKnown && !hackatimeLinked && !readOnly && currentPath !== "/error") {
         return openHtModal(true);
     }
 
@@ -4666,8 +4736,8 @@ function applyHours(rows) {
 // the profile row
 function paintHackatime() {
     put("fHackatime", hackatimeLinked ? "linked" : "not linked");
-    document.getElementById("htLinkBtn").hidden = hackatimeLinked;
-    document.getElementById("htUnlinkBtn").hidden = !hackatimeLinked;
+    document.getElementById("htLinkBtn").hidden = hackatimeLinked || readOnly;
+    document.getElementById("htUnlinkBtn").hidden = !hackatimeLinked || readOnly;
 }
 
 document.getElementById("htUnlinkBtn").addEventListener("click", () => {
@@ -4800,7 +4870,7 @@ const submitForgetBtn = document.getElementById("submitForgetBtn");
 
 function paintSubmitProfile() {
     put("fSubmit", submitProfileOn ? "on file" : "not on file");
-    submitForgetBtn.hidden = !submitProfileOn;
+    submitForgetBtn.hidden = !submitProfileOn || readOnly;
 }
 
 submitForgetBtn.addEventListener("click", async () => {
@@ -5128,6 +5198,9 @@ async function load() {
     put("fName", user.name || "—");
     put("fEmail", user.email);
     put("fSlack", user.slackId || "not linked");
+
+    readOnly = Boolean(user.readOnly);
+    newProjectBtn.hidden = readOnly;
 
     hackatimeLinked = Boolean(user.hackatimeLinked);
     htKnown = true;

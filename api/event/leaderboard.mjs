@@ -6,6 +6,7 @@ import {
     leaderboard,
     setParticipantAdjust,
     removeParticipant,
+    setBoardShadow,
     addParticipantByEmail,
     MAX_EVENT_HOURS
 } from "../../lib/event.mjs";
@@ -29,10 +30,11 @@ async function read(req, res) {
     if (await limited(res, "event-board", user.user_id, 40, 60)) return;
 
     try {
+        const admin = isAdminEmail(user.email) && !user.shadow_banned;
         return res.status(200).json({
             ok: true,
-            isAdmin: isAdminEmail(user.email),
-            rows: present(await leaderboard())
+            isAdmin: admin,
+            rows: present(await leaderboard(), user.user_id, admin)
         });
     } catch (err) {
         console.error("leaderboard lookup failed:", err.message);
@@ -63,7 +65,7 @@ async function write(req, res) {
 
     try {
         await apply(body, admin.user_id);
-        return res.status(200).json({ ok: true, isAdmin: true, rows: present(await leaderboard()) });
+        return res.status(200).json({ ok: true, isAdmin: true, rows: present(await leaderboard(), admin.user_id, true) });
     } catch (err) {
         if (err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
@@ -89,6 +91,8 @@ async function apply(body, actorId) {
 
     if (action === "remove") return removeParticipant(userId, actorId);
 
+    if (action === "shadow") return setBoardShadow(userId, body.on === true, actorId);
+
     // the adjustment is signed, so an organiser can take hours away as well as give them
     if (action === "adjust") {
         const raw = typeof body.adjust === "string" ? body.adjust.trim() : body.adjust;
@@ -108,14 +112,24 @@ function readId(raw) {
     return id;
 }
 
-function present(rows) {
-    return rows.map(row => ({
-        userId: row.user_id,
-        name: row.name || "Unnamed",
-        hours: row.hours ?? 0,
-        trackedHours: row.tracked_hours ?? 0,
-        adjust: row.adjust ?? 0,
-        deflation: row.deflation ?? 0,
-        tickets: row.tickets ?? 0
-    }));
+// a shadowed row reads 0 to everybody but its owner and the admins
+function present(rows, viewerId, admin) {
+    return rows
+        .map(row => {
+            const masked = row.shadowed === true && !admin && row.user_id !== viewerId;
+            const shown = {
+                userId: row.user_id,
+                name: row.name || "Unnamed",
+                hours: masked ? 0 : (row.hours ?? 0),
+                trackedHours: masked ? 0 : (row.tracked_hours ?? 0),
+                adjust: masked ? 0 : (row.adjust ?? 0),
+                deflation: masked ? 0 : (row.deflation ?? 0),
+                tickets: row.tickets ?? 0,
+                joinedAt: row.joined_at
+            };
+            if (admin) shown.shadowed = row.shadowed === true;
+            return shown;
+        })
+        .sort((a, b) => (b.hours - a.hours) || (new Date(a.joinedAt) - new Date(b.joinedAt)))
+        .map(({ joinedAt, ...row }) => row);
 }

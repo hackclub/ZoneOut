@@ -1516,6 +1516,7 @@ const infoModal = document.getElementById("infoModal");
 // state
 let balanceHours = 0;
 let signedIn = false;
+let readOnly = false;
 let openItem = null;
 let returnFocus = null;
 let myOrders = [];
@@ -2011,7 +2012,8 @@ async function refreshBalance() {
     try {
         const payload = await response.json();
         signedIn = true;
-        suggestBtn.hidden = false;
+        readOnly = payload.readOnly === true;
+        suggestBtn.hidden = readOnly;
         ordersBtn.hidden = false;
         queueMeasure();
         hideLoginBar();
@@ -2099,6 +2101,12 @@ function updateOrderButton() {
     if (!signedIn) {
         orderBtn.textContent = "Log In to Order";
         orderBtn.disabled = false;
+        return;
+    }
+
+    if (readOnly) {
+        orderBtn.textContent = "Unavailable.";
+        orderBtn.disabled = true;
         return;
     }
 
@@ -2261,7 +2269,7 @@ qtyInput.addEventListener("blur", () => {
 
 // placing the order
 orderBtn.addEventListener("click", async () => {
-    if (!openItem) return;
+    if (!openItem || readOnly) return;
 
     if (!signedIn) {
         window.location.href = "/api/auth/login";

@@ -1,4 +1,4 @@
-import { requireUser } from "../../lib/guard.mjs";
+import { requireUser, refuseReadOnly } from "../../lib/guard.mjs";
 import { createProject, listProjectsForUser, ValidationError } from "../../lib/users.mjs";
 import { resolveProjectLink } from "../../lib/hackatime.mjs";
 import { readJsonBody, BadRequest } from "../../lib/body.mjs";
@@ -58,6 +58,7 @@ export default async function handler(req, res) {
     }
 
     // create
+    if (refuseReadOnly(user, res)) return;
     if (await limited(res, "project-create", user.user_id, 12, 3600)) return;
 
     let body;

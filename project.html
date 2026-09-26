@@ -924,6 +924,23 @@ gap:16px;
 </div>
 </div>
 
+<div class="modalScrim" id="shadowModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="shadowTitle">
+<button class="modalClose" id="shadowClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="shadowTitle">SHADOW BAN?</div>
+
+<div class="confirmText">Do you want to shadow ban this person? They keep their account but can no longer create, edit or submit projects, order from the shop, join the event or change their Hackatime link.</div>
+
+<div class="formError" id="shadowError" role="alert"></div>
+
+<div class="modalActions">
+<button class="camNode rejectNode dangerNode" id="shadowYes" type="button">YES, SHADOW BAN</button>
+<button class="camNode" id="shadowNo" type="button">NO</button>
+</div>
+</div>
+</div>
+
 <div class="modalScrim" id="remarksModal" hidden>
 <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="remarksTitle">
 <button class="modalClose" id="remarksClose" type="button" aria-label="Close">&times;</button>
@@ -1571,7 +1588,7 @@ function load() {
 
 // section for the administrator-only figures, which ride GET /api/projects/:id alone
 var ADMIN_FIGURES = ["submissions", "previousRound", "ownerSlackId",
-                     "ownerBalanceHours", "ownerPendingOrders"];
+                     "ownerBalanceHours", "ownerPendingOrders", "ownerShadowBanned"];
 
 function adoptProject(next) {
     if (!next) return;
@@ -1924,6 +1941,7 @@ function currentModal() {
     if (modalOpen(blockModal)) return { el: blockModal, close: closeBlockModal };
     if (modalOpen(guidelinesModal)) return { el: guidelinesModal, close: closeGuidelinesModal };
     if (modalOpen(queueModal)) return { el: queueModal, close: closeQueueModal };
+    if (modalOpen(shadowModal)) return { el: shadowModal, close: closeShadowModal };
     if (modalOpen(reviewModal)) return { el: reviewModal, close: closeReviewModal };
     if (modalOpen(remarksModal)) return { el: remarksModal, close: closeRemarksModal };
     if (modalOpen(updateModal)) return { el: updateModal, close: closeUpdateModal };
@@ -2768,6 +2786,70 @@ function closeQueueModal() {
     closeModal(queueModal);
 }
 
+// section for the shadow ban prompt after a fraud rejection
+var shadowModal = document.getElementById("shadowModal");
+var shadowYes = document.getElementById("shadowYes");
+var shadowError = document.getElementById("shadowError");
+
+function openShadowModal() {
+    shadowError.textContent = "";
+    shadowYes.disabled = false;
+    shadowYes.textContent = "YES, SHADOW BAN";
+    openModal(shadowModal, document.getElementById("shadowNo"));
+}
+
+function closeShadowModal() {
+    closeModal(shadowModal);
+}
+
+document.getElementById("shadowNo").addEventListener("click", closeShadowModal);
+document.getElementById("shadowClose").addEventListener("click", closeShadowModal);
+
+shadowModal.addEventListener("mousedown", function (e) {
+    if (e.target === shadowModal) closeShadowModal();
+});
+
+shadowYes.addEventListener("click", function () {
+    shadowError.textContent = "";
+    shadowYes.disabled = true;
+    shadowYes.textContent = "SAVING…";
+
+    fetch("/api/projects/review", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: Number(projectId), decision: "shadow" })
+    })
+        .then(function (response) {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json()
+                .catch(function () { return {}; })
+                .then(function (payload) {
+                    return { ok: response.ok, status: response.status, payload: payload };
+                });
+        })
+        .then(function (result) {
+            if (!result) return;
+
+            if (!result.ok) {
+                shadowError.textContent = result.status === 404
+                    ? "Could not shadow ban this person."
+                    : (result.payload.error || "Could not shadow ban this person.");
+                shadowYes.disabled = false;
+                shadowYes.textContent = "YES, SHADOW BAN";
+                return;
+            }
+
+            project.ownerShadowBanned = true;
+            closeShadowModal();
+        })
+        .catch(function () {
+            shadowError.textContent = "Could not reach ZoneOut.";
+            shadowYes.disabled = false;
+            shadowYes.textContent = "YES, SHADOW BAN";
+        });
+});
+
 document.getElementById("queueCancel").addEventListener("click", closeQueueModal);
 document.getElementById("queueClose").addEventListener("click", closeQueueModal);
 
@@ -2937,11 +3019,13 @@ function sendReview(wipe) {
                 return;
             }
 
+            var wasFraud = reviewDecision === "fraud";
             adoptProject(result.payload.project);
             closeReviewModal();
             renderView();
             stashEdit(project);
             refreshFigures();
+            if (wasFraud && !project.ownerShadowBanned) openShadowModal();
         })
         .catch(function () {
             reviewError.textContent = "Could not reach ZoneOut.";
