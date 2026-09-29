@@ -3568,6 +3568,7 @@ function closeEvents() {
     stopDialogue();
     stopEventSting();
     closePanel(eventModal);
+    setTimeout(maybePrompt, 260);
 }
 
 // the cutscene replay hands straight back to the events dialog
@@ -4602,7 +4603,7 @@ function maybePrompt() {
         return openRegionModal();
     }
 
-    if (nickKnown && !userNickname && !readOnly && !nickPromptShown) {
+    if (nickKnown && eventJoined && !userNickname && !readOnly && !nickPromptShown) {
         nickPromptShown = true;
         return openNickModal();
     }
