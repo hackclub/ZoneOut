@@ -48,7 +48,9 @@ export default async function handler(req, res) {
             fxEnabled: fx ? fx.fxEnabled : false,
             fxIntensity: fx ? fx.fxIntensity : 0,
             fxBeatSeconds: fx ? fx.fxBeatSeconds : 45,
-            fxLevelScale: fx ? fx.fxLevelScale : 1
+            fxLevelScale: fx ? fx.fxLevelScale : 1,
+            fxGlitch: fx ? fx.fxGlitch : 0,
+            corruptionPercent: fx ? fx.corruptionPercent : 0
         });
     } catch (err) {
         console.error("balance lookup failed:", err.message);

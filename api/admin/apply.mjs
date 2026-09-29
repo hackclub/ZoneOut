@@ -227,6 +227,7 @@ async function readFx() {
             fxIntensity: figures.fxIntensity,
             fxBeatSeconds: figures.fxBeatSeconds,
             fxLevelScale: figures.fxLevelScale,
+            fxGlitch: figures.fxGlitch,
             goal: figures.goal,
             hours: figures.hours,
             liveHours: figures.liveHours,

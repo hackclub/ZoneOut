@@ -95,6 +95,11 @@
 --bloodText:255,58,58;
 --bloodDark:26,0,0;
 --ghostText:198,214,214;
+/* GLITCH MODE */
+--sigA:255,50,110;
+--sigB:60,220,255;
+--sigC:120,255,110;
+--sigLight:226,236,255;
 /* MEDIA */
 --mediaFilter:none;
 --mediaFilterFn:grayscale(0);
@@ -2009,6 +2014,68 @@ opacity:1;
 
 .fxBorder[hidden]{
 display:none;
+}
+
+/* glitch mode */
+.sigRoll{
+position:fixed;
+inset:0;
+z-index:239;
+pointer-events:none;
+overflow:hidden;
+opacity:0;
+transition:opacity 1.6s ease;
+}
+
+.sigRoll[hidden]{
+display:none;
+}
+
+.sigRoll::before{
+content:"";
+position:absolute;
+left:0;
+right:0;
+top:0;
+height:26vh;
+background:linear-gradient(180deg,
+transparent 0%,
+rgba(var(--sigLight),0.035) 38%,
+rgba(var(--sigA),0.05) 48%,
+rgba(var(--sigB),0.04) 54%,
+rgba(var(--sigLight),0.03) 64%,
+transparent 100%);
+animation:sigRoll 9s linear infinite;
+will-change:transform;
+}
+
+@keyframes sigRoll{
+from{ transform:translateY(-30vh); }
+to{ transform:translateY(104vh); }
+}
+
+html.sigText :where(button,a,input,textarea,select,svg,.camNode,[role=button],[role=switch]){
+text-shadow:none;
+}
+
+.sigTear{
+position:fixed;
+left:0;
+right:0;
+top:0;
+height:4px;
+z-index:239;
+pointer-events:none;
+opacity:0;
+will-change:transform,opacity;
+background:linear-gradient(90deg,
+transparent,
+rgba(var(--sigA),0.6) 14%,
+rgba(var(--sigC),0.45) 34%,
+rgba(var(--sigLight),0.65) 50%,
+rgba(var(--sigA),0.45) 66%,
+rgba(var(--sigB),0.6) 86%,
+transparent);
 }
 
 /* the ??? node, styled as every other camera node */

@@ -448,6 +448,11 @@ background:rgb(var(--corruptBar));
 box-shadow:inset 0 0 0 1px rgba(var(--corruptBarGlow),0.85);
 }
 
+.hourGauge{
+position:relative;
+z-index:1;
+}
+
 .hourGauge #meterHours{
 color:rgb(var(--hourBar));
 }
@@ -4104,7 +4109,8 @@ const FX_EFFECTS = [
     { id: "border", label: "RED BORDER" },
     { id: "node", label: "??? NODE" },
     { id: "modal", label: "HELP MODAL" },
-    { id: "jumpscare", label: "JUMPSCARE" }
+    { id: "jumpscare", label: "JUMPSCARE" },
+    { id: "glitch", label: "GLITCH BURST" }
 ];
 
 function fxFirePicker() {
@@ -5160,6 +5166,8 @@ function toError(message) {
 }
 
 // session load
+let fxViewer = false;
+
 async function load() {
     let response;
     try {
@@ -5195,6 +5203,7 @@ async function load() {
     }
 
     const user = payload.user;
+    fxViewer = true;
     put("fName", user.name || "—");
     put("fEmail", user.email);
     put("fSlack", user.slackId || "not linked");
@@ -5293,8 +5302,10 @@ function startCorruption() {
     }
 
     api.register({
-        effects: ["music", "border", "node"],
+        effects: ["music", "border", "node", "glitch"],
         busy: corruptionBusy,
+        viewer: () => fxViewer,
+        quiet: () => ["/submit", "/error", "/shop", "/projects"].includes(currentPath),
         modal: () => {
             if (currentPath !== "/home" && currentPath !== "/profile") return;
             afterArrival(() => openFxModal(false));

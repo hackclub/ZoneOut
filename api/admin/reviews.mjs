@@ -32,6 +32,7 @@ export function presentReviews(rows, viewerId = null) {
         ownerName: row.owner_name,
         email: row.email,
         slackId: row.slack_id,
+        description: row.description ?? null,
         repoUrl: row.repo_url ?? null,
         demoUrl: row.demo_url ?? null,
         hackatimeProject: row.hackatime_project ?? null,
