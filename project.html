@@ -1047,6 +1047,8 @@ var canEdit = false;
 var adminOverride = false;
 var canReview = false;
 var signedIn = true;
+var submissionsClosed = false;
+var SUBMISSIONS_CLOSED = "submissions have been closed! contact @Kuzu";
 
 // views
 function show(id) {
@@ -1314,8 +1316,11 @@ function submitLine() {
     var permanent = fraudRejected();
 
     row.hidden = !canEdit || adminOverride;
-    button.textContent = permanent ? "PERMANENTLY REJECTED" : (SUBMIT_LABELS[status] || SUBMIT_LABELS.draft);
-    button.disabled = permanent || status === "under_review";
+    var doomed = submissionsClosed && !permanent && status !== "under_review";
+    button.textContent = permanent ? "PERMANENTLY REJECTED"
+                       : doomed ? SUBMISSIONS_CLOSED
+                       : (SUBMIT_LABELS[status] || SUBMIT_LABELS.draft);
+    button.disabled = permanent || doomed || status === "under_review";
 
     document.getElementById("reviewActions").hidden = !canReview;
     document.getElementById("queueBtn").disabled = status === "under_review";
@@ -1578,6 +1583,7 @@ function load() {
             canEdit = Boolean(payload.canEdit);
             adminOverride = Boolean(payload.adminOverride);
             canReview = Boolean(payload.canReview);
+            submissionsClosed = payload.submissionsClosed === true;
             if (payload.signedIn === false) showLoginBar();
             renderView();
         })
@@ -2225,6 +2231,7 @@ blockModal.addEventListener("mousedown", function (e) {
 document.getElementById("submitBtn").addEventListener("click", function () {
     if (!canEdit || adminOverride) return;
     if (reviewStatus() === "under_review") return;
+    if (submissionsClosed) return;
 
     var gaps = missingForSubmit();
     if (!project || gaps.length) {

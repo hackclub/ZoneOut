@@ -47,6 +47,7 @@ export default async function handler(req, res) {
                 email: user.email,
                 slackId: user.slack_id,
                 name: user.name,
+                nickname: user.nickname ?? null,
                 status: user.status,
 
                 balanceHours: user.balance_hours,
@@ -54,6 +55,7 @@ export default async function handler(req, res) {
                 hackatimeLinked: Boolean(user.hackatime_user_id),
                 submitProfile: Boolean(user.submit_profile_on),
                 eventJoined: Boolean(user.event_joined),
+                submissionsClosed: Boolean(user.submissions_closed),
                 readOnly: Boolean(user.shadow_banned),
                 isAdmin: isAdminEmail(user.email) && !user.shadow_banned
             },

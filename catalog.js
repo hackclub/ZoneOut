@@ -14,6 +14,7 @@ function newWindow(from, days) {
 const NEW_UNTIL = newWindow("2026-09-13T00:00:00Z", 6);
 const NEW_UNTIL_SUBS = newWindow("2026-09-22T00:00:00Z", 4);
 const NEW_UNTIL_DUO = newWindow("2026-09-25T00:00:00Z", 6);
+const NEW_UNTIL_EVENT = newWindow("2026-09-29T00:00:00Z", 6);
 
 export function itemIsNew(item, now) {
     if (!item || !item.newUntil) return false;
@@ -335,6 +336,16 @@ export const SHOP_ITEMS = [
         id: "camera-grant", fit: "contain", name: "Camera Grant (20$)", hours: 4, section: "grants", note: "Stackable", newUntil: NEW_UNTIL_SUBS,
         image: "https://cdn.hackclub.com/01a0c932-eab4-74c8-8c76-6686ee883b13/camerag.png",
         description: "Like clicking pictures? buy yourself a camera using this grant. Stackable!"
+    },
+    {
+        id: "blue-light-glasses-grant", fit: "contain", name: "Blue Light Glasses Grant (10$)", hours: 2, section: "grants", note: "Stackable", eventOnly: true, newUntil: NEW_UNTIL_EVENT,
+        image: "https://cdn.hackclub.com/01a0ed8b-d662-74c7-94c9-8c51e8173a64/glasses.png",
+        description: "Worried of eye pain? get some non-prescribed blue light glasses!"
+    },
+    {
+        id: "lego-set-grant", fit: "contain", name: "Lego Set Grant (10$)", hours: 2, section: "grants", note: "Stackable", eventOnly: true, newUntil: NEW_UNTIL_EVENT,
+        image: "https://cdn.hackclub.com/01a0ed8b-c608-7cd6-ad53-3a7e890c6971/lego.png",
+        description: "Get yourself a lego set :))"
     }
 ];
 
@@ -412,6 +423,14 @@ export function itemLimit(item) {
 export function itemUnlocked(item, grants) {
     if (!item || !item.access) return true;
     return Array.isArray(grants) && grants.includes(item.access);
+}
+
+// section for sub-event items
+export const EVENT_ONLY_LABEL = "Sub-Event Participants Only";
+export const EVENT_ONLY_MIN_HOURS = 2;
+
+export function itemEventOnly(item) {
+    return Boolean(item && item.eventOnly);
 }
 
 export const MAX_QUANTITY = 999;

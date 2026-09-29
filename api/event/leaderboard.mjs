@@ -112,14 +112,14 @@ function readId(raw) {
     return id;
 }
 
-// a shadowed row reads 0 to everybody but its owner and the admins
+// a shadowed row reads 0 to everybody but its owner and the admins; only admins see legal names
 function present(rows, viewerId, admin) {
     return rows
         .map(row => {
             const masked = row.shadowed === true && !admin && row.user_id !== viewerId;
             const shown = {
                 userId: row.user_id,
-                name: row.name || "Unnamed",
+                name: admin ? (row.name || "Unnamed") : (row.nickname || row.name || "Unnamed"),
                 hours: masked ? 0 : (row.hours ?? 0),
                 trackedHours: masked ? 0 : (row.tracked_hours ?? 0),
                 adjust: masked ? 0 : (row.adjust ?? 0),
@@ -127,7 +127,10 @@ function present(rows, viewerId, admin) {
                 tickets: row.tickets ?? 0,
                 joinedAt: row.joined_at
             };
-            if (admin) shown.shadowed = row.shadowed === true;
+            if (admin) {
+                shown.shadowed = row.shadowed === true;
+                shown.nickname = row.nickname ?? null;
+            }
             return shown;
         })
         .sort((a, b) => (b.hours - a.hours) || (new Date(a.joinedAt) - new Date(b.joinedAt)))

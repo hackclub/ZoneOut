@@ -666,6 +666,14 @@ color:rgb(var(--accentText));
 word-break:break-word;
 }
 
+.boardNick{
+display:block;
+margin-top:2px;
+font-size:11px;
+letter-spacing:0.5px;
+color:rgba(var(--fg),0.55);
+}
+
 .boardCrown{
 margin-left:8px;
 font-size:10px;
@@ -1696,6 +1704,7 @@ background:rgb(var(--bg));
 <div class="subPage" id="pageProfile">
 <div class="panel">
 <div class="field"><span class="fieldKey">NAME</span><span class="fieldVal" id="fName">—</span></div>
+<div class="field"><span class="fieldKey">NICKNAME</span><span class="fieldVal" id="fNick">—</span></div>
 <div class="field"><span class="fieldKey">EMAIL</span><span class="fieldVal" id="fEmail">—</span></div>
 <div class="field"><span class="fieldKey">SLACK ID</span><span class="fieldVal" id="fSlack">—</span></div>
 <div class="field"><span class="fieldKey">HACKATIME</span><span class="fieldVal" id="fHackatime">—</span></div>
@@ -1707,6 +1716,7 @@ background:rgb(var(--bg));
 <button class="camNode" id="htLinkBtn" type="button" hidden>CONNECT HACKATIME</button>
 <button class="camNode" id="htUnlinkBtn" type="button" hidden>UNLINK HACKATIME</button>
 <button class="camNode" id="regChangeBtn" type="button">SET REGION</button>
+<button class="camNode" id="nickChangeBtn" type="button">SET NICKNAME</button>
 <button class="camNode" id="submitForgetBtn" type="button" hidden>FORGET DETAILS</button>
 </div>
 
@@ -1816,6 +1826,30 @@ Where do you live? Choose your region for shop items!
 <div class="modalActions pair">
 <button class="camNode" id="regSave" type="button">SAVE REGION</button>
 <button class="camNode" id="regLater" type="button">LATER</button>
+</div>
+</div>
+</div>
+
+<div class="modalScrim" id="nickModal" hidden>
+<div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
+<button class="modalClose" id="nickModalClose" type="button" aria-label="Close">&times;</button>
+
+<div class="modalTitle" id="nickModalTitle">PICK A NICKNAME</div>
+
+<div class="modalText">
+This is the name everyone else sees on the leaderboard. Your real name stays private.
+</div>
+
+<label class="formField">
+<span>NICKNAME</span>
+<input class="textInput" id="nickInput" type="text" minlength="2" maxlength="24" autocomplete="off" spellcheck="false" placeholder="2 to 24 characters">
+</label>
+
+<div class="formError" id="nickError" role="alert"></div>
+
+<div class="modalActions pair">
+<button class="camNode" id="nickSave" type="button">SAVE NICKNAME</button>
+<button class="camNode" id="nickLater" type="button">LATER</button>
 </div>
 </div>
 </div>
@@ -2498,6 +2532,8 @@ const formNote = document.getElementById("formNote");
 
 let formMounted = false;
 let formPending = null;
+let submissionsClosed = false;
+const SUBMISSIONS_CLOSED = "submissions have been closed! contact @Kuzu";
 
 function mountForm() {
     if (formMounted) return;
@@ -2514,6 +2550,14 @@ async function prepareForm() {
     ]);
 
     if (formMounted) return;
+
+    if (submissionsClosed || (params && params.closed)) {
+        submissionsClosed = true;
+        formNote.hidden = false;
+        formNote.textContent = SUBMISSIONS_CLOSED;
+        formPending = null;
+        return;
+    }
 
     if (params) {
         for (const [key, value] of Object.entries(params)) {
@@ -2550,6 +2594,7 @@ async function prefillParams() {
         const url = project ? "/api/submit/prefill?project=" + project : "/api/submit/prefill";
 
         const response = await fetch(url, { credentials: "same-origin" });
+        if (response.status === 423) return { closed: true };
         if (!response.ok) return null;
 
         const payload = await response.json();
@@ -3085,7 +3130,7 @@ function setInertBehind(on, dialog) {
 }
 
 function anyModalOpen() {
-    return projModalOpen() || htModalOpen() || regModalOpen() || lightboxOpen()
+    return projModalOpen() || htModalOpen() || regModalOpen() || nickModalOpen() || lightboxOpen()
         || panelOpen(infoModal) || panelOpen(bookModal)
         || panelOpen(eventModal) || panelOpen(boardModal) || panelOpen(mailModal)
         || fxModalOpen();
@@ -3200,6 +3245,7 @@ function currentModal() {
     if (lightboxOpen()) return { el: lightbox, close: closeLightbox };
     if (projModalOpen()) return { el: projModal, close: closeProjectModal };
     if (regModalOpen()) return { el: regModal, close: closeRegionModal };
+    if (nickModalOpen()) return { el: nickModal, close: closeNickModal };
     if (htModalOpen()) return { el: htModal, close: closeHtModal };
     if (fxModalOpen()) return { el: fxModal, close: closeFxModal };
     if (panelOpen(mailModal)) return { el: mailModal, close: closeMail };
@@ -3866,6 +3912,13 @@ function renderBoard(rows) {
             crown.className = "boardCrown";
             crown.textContent = "NAMES THE ENTITY";
             name.appendChild(crown);
+        }
+
+        if (boardAdmin && row.nickname) {
+            const nick = document.createElement("span");
+            nick.className = "boardNick";
+            nick.textContent = "(" + row.nickname + ")";
+            name.appendChild(nick);
         }
         tr.appendChild(name);
 
@@ -4549,6 +4602,11 @@ function maybePrompt() {
         return openRegionModal();
     }
 
+    if (nickKnown && !userNickname && !readOnly && !nickPromptShown) {
+        nickPromptShown = true;
+        return openNickModal();
+    }
+
     if (eventsPending) {
         eventsPending = false;
         afterArrival(() => openEvents(true));
@@ -4830,7 +4888,7 @@ function closeRegMenu(refocus) {
 }
 
 function openRegionModal() {
-    if (regModalOpen() || htModalOpen() || projModalOpen()) return;
+    if (regModalOpen() || nickModalOpen() || htModalOpen() || projModalOpen()) return;
 
     regReturnFocus = document.activeElement;
     regError.textContent = "";
@@ -4947,6 +5005,121 @@ regSave.addEventListener("click", () => {
             regSave.disabled = false;
             regSave.textContent = "SAVE REGION";
         });
+});
+
+// section for the public nickname
+const nickModal = document.getElementById("nickModal");
+const nickInput = document.getElementById("nickInput");
+const nickError = document.getElementById("nickError");
+const nickSave = document.getElementById("nickSave");
+const nickChangeBtn = document.getElementById("nickChangeBtn");
+
+let userNickname = null;
+let nickKnown = false;
+let nickPromptShown = false;
+let nickReturnFocus = null;
+
+function nickModalOpen() {
+    return nickModal.classList.contains("show");
+}
+
+function openNickModal() {
+    if (nickModalOpen() || regModalOpen() || htModalOpen() || projModalOpen() || readOnly) return;
+
+    nickReturnFocus = document.activeElement;
+    nickError.textContent = "";
+    nickInput.value = userNickname || "";
+    nickSave.disabled = false;
+    nickSave.textContent = "SAVE NICKNAME";
+
+    nickModal.hidden = false;
+
+    const raise = () => nickModal.classList.add("show");
+    requestAnimationFrame(raise);
+    setTimeout(raise, 60);
+
+    document.body.classList.add("noScroll");
+    setInertBehind(true, nickModal);
+
+    nickInput.focus();
+}
+
+function closeNickModal() {
+    nickModal.classList.remove("show");
+    setInertBehind(false, nickModal);
+    restoreScroll();
+
+    setTimeout(() => {
+        if (!nickModalOpen()) nickModal.hidden = true;
+        maybePrompt();
+    }, 240);
+
+    if (nickReturnFocus && document.contains(nickReturnFocus)) nickReturnFocus.focus();
+    nickReturnFocus = null;
+}
+
+function paintNickname() {
+    put("fNick", userNickname || "not set");
+    nickChangeBtn.textContent = userNickname ? "CHANGE NICKNAME" : "SET NICKNAME";
+    nickChangeBtn.hidden = readOnly;
+}
+
+function saveNickname() {
+    const wanted = nickInput.value.replace(/\s+/g, " ").trim();
+    if (wanted.length < 2) {
+        nickError.textContent = "A nickname is 2 to 24 characters.";
+        return;
+    }
+
+    nickError.textContent = "";
+    nickSave.disabled = true;
+    nickSave.textContent = "SAVING…";
+
+    fetch("/api/auth/nickname", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname: wanted })
+    })
+        .then(response => {
+            if (response.status === 403) { window.location.replace("/ban"); return null; }
+            return response.json().then(payload => ({ ok: response.ok, payload }));
+        })
+        .then(result => {
+            if (!result) return;
+
+            if (!result.ok) {
+                nickError.textContent = result.payload.error || "Could not save your nickname.";
+                nickSave.disabled = false;
+                nickSave.textContent = "SAVE NICKNAME";
+                return;
+            }
+
+            userNickname = result.payload.nickname;
+            paintNickname();
+            closeNickModal();
+            showToast("You now appear as " + userNickname + ".");
+        })
+        .catch(() => {
+            nickError.textContent = "Could not reach ZoneOut.";
+            nickSave.disabled = false;
+            nickSave.textContent = "SAVE NICKNAME";
+        });
+}
+
+nickChangeBtn.addEventListener("click", openNickModal);
+nickSave.addEventListener("click", saveNickname);
+document.getElementById("nickModalClose").addEventListener("click", closeNickModal);
+document.getElementById("nickLater").addEventListener("click", closeNickModal);
+
+nickInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!nickSave.disabled) saveNickname();
+});
+
+nickModal.addEventListener("mousedown", (e) => {
+    if (e.target === nickModal) closeNickModal();
 });
 
 // the message the callback leaves behind
@@ -5219,10 +5392,15 @@ async function load() {
     regionKnown = true;
     paintRegion();
 
+    userNickname = typeof user.nickname === "string" && user.nickname ? user.nickname : null;
+    nickKnown = true;
+    paintNickname();
+
     submitProfileOn = Boolean(user.submitProfile);
     paintSubmitProfile();
 
     eventJoined = Boolean(user.eventJoined);
+    submissionsClosed = user.submissionsClosed === true;
     settingsAdmin = Boolean(user.isAdmin);
     mountEventSettings();
     paintJoinState();

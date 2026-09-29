@@ -8,7 +8,7 @@ import { presentUsers } from "./users.mjs";
 import { presentReviews } from "./reviews.mjs";
 import { presentOrders } from "./orders.mjs";
 import { setOrderStatus, listAllOrdersForAdmin } from "../../lib/shop.mjs";
-import { readFxSettings, readMeterSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
+import { readFxSettings, readMeterSettings, readDoomSettings, writeEventState, readEventState, eventTotals, derive } from "../../lib/event.mjs";
 import { createAnnouncement, deleteAnnouncement, listAnnouncements, presentAnnouncements, normaliseTitle, normaliseBody, normaliseAuthor } from "../../lib/announcements.mjs";
 
 const MAX_BATCH = 200;
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             reviews: rawReviews.map(readReviewEdit),
             orders: rawOrders.map(readOrderEdit),
             announcements: rawAnnouncements.map(readAnnouncementEdit),
-            fx: rawFx ? { ...readFxSettings(rawFx), ...readMeterSettings(rawFx) } : null
+            fx: rawFx ? { ...readFxSettings(rawFx), ...readMeterSettings(rawFx), ...readDoomSettings(rawFx) } : null
         };
 
         if (staged.fx && Object.keys(staged.fx).length === 0) staged.fx = null;
@@ -205,14 +205,17 @@ export default async function handler(req, res) {
 // what the one event-state write actually changed
 function describeMeters(patch) {
     const parts = [];
+    if (patch.submissionsClosed !== undefined) {
+        parts.push(patch.submissionsClosed ? "closed submissions (doomsday)" : "reopened submissions");
+    }
     if (patch.hourGoal !== undefined) parts.push(`set the hour goal to ${patch.hourGoal}`);
     if (patch.setHoursCeiling === true) {
         parts.push(patch.hoursCeiling === null
             ? "let the leaderboard meter run free"
             : `stopped the leaderboard meter at ${patch.hoursCeiling}`);
     }
-    if (parts.length === 0) return "retuned the corruption effects";
     const tuned = Object.keys(patch).some(key => key.startsWith("fx"));
+    if (parts.length === 0) return "retuned the corruption effects";
     return parts.join(", ") + (tuned ? " and retuned the corruption effects" : "");
 }
 
@@ -232,7 +235,8 @@ async function readFx() {
             hours: figures.hours,
             liveHours: figures.liveHours,
             hoursCeiling: figures.hoursCeiling,
-            hoursFrozen: figures.hoursFrozen
+            hoursFrozen: figures.hoursFrozen,
+            submissionsClosed: figures.submissionsClosed
         };
     } catch (err) {
         console.error("fx settings lookup failed:", err.message);

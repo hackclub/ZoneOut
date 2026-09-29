@@ -753,6 +753,59 @@ border-color:rgb(var(--pumpkinHot));
 box-shadow:inset 0 0 0 1px rgba(var(--pumpkinEmber),0.5), inset 0 0 14px rgba(var(--pumpkinEmber),0.18);
 }
 
+/* SUB-EVENT CARDS */
+.itemCard.subEventCard{
+border-color:rgba(var(--subEvent),0.55);
+background:linear-gradient(165deg, rgba(var(--subEventDeep),0.6), rgba(var(--surfaceAlt),0.88) 72%);
+box-shadow:inset 0 0 0 1px rgba(var(--subEvent),0.28), inset 0 0 20px rgba(var(--subEvent),0.1);
+}
+
+.itemCard.subEventCard:hover,
+.itemCard.subEventCard:focus-visible{
+border-color:rgba(var(--subEventHot),0.9);
+box-shadow:inset 0 0 0 1px rgba(var(--subEvent),0.55), inset 0 0 22px rgba(var(--subEvent),0.2);
+}
+
+.subEventTag{
+margin-top:8px;
+padding:3px 8px;
+font-size:10px;
+font-weight:bold;
+letter-spacing:1.5px;
+line-height:1.3;
+text-transform:uppercase;
+color:rgb(var(--subEventText));
+background:rgba(var(--subEventDeep),0.7);
+border:1px solid rgba(var(--subEvent),0.6);
+border-radius:4px;
+}
+
+/* SUB-EVENT ORDER DIALOG */
+.modalCard.subEventModal{
+border-color:rgba(var(--subEvent),0.6);
+box-shadow:inset 0 0 0 1px rgba(var(--subEvent),0.3), inset 0 0 34px rgba(var(--subEventDeep),0.25);
+}
+
+.modalCard.subEventModal .orderName{
+color:rgb(var(--subEventText));
+}
+
+.modalCard.subEventModal #orderBtn{
+border-color:rgba(var(--subEvent),0.6);
+}
+
+.modalCard.subEventModal #orderBtn:hover:not(:disabled),
+.modalCard.subEventModal #orderBtn:focus-visible:not(:disabled){
+border-color:rgb(var(--subEventHot));
+box-shadow:inset 0 0 0 1px rgba(var(--subEvent),0.5), inset 0 0 14px rgba(var(--subEvent),0.18);
+}
+
+.orderNote.subEventNote{
+color:rgb(var(--subEventText));
+background:rgba(var(--subEventDeep),0.45);
+border-color:rgba(var(--subEvent),0.45);
+}
+
 /* new item flag */
 .newFlag{
 position:absolute;
@@ -1464,7 +1517,7 @@ display:none;
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemListHours, itemSalePercent, itemLimit, itemUnlocked, isRegion, regionName, itemImage, itemIsNew } from "/catalog.js";
+import { SHOP_ITEMS, SHOP_SECTIONS, SHOP_REGIONS, MAX_QUANTITY, findItem, itemInRegion, itemHours, itemListHours, itemSalePercent, itemLimit, itemUnlocked, isRegion, regionName, itemImage, itemIsNew, itemEventOnly, EVENT_ONLY_LABEL, EVENT_ONLY_MIN_HOURS } from "/catalog.js";
 
 // elements
 const sectionsHost = document.getElementById("shopSections");
@@ -1627,7 +1680,8 @@ function renderSections() {
 
         items.forEach(item => {
             const card = document.createElement("button");
-            card.className = "itemCard glitch" + (section.id === "halloween" ? " hallowCard" : "");
+            card.className = "itemCard glitch" + (section.id === "halloween" ? " hallowCard" : "")
+                           + (itemEventOnly(item) ? " subEventCard" : "");
             card.type = "button";
             card.dataset.itemId = item.id;
 
@@ -1650,6 +1704,13 @@ function renderSections() {
                 note.className = "itemNote";
                 note.textContent = item.note;
                 card.appendChild(note);
+            }
+
+            if (itemEventOnly(item)) {
+                const tag = document.createElement("div");
+                tag.className = "subEventTag";
+                tag.textContent = EVENT_ONLY_LABEL;
+                card.appendChild(tag);
             }
 
             const off = itemSalePercent(item, priced);
@@ -1722,6 +1783,7 @@ let region = readRegion();
 let regionChosen = isRegion(readStoredRegion());
 let homeRegion = null;
 let grants = [];
+let eventEligible = false;
 
 // pricing region
 function priceRegion() {
@@ -1990,6 +2052,7 @@ async function refreshBalance() {
         ordersKnown = false;
         homeRegion = null;
         grants = [];
+        eventEligible = false;
         renderSections();
         if (openItem && !itemUnlocked(openItem, grants)) closeOrder();
         else updateOrderButton();
@@ -2020,6 +2083,10 @@ async function refreshBalance() {
         balanceHours = Number(payload.balanceHours) || 0;
         paintBalance();
         adoptGrants(payload.grants);
+        if (eventEligible !== (payload.eventEligible === true)) {
+            eventEligible = payload.eventEligible === true;
+            updateOrderButton();
+        }
         adoptHomeRegion(payload.region);
 
         if (window.zoneoutCorruption) {
@@ -2116,6 +2183,12 @@ function updateOrderButton() {
         return;
     }
 
+    if (itemEventOnly(openItem) && !eventEligible) {
+        orderBtn.textContent = "Not Eligible.";
+        orderBtn.disabled = true;
+        return;
+    }
+
     if (balanceHours >= chargedCost) {
         orderBtn.textContent = "Place Order!";
         orderBtn.disabled = false;
@@ -2134,6 +2207,7 @@ function openOrder(itemId) {
     returnFocus = document.activeElement;
 
     orderCard.classList.toggle("hallowModal", item.section === "halloween");
+    orderCard.classList.toggle("subEventModal", itemEventOnly(item));
 
     orderName.textContent = item.name + (item.note ? " (" + item.note + ")" : "");
 
@@ -2141,6 +2215,10 @@ function openOrder(itemId) {
 
     const cap = itemLimit(item);
     const note = [
+        itemEventOnly(item)
+            ? "**" + EVENT_ONLY_LABEL + ".** You can only buy this with at least **"
+              + EVENT_ONLY_MIN_HOURS + " approved hours** on a project of yours on the Entity Breakout leaderboard."
+            : "",
         item.modalNote || "",
         cap ? "Limited to **" + cap + "** per person in total." : ""
     ].filter(Boolean).join(" ");
@@ -2148,6 +2226,7 @@ function openOrder(itemId) {
     qtyInput.max = String(cap || MAX_QUANTITY);
     paintRich(orderNote, note);
     orderNote.hidden = !note;
+    orderNote.classList.toggle("subEventNote", itemEventOnly(item));
     orderWarning.hidden = !item.local;
 
     orderArt.textContent = "";
@@ -2503,6 +2582,7 @@ function openOrderView(orderId) {
     const state = orderState(row.status);
 
     viewCard.classList.toggle("hallowModal", Boolean(item) && item.section === "halloween");
+    viewCard.classList.toggle("subEventModal", itemEventOnly(item));
 
     viewName.textContent = row.itemName;
     viewCost.textContent = hoursLabel(row.hoursSpent) + " total · × " + row.quantity;

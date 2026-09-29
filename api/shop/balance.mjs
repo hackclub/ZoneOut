@@ -1,5 +1,6 @@
 import { readSession } from "../../lib/session.mjs";
 import { getBalanceHours, grantsFor } from "../../lib/shop.mjs";
+import { isAdminEmail } from "../../lib/admin.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 import { readEventState, derive } from "../../lib/event.mjs";
 
@@ -45,6 +46,7 @@ export default async function handler(req, res) {
             region: row.region ?? null,
             readOnly: Boolean(row.shadow_banned),
             grants: grantsFor(row),
+            eventEligible: Boolean(row.event_eligible) || isAdminEmail(row.email),
             fxEnabled: fx ? fx.fxEnabled : false,
             fxIntensity: fx ? fx.fxIntensity : 0,
             fxBeatSeconds: fx ? fx.fxBeatSeconds : 45,

@@ -93,6 +93,7 @@ export default async function handler(req, res) {
             canEdit: owns || admin,
             canReview: admin,
             adminOverride: admin && !owns,
+            submissionsClosed: owns && project.viewer_submissions_closed === true,
             signedIn: Boolean(session)
         });
     } catch (err) {

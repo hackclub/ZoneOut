@@ -1,5 +1,5 @@
 import { requireUser, refuseReadOnly } from "../../lib/guard.mjs";
-import { readSubmitProfile, clearSubmitProfile, getProjectById } from "../../lib/users.mjs";
+import { readSubmitProfile, clearSubmitProfile, getProjectById, submissionsClosedFor } from "../../lib/users.mjs";
 import { openProfile, sealRef } from "../../lib/secretbox.mjs";
 import { hasEnv } from "../../lib/env.mjs";
 import { CAPTURED_FIELDS, PROJECT_FIELDS } from "../../submitFields.js";
@@ -23,6 +23,16 @@ export default async function handler(req, res) {
     if (await limited(res, "submit-prefill", user.user_id, 30, 60)) return;
 
     if (req.method === "DELETE") return forget(user, res);
+
+    // doomsday
+    try {
+        if (await submissionsClosedFor(user.user_id)) {
+            return res.status(423).json({ ok: false, error: "submissions closed", closed: true });
+        }
+    } catch (err) {
+        console.error("doomsday lookup failed:", err.message);
+    }
+
     return prefill(user, res, readProjectId(req.query?.project));
 }
 
