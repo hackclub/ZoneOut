@@ -97,7 +97,7 @@ export const SHOP_ITEMS = [
         description: "A pacman and ghost themed LED arcade light"
     },
     {
-        id: "smart-watch-grant", fit: "contain", name: "Smart Watch Grant (15$)", hours: 4, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-5cc4-7dd2-9ee5-9c97b01ff9af/smartwatch.png",
+        id: "smart-watch-grant", fit: "contain", name: "Smart Watch Grant (15$)", hours: 3, section: "grants", note: "Stackable", image: "https://cdn.hackclub.com/01a03ee8-5cc4-7dd2-9ee5-9c97b01ff9af/smartwatch.png",
         description: "You might be able to track your health and become human again"
     },
     {
@@ -105,7 +105,7 @@ export const SHOP_ITEMS = [
         description: "Long vampire type cloak"
     },
     {
-        id: "peripherals-grant", name: "Peripherals Grant (20$)", hours: 5, section: "grants", image: "https://cdn.hackclub.com/019d202f-1142-7f3e-9851-d3c3b0ce00ad/perpherals.png", note: "Stackable",
+        id: "peripherals-grant", name: "Peripherals Grant (25$)", hours: 5, section: "grants", image: "https://cdn.hackclub.com/019d202f-1142-7f3e-9851-d3c3b0ce00ad/perpherals.png", note: "Stackable",
         description: "To build a more cooler setup and flex it!"
     },
     {
