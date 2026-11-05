@@ -112,7 +112,7 @@ function readId(raw) {
     return id;
 }
 
-// a shadowed row reads 0 to everybody but its owner and the admins; only admins see legal names
+// a shadowed row reads 0 to everybody but its owner and the admins; only admins see legal names and the breakdown
 function present(rows, viewerId, admin) {
     return rows
         .map(row => {
@@ -121,13 +121,13 @@ function present(rows, viewerId, admin) {
                 userId: row.user_id,
                 name: admin ? (row.name || "Unnamed") : (row.nickname || row.name || "Unnamed"),
                 hours: masked ? 0 : (row.hours ?? 0),
-                trackedHours: masked ? 0 : (row.tracked_hours ?? 0),
-                adjust: masked ? 0 : (row.adjust ?? 0),
-                deflation: masked ? 0 : (row.deflation ?? 0),
                 tickets: row.tickets ?? 0,
                 joinedAt: row.joined_at
             };
             if (admin) {
+                shown.trackedHours = row.tracked_hours ?? 0;
+                shown.adjust = row.adjust ?? 0;
+                shown.deflation = row.deflation ?? 0;
                 shown.shadowed = row.shadowed === true;
                 shown.nickname = row.nickname ?? null;
             }

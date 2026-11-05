@@ -1201,7 +1201,7 @@ function boardHoursLine() {
         : net + " HOURS ON THE LEADERBOARD";
 
     document.getElementById("viewBoardHoursValue").textContent =
-        cut > 0 ? text + " (\u2212" + cut + " DEFLATED)" : text;
+        canReview && cut > 0 ? text + " (\u2212" + cut + " DEFLATED)" : text;
 }
 
 function approvedLine() {

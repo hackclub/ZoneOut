@@ -7,7 +7,7 @@ import { readJsonBody, BadRequest } from "../../lib/body.mjs";
 import { limited } from "../../lib/ratelimit.mjs";
 
 // response shape, the hackatime name is for the owner and administrators only
-function present(project, ownerName, showLink = true, showOwnerId = false, showReview = false) {
+function present(project, ownerName, showLink = true, showOwnerId = false, showReview = false, showDeflation = showReview) {
     return {
         projectId: project.project_id,
         ownerName: ownerName ?? project.owner_name ?? null,
@@ -22,8 +22,8 @@ function present(project, ownerName, showLink = true, showOwnerId = false, showR
         approvedHours: project.approved_hours ?? 0,
         creditedHours: project.credited_hours ?? 0,
         judgedHours: project.judged_hours ?? 0,
-        eventHours: showLink ? (project.event_hours ?? null) : null,
-        eventDeducted: showLink ? (project.event_deducted ?? 0) : null,
+        eventHours: !showLink ? null : showDeflation ? (project.event_hours ?? null) : boardNet(project),
+        eventDeducted: showLink && showDeflation ? (project.event_deducted ?? 0) : null,
         onLeaderboard: showLink ? (project.owner_on_board ?? null) : null,
         roundSettled: Boolean(project.round_settled),
         roundLocked: Boolean(project.round_locked),
@@ -41,6 +41,12 @@ function present(project, ownerName, showLink = true, showOwnerId = false, showR
         createdAt: project.created_at,
         updatedAt: project.updated_at
     };
+}
+
+// deflation is administrators only, so everybody else gets the board figure already netted
+function boardNet(project) {
+    if (project.event_hours === null || project.event_hours === undefined) return null;
+    return Math.max(Number(project.event_hours) - (Number(project.event_deducted) || 0), 0);
 }
 
 // id parsing
@@ -148,7 +154,7 @@ async function edit(req, res, projectId) {
             return res.status(404).json({ ok: false, error: "not found" });
         }
 
-        return res.status(200).json({ ok: true, project: present(project, ownerName), canEdit: true });
+        return res.status(200).json({ ok: true, project: present(project, ownerName, true, false, false, isAdminEmail(user.email)), canEdit: true });
     } catch (err) {
         if (err instanceof ValidationError) {
             return res.status(400).json({ ok: false, error: err.message });
