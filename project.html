@@ -115,6 +115,10 @@ color:rgb(var(--fg));
 display:none;
 }
 
+body.hasLoginBar .backBtn{
+top:calc(var(--loginBarH, 72px) + 14px);
+}
+
 .backBtn:hover,
 .backBtn:focus-visible{
 opacity:1;
@@ -1720,6 +1724,15 @@ function cameFromThisSite() {
     }
 }
 
+function cameFromExplore() {
+    if (!cameFromThisSite()) return false;
+    try {
+        return new URL(document.referrer).pathname === "/explore";
+    } catch (e) {
+        return false;
+    }
+}
+
 function goBack() {
     if (document.getElementById("stateEdit").classList.contains("show")) {
         renderView();
@@ -1727,7 +1740,8 @@ function goBack() {
     }
 
     if (!signedIn) {
-        window.location.href = "/";
+        if (cameFromExplore() && history.length > 1) history.back();
+        else window.location.href = "/";
         return;
     }
 
@@ -1753,7 +1767,7 @@ function showLoginBar() {
     signedIn = false;
     if (!loginBar.hidden) return;
     loginBar.hidden = false;
-    backBtn.hidden = true;
+    backBtn.hidden = !cameFromExplore();
     document.body.classList.add("hasLoginBar");
     measureLoginBar();
 }

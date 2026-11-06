@@ -1021,6 +1021,7 @@ document.addEventListener("keydown", (e) => {
         if (index === 0) openLogin();
         if (index === 1) triggerLearn();
         if (index === 2) openShop();
+        if (index === 3) openExplore();
     }
 });
 
@@ -1039,6 +1040,7 @@ options.forEach((opt, i) => {
         if (i === 0) openLogin();
         if (i === 1) triggerLearn();
         if (i === 2) openShop();
+        if (i === 3) openExplore();
     });
 });
 
@@ -1068,6 +1070,17 @@ function openShop() {
 
     setTimeout(() => {
         window.location.href = "/shop";
+    }, VEIL_MS);
+}
+
+// explore
+function openExplore() {
+    try { sessionStorage.setItem("zoneoutFadeIn", "1"); } catch (e) {}
+
+    screenVeil.classList.add("on");
+
+    setTimeout(() => {
+        window.location.href = "/explore";
     }, VEIL_MS);
 }
 

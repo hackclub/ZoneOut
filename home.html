@@ -992,6 +992,10 @@ display:inline;
 display:none;
 }
 
+.camMap.fxOn #nodeExplore{
+display:none;
+}
+
 @keyframes wireChargeFx{
 from{stroke-dashoffset:86px;}
 to{stroke-dashoffset:calc(0px - var(--wireHalf));}
@@ -1665,6 +1669,7 @@ background:rgb(var(--bg));
 <button class="camNode" id="nodeShop" type="button" style="left:78%;top:12%">SHOP</button>
 <button class="camNode" id="nodeProjects" type="button" style="left:22%;top:88%">PROJECTS</button>
 <button class="camNode camEvents" id="nodeEvents" type="button" style="left:78%;top:88%">EVENTS</button>
+<button class="camNode" id="nodeExplore" type="button" style="left:50%;top:50%">EXPLORE</button>
 <button class="camNode fxNode" id="nodeFx" type="button" style="left:50%;top:50%" hidden>???</button>
 </div>
 
@@ -2842,6 +2847,7 @@ window.addEventListener("resize", () => {
 document.getElementById("nodeProfile").addEventListener("click", () => go("/profile"));
 document.getElementById("nodeProjects").addEventListener("click", () => go("/projects"));
 document.getElementById("nodeShop").addEventListener("click", () => leaveTo("/shop"));
+document.getElementById("nodeExplore").addEventListener("click", () => leaveTo("/explore"));
 
 // back control
 function cameFromProject(id) {

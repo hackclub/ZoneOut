@@ -99,6 +99,31 @@
 --bloodText:255,58,58;
 --bloodDark:26,0,0;
 --ghostText:198,214,214;
+/* EXPLORE DECOR, NEVER THEMED */
+--cautionTape:236,196,40;
+--cautionInk:18,14,0;
+--maskTape:214,200,158;
+--phosphor:110,255,150;
+--lurkGlass:70,130,190;
+--gunSteel:150,156,164;
+--gunGrip:96,54,30;
+--zoPanel:45,14,72;
+--zoPanelDeep:12,10,18;
+--zoAccent:200,160,255;
+--zoText:242,233,255;
+--zoGlow:130,70,200;
+--deskScreen:27,27,27;
+--deskBar:38,44,52;
+--deskVoid:6,6,6;
+--deskInk:236,236,236;
+--deskNotes:146,124,66;
+--deskBubble:148,168,224;
+--deskGear:58,70,82;
+--crtCase:200,190,162;
+--crtCaseLight:232,224,202;
+--crtCaseShade:132,122,98;
+--crtScreen:5,14,9;
+--crtKnob:54,50,44;
 /* GLITCH MODE */
 --sigA:255,50,110;
 --sigB:60,220,255;
